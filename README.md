@@ -7,35 +7,25 @@ AI 기반 노잇을 통한 사내 지식 공유 플랫폼
 ## 🤝 팀원 소개
 <table>
   <tr>
-    <td align="center">
+    <td align="center" width="20%">
       <b>김진혁</b><br><br>
-      <a href="[https://github.com/jin605](https://github.com/jin605)">
-        <img src="[https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)"/>
-      </a>
+      <a href="https://github.com/jin605"><img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"/></a>
     </td>
-    <td align="center">
+    <td align="center" width="20%">
       <b>김가영</b><br><br>
-      <a href="[https://github.com/gahyoung920-eng](https://github.com/gahyoung920-eng)">
-        <img src="[https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)"/>
-      </a>
+      <a href="https://github.com/gahyoung920-eng"><img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"/></a>
     </td>
-    <td align="center">
+    <td align="center" width="20%">
       <b>민정기</b><br><br>
-      <a href="[https://github.com/calendar3450](https://github.com/calendar3450)">
-        <img src="[https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)"/>
-      </a>
+      <a href="https://github.com/calendar3450"><img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"/></a>
     </td>
-    <td align="center">
+    <td align="center" width="20%">
       <b>이슬이</b><br><br>
-      <a href="[https://github.com/0lthree](https://github.com/0lthree)">
-        <img src="[https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)"/>
-      </a>
+      <a href="https://github.com/0lthree"><img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"/></a>
     </td>
-    <td align="center">
+    <td align="center" width="20%">
       <b>황희수</b><br><br>
-      <a href="[https://github.com/huisu73](https://github.com/huisu73)">
-        <img src="[https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)"/>
-      </a>
+      <a href="https://github.com/huisu73"><img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"/></a>
     </td>
   </tr>
 </table>
