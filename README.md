@@ -9,36 +9,32 @@ AI 기반 노잇을 통한 사내 지식 공유 플랫폼
   <tr>
     <td align="center">
       <b>김진혁</b><br><br>
-      <a href="https://github.com/jin605">
-        <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"/>
+      <a href="[https://github.com/jin605](https://github.com/jin605)">
+        <img src="[https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)"/>
       </a>
     </td>
-
     <td align="center">
       <b>김가영</b><br><br>
-      <a href="https://github.com/gahyoung920-eng">
-        <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"/>
+      <a href="[https://github.com/gahyoung920-eng](https://github.com/gahyoung920-eng)">
+        <img src="[https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)"/>
       </a>
     </td>
-
     <td align="center">
       <b>민정기</b><br><br>
-      <a href="https://github.com/calendar3450">
-        <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"/>
+      <a href="[https://github.com/calendar3450](https://github.com/calendar3450)">
+        <img src="[https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)"/>
       </a>
     </td>
-
     <td align="center">
       <b>이슬이</b><br><br>
-      <a href="https://github.com/0lthree">
-        <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"/>
+      <a href="[https://github.com/0lthree](https://github.com/0lthree)">
+        <img src="[https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)"/>
       </a>
     </td>
-
     <td align="center">
       <b>황희수</b><br><br>
-      <a href="https://github.com/huisu73">
-        <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"/>
+      <a href="[https://github.com/huisu73](https://github.com/huisu73)">
+        <img src="[https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)"/>
       </a>
     </td>
   </tr>
@@ -79,7 +75,7 @@ AI 기반 노잇을 통한 사내 지식 공유 플랫폼
 <details>
 <summary>세부사항</summary>
 
-[🛠 프로젝트 기획서]()
+[🛠 프로젝트기획서]()
 
 </details>
 
@@ -91,7 +87,7 @@ AI 기반 노잇을 통한 사내 지식 공유 플랫폼
 <details>
 <summary>세부사항</summary>
 
-[🗒️ 요구사항 명세서](https://docs.google.com/spreadsheets/d/1UwKgzHGSBpIbeOFRVJ_3B759vdDhf5sKBs9VNqmtCpI/edit?gid=0#gid=0)
+[🗒️ 요구사항명세서](https://docs.google.com/spreadsheets/d/1UwKgzHGSBpIbeOFRVJ_3B759vdDhf5sKBs9VNqmtCpI/edit?gid=0#gid=0)
 
 </details>
 
