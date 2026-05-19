@@ -91,8 +91,7 @@ AI 기반 노잇을 통한 사내 지식 공유 플랫폼
 
 [📅 WBS](https://playdatacademy.notion.site/358d943bcac281f39953cef849482b81?v=35ed943bcac280338131000cb1fc378e)
 
-<br>
-<img src="./images/WBS.png" width="900" />
+<img src="./images/WBS.png"/>
 </details>
 
 <br>
