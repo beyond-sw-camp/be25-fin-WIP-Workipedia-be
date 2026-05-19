@@ -2,25 +2,27 @@
 AI 기반 노잇을 통한 사내 지식 공유 플랫폼
 
 ## 🤝 팀원 소개
+## ✨ 팀원
+
 <table>
   <tr>
     <td align="center">
       <b>김진혁</b><br><br>
-      <a href="https://github.com/jin605">
+      <a href="https://github.com/진혁님ID">
         <img src="https://img.shields.io/badge/GitHub-Link-black?style=for-the-badge&logo=github">
       </a>
     </td>
 
     <td align="center">
       <b>김가영</b><br><br>
-      <a href="https://github.com/gahyoung920-eng">
+      <a href="https://github.com/가영님ID">
         <img src="https://img.shields.io/badge/GitHub-Link-black?style=for-the-badge&logo=github">
       </a>
     </td>
 
     <td align="center">
       <b>민정기</b><br><br>
-      <a href="https://github.com/calendar3450">
+      <a href="https://github.com/정기님ID">
         <img src="https://img.shields.io/badge/GitHub-Link-black?style=for-the-badge&logo=github">
       </a>
     </td>
@@ -34,7 +36,7 @@ AI 기반 노잇을 통한 사내 지식 공유 플랫폼
 
     <td align="center">
       <b>황희수</b><br><br>
-      <a href="https://github.com/huisu73">
+      <a href="https://github.com/희수님ID">
         <img src="https://img.shields.io/badge/GitHub-Link-black?style=for-the-badge&logo=github">
       </a>
     </td>
