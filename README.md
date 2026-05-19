@@ -2,45 +2,38 @@
 AI 기반 노잇을 통한 사내 지식 공유 플랫폼
 
 ## 🤝 팀원 소개
-## ✨ 팀원
-
-<table>
-  <tr>
-    <td align="center">
-      <b>김진혁</b><br><br>
-      <a href="https://github.com/진혁님ID">
-        <img src="https://img.shields.io/badge/GitHub-Link-black?style=for-the-badge&logo=github">
-      </a>
-    </td>
-
-    <td align="center">
-      <b>김가영</b><br><br>
-      <a href="https://github.com/가영님ID">
-        <img src="https://img.shields.io/badge/GitHub-Link-black?style=for-the-badge&logo=github">
-      </a>
-    </td>
-
-    <td align="center">
-      <b>민정기</b><br><br>
-      <a href="https://github.com/정기님ID">
-        <img src="https://img.shields.io/badge/GitHub-Link-black?style=for-the-badge&logo=github">
-      </a>
-    </td>
-
-    <td align="center">
-      <b>이슬이</b><br><br>
-      <a href="https://github.com/0lthree">
-        <img src="https://img.shields.io/badge/GitHub-Link-black?style=for-the-badge&logo=github">
-      </a>
-    </td>
-
-    <td align="center">
-      <b>황희수</b><br><br>
-      <a href="https://github.com/희수님ID">
-        <img src="https://img.shields.io/badge/GitHub-Link-black?style=for-the-badge&logo=github">
-      </a>
-    </td>
-  </tr>
+<table style="width:100%; text-align:center;">
+  <thead>
+    <tr>
+      <th>김진혁</th>
+      <th>김가영</th>
+      <th>민정기</th>
+      <th>이슬이</th>
+      <th>황희수</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        🔗
+      </td>
+      <td>
+        🔗
+      </td>
+      <td>
+        🔗
+      </td>
+      <td>
+        🔗
+      </td>
+      <td>
+        🔗
+      </td>
+      <td>
+        🔗
+      </td>
+    </tr>
+  </tbody>
 </table>
 
 <br>
@@ -57,6 +50,7 @@ AI 기반 노잇을 통한 사내 지식 공유 플랫폼
 
 
 ## <a id="0-프로젝트-소개 a"></a> 0. 프로젝트 소개
+
 ### 배경
 본 프로젝트는 신규 입사자와 임직원이 인사·복지·근태·교육·사내 제도 관련 정보를 하나의 검색창에서 확인하고, 검색으로 해결되지 않는 문의는 HR 티켓으로 전환하는 인사 업무 지원 플랫폼이다.
 
