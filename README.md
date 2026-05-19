@@ -1,6 +1,9 @@
 # Workipedia
 AI 기반 노잇을 통한 사내 지식 공유 플랫폼
 
+<br>
+
+
 ## 🤝 팀원 소개
 <table style="width:100%; text-align:center;">
   <thead>
