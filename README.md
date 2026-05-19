@@ -5,35 +5,43 @@ AI 기반 노잇을 통한 사내 지식 공유 플랫폼
 
 
 ## 🤝 팀원 소개
-<table style="width:100%; text-align:center;">
-  <thead>
-    <tr>
-      <th>김진혁</th>
-      <th>김가영</th>
-      <th>민정기</th>
-      <th>이슬이</th>
-      <th>황희수</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        🔗 진혁님링크
-      </td>
-      <td>
-        🔗 가영님링크
-      </td>
-      <td>
-        🔗 정기님링크
-      </td>
-      <td>
-        🔗 슬이님링크
-      </td>
-      <td>
-        🔗 희수님링크
-      </td>
-    </tr>
-  </tbody>
+<table>
+  <tr>
+    <td align="center">
+      <b>김진혁</b><br><br>
+      <a href="https://github.com/jin605">
+        <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"/>
+      </a>
+    </td>
+
+    <td align="center">
+      <b>김가영</b><br><br>
+      <a href="https://github.com/gahyoung920-eng">
+        <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"/>
+      </a>
+    </td>
+
+    <td align="center">
+      <b>민정기</b><br><br>
+      <a href="https://github.com/calendar3450">
+        <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"/>
+      </a>
+    </td>
+
+    <td align="center">
+      <b>이슬이</b><br><br>
+      <a href="https://github.com/0lthree">
+        <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"/>
+      </a>
+    </td>
+
+    <td align="center">
+      <b>황희수</b><br><br>
+      <a href="https://github.com/huisu73">
+        <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"/>
+      </a>
+    </td>
+  </tr>
 </table>
 
 <br>
@@ -69,7 +77,7 @@ AI 기반 노잇을 통한 사내 지식 공유 플랫폼
 ## <a id="1-프로젝트-기획서"></a> 1. 프로젝트 기획서
 
 <details>
-<summary><b>세부사항</b></summary>
+<summary>세부사항</summary>
 
 [🛠 프로젝트 기획서]()
 
@@ -81,7 +89,7 @@ AI 기반 노잇을 통한 사내 지식 공유 플랫폼
 ## <a id="2-요구사항-명세서"></a> 2. 요구사항 명세서
 
 <details>
-<summary><b>세부사항</b></summary>
+<summary>세부사항</summary>
 
 [🗒️ 요구사항 명세서](https://docs.google.com/spreadsheets/d/1UwKgzHGSBpIbeOFRVJ_3B759vdDhf5sKBs9VNqmtCpI/edit?gid=0#gid=0)
 
@@ -93,7 +101,7 @@ AI 기반 노잇을 통한 사내 지식 공유 플랫폼
 ## <a id="3-WBS"></a> 3. WBS
 
 <details>
-<summary><b>세부사항</b></summary>
+<summary>세부사항</summary>
 
 [📅 WBS]()
 
