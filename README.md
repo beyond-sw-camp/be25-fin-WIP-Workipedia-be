@@ -187,3 +187,15 @@
 
 <br>
 
+## <a id="4-ERD"></a> 4. ERD
+
+<details>
+<summary>세부사항</summary>
+
+[📅 ERD](https://www.erdcloud.com/d/f2crxM2E8EBrAy9oW)
+
+<img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/main/images/ERD.png?raw=true"/>
+</details>
+
+<br>
+
