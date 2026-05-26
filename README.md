@@ -199,3 +199,15 @@
 
 <br>
 
+## <a id="5-화면설계서"></a> 5. 화면설계서
+
+<details>
+<summary>세부사항</summary>
+
+[📅 화면설계서](https://www.figma.com/design/jleHnh9qzkjeduukiUuJws/%ED%99%94%EB%A9%B4%EA%B8%B0%EB%8A%A5%EC%84%A4%EA%B3%84%EC%84%9C?node-id=0-1&t=Y0yJvaReqcKLiOyK-1)
+
+<img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/main/images/%ED%99%94%EB%A9%B4%EC%84%A4%EA%B3%84%EC%84%9C.png?raw=true"/>
+</details>
+
+<br>
+
