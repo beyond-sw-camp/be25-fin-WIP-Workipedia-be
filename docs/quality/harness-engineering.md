@@ -1,6 +1,6 @@
 # Workipedia Harness Engineering Guide
 
-> 목적: Workipedia/KnowIT의 핵심 원칙을 자동 검증 가능한 테스트 체계로 바꾼다.
+> 목적: Workipedia의 핵심 원칙을 자동 검증 가능한 테스트 체계로 바꾼다.
 > 정본 위치: `docs/quality/harness-engineering.md`
 > 기준 문서: `docs/reference/constitution.md`, README 기획서, Google Sheet `Workipedia docs`
 > 작성일: 2026-05-28
