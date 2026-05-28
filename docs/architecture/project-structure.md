@@ -238,14 +238,13 @@ rag/adapter/
 ```text
 src/main/resources/db/migration/
   V1__create_departments_and_users.sql
-  V2__create_manuals.sql
-  V3__create_worki.sql
-  V4__create_chatbot.sql
-  V5__create_tickets.sql
-  V6__create_points_badges_notifications.sql
-  V7__create_chunks_and_references.sql
-  V8__create_admin_logs.sql
-  V9__create_esg_statistics.sql
+  V2__create_worki.sql
+  V3__create_chatbot.sql
+  V4__create_tickets.sql
+  V5__create_points_and_notifications.sql
+  V6__create_admin_logs.sql
+  V7__create_manuals_and_chunks.sql
+  V8__create_badges_and_esg_metrics.sql
 ```
 
 처음부터 모든 컬럼을 완벽하게 넣으려 하기보다, 테이블 명세서의 P0/P1 컬럼부터 반영한다.

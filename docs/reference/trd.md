@@ -1,4 +1,4 @@
-# TRD — KnowIT (사내 지식 공유 플랫폼)
+# TRD — Workipedia (사내 지식 공유 플랫폼)
 
 > 문서 유형: Technical Requirements Document
 > 상태: Draft
@@ -12,7 +12,7 @@
 
 ## 1. 문서 개요
 
-본 문서는 KnowIT의 기술 아키텍처, 데이터 모델, 외부 의존성, 인터페이스 정의를 기술한다. PRD와 함께 읽어야 한다.
+본 문서는 Workipedia의 기술 아키텍처, 데이터 모델, 외부 의존성, 인터페이스 정의를 기술한다. PRD와 함께 읽어야 한다.
 
 ---
 
