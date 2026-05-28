@@ -200,7 +200,7 @@ AI 답변 해결 건수
 <details>
 <summary>세부사항</summary>
 
-<img src=""/>
+<img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/main/images/시스템아키텍처.png?raw=true"/>
 </details>
 
 <br>
