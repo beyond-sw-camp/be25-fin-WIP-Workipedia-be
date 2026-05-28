@@ -17,6 +17,7 @@
 | DB Migration Guide | `../database/db-migration-guide.md` | Flyway migration 규칙과 테이블 생성 순서 |
 | Harness Guide | `../quality/harness-engineering.md` | 출처, 개인정보, 권한, 워크플로우 검증 기준 |
 | Midterm Guide | `../presentation/midterm-presentation-guide.md` | 중간 발표 메시지와 시연 구성 |
+| Git Strategy | `../process/git-strategy.md` | 브랜치, 커밋, PR, 리뷰 규칙 |
 | ADRs | `../adr/` | DB/Auth/RAG 등 주요 기술 결정 기록 |
 
 ## 읽는 순서
@@ -33,6 +34,7 @@
 10. `../adr/0003-auth-strategy.md`
 11. `../quality/harness-engineering.md`
 12. `../presentation/midterm-presentation-guide.md`
+13. `../process/git-strategy.md`
 
 ## 관리 규칙
 
