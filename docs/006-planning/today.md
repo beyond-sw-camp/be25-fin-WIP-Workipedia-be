@@ -27,7 +27,7 @@
 | 김가영 | 휴가 복귀 후 월요일에 받을 입력값 확인 | `docs/006-planning/member-wbs/kim-gayeong.md`, `docs/006-planning/daily-discussions/2026-06-01.md` |
 | 김진혁 | 티켓 상태값, 챗봇 실패 처리, RAG references 구조 확인 | `docs/006-planning/member-wbs/kim-jinhyeok.md`, `docs/001-reference/service-flow.md` |
 | 이슬이 | Auth 필드, 권한 구조, 챗봇 세션/메시지 저장 경계 확인 | `docs/006-planning/member-wbs/lee-seuli.md`, `docs/003-adr/0003-auth-strategy.md` |
-| 황희수 | Figma Make 화면 목록, 라우팅, mock API 필요 목록 확인 | `docs/006-planning/member-wbs/hwang-heesoo.md`, `docs/004-api/api-contract.md` |
+| 황희수 | Figma Make가 최신 기획 문서와 맞는지 점검하고, 라우팅/mock API 필요 목록 확인 | `docs/006-planning/member-wbs/hwang-heesoo.md`, `docs/006-planning/weekly-wbs/2026-06-01-week1.md`, `docs/001-reference/service-flow.md`, `docs/004-api/api-contract.md` |
 
 ## 3. 팀원이 "나 오늘 뭐하면 돼?"라고 물었을 때
 
@@ -46,6 +46,7 @@
 이슬이는 today.md에서 본인 행을 먼저 보고,
 member-wbs/lee-seuli.md와 weekly-wbs/2026-06-01-week1.md를 확인한 뒤
 Auth/챗봇 세션 skeleton을 월요일에 바로 시작할 수 있게 경계를 정리한다.
+황희수는 FE skeleton 전에 Figma Make 화면이 최신 기획과 맞는지 먼저 확인한다.
 ```
 
 ## 4. 오늘 종료 전 받을 메모

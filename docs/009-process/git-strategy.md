@@ -320,7 +320,123 @@ git push -u origin feat/ticket-transfer
 release/2026-06-26
 ```
 
-## 14. hotfix 전략
+## 14. GitHub Ruleset 권장 설정
+
+GitHub Ruleset은 브랜치별로 직접 push, PR 필수 여부, 리뷰, 상태 체크, 브랜치명 같은 규칙을 강제하기 위한 설정이다.
+우리 팀은 발표 일정이 짧으므로 너무 빡빡하게 막기보다 `main`과 `dev`를 보호하고, 기능 브랜치는 이름 규칙만 강제하는 정도로 시작한다.
+
+### 14.1 `main` 보호 Ruleset
+
+대상 브랜치:
+
+```text
+main
+```
+
+권장 규칙:
+
+- 직접 push 금지
+- PR을 통한 변경만 허용
+- 최소 1명 approve 필요
+- conversation resolution 필수
+- force push 금지
+- branch 삭제 금지
+- bypass는 repository admin 1명만 허용하거나, 가능하면 허용하지 않음
+
+`main`은 최종 발표/배포 기준 브랜치이므로 기능 개발자가 직접 작업하지 않는다.
+
+### 14.2 `dev` 보호 Ruleset
+
+대상 브랜치:
+
+```text
+dev
+```
+
+권장 규칙:
+
+- 직접 push 금지
+- PR을 통한 변경만 허용
+- 최소 1명 approve 필요
+- conversation resolution 필수
+- force push 금지
+- branch 삭제 금지
+- GitHub Actions 테스트가 생기면 required status check 추가
+
+초기에는 CI가 없을 수 있으므로 required status check는 만들지 않는다.
+빌드/테스트 workflow가 추가된 뒤 `build`, `test` 같은 check를 필수로 전환한다.
+
+### 14.3 `release/*` 보호 Ruleset
+
+대상 브랜치:
+
+```text
+release/*
+```
+
+권장 규칙:
+
+- 직접 push 금지
+- PR을 통한 변경만 허용
+- 최소 1명 approve 필요
+- force push 금지
+- branch 삭제 금지
+- 기능 추가 PR merge 금지, 버그픽스와 시연 차단 수정만 허용
+
+배포 후보 브랜치가 만들어지는 2026-06-25 전후부터 적용한다.
+
+### 14.4 브랜치 네이밍 Ruleset
+
+대상:
+
+```text
+모든 생성 브랜치
+```
+
+허용 패턴:
+
+```text
+feat/*
+fix/*
+hotfix/*
+docs/*
+chore/*
+refactor/*
+test/*
+release/*
+```
+
+권장 규칙:
+
+- 위 prefix 밖의 브랜치 생성을 제한한다.
+- 문서 작업은 `docs/*` 브랜치를 사용한다.
+- 기능 작업은 Issue 생성 후 `feat/*` 브랜치를 사용한다.
+
+### 14.5 Pull Request merge 방식
+
+권장 설정:
+
+- `dev` merge는 squash merge 권장
+- `main` merge는 PR merge만 허용
+- merge commit 허용 여부는 팀 합의로 정하되, 발표 전에는 squash merge로 이력을 단순화한다.
+
+### 14.6 지금 당장 적용할 최소 Ruleset
+
+처음부터 전부 켜면 개발 속도가 느려질 수 있으므로, 오늘 바로 적용할 최소값은 아래로 둔다.
+
+| 대상 | 필수 설정 |
+|---|---|
+| `main` | PR 필수, approve 1명, force push 금지, 삭제 금지 |
+| `dev` | PR 필수, approve 1명, force push 금지, 삭제 금지 |
+| 브랜치명 | `feat/*`, `fix/*`, `docs/*`, `chore/*`, `hotfix/*`, `release/*` 허용 |
+
+CI가 붙은 뒤 추가할 것:
+
+- required status check
+- stale approval dismiss
+- 최신 브랜치 기준 merge 요구
+
+## 15. hotfix 전략
 
 발표 직전 또는 배포 후보 브랜치에서 시연을 막는 문제가 생기면 `hotfix/*` 브랜치를 사용한다.
 
@@ -338,7 +454,7 @@ release/2026-06-26
 - 기능 추가는 hotfix로 처리하지 않는다.
 - hotfix 후 `develop`에도 반드시 반영한다.
 
-## 14. 금지 사항
+## 16. 금지 사항
 
 - 공유 브랜치에서 직접 큰 기능 개발 금지
 - 리뷰 없이 DB migration 변경 merge 금지
