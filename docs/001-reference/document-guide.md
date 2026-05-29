@@ -78,7 +78,8 @@
 - 제품 범위 변경은 `prd.md`에 먼저 반영한 뒤 구현한다.
 - 기술 구조, 테이블, API 변경은 `trd.md` 또는 별도 기술 문서에 반영한다.
 - 당일 작업 시작점은 `../006-planning/today.md`로 둔다.
-- 매주 금요일에는 다음 주 실행 WBS를 `../006-planning/weekly-wbs/`에 작성한다.
+- skeleton 또는 기능 개발 시작 전에는 GitHub Issue를 먼저 만든다.
+- 매주 금요일에는 다음 주 실행 WBS를 `../006-planning/weekly-wbs/`에 작성하고, 다음 주 Weekly Issue 내용을 준비한다.
 - 매일 작업 종료 전에는 다음 근무일 논의사항을 `../006-planning/daily-discussions/`에 작성한다.
 - 루트 `README.md`는 발표/최종 산출물 정리 시점에만 갱신한다.
 - 작업 중 문서는 `docs/` 아래에 만들고, 루트 `README.md`에 임의 링크를 추가하지 않는다.
