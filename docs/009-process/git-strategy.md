@@ -133,29 +133,92 @@ chore: Flyway migration 설정 추가
 | `refactor` | 리팩터링 |
 | `test` | 테스트 |
 
-## 7. PR 규칙
+## 7. Issue 규칙
 
-### 7.1 PR 크기
+개발 작업은 Issue를 먼저 만들고 시작한다.
+Issue는 작업 범위, 담당자, 완료 기준을 팀이 같은 기준으로 이해하기 위한 단위다.
+
+기본 원칙:
+
+- skeleton 구현, 기능 구현, 버그 수정, 문서 정리는 작업 시작 전에 Issue를 만든다.
+- 브랜치는 Issue를 기준으로 만든다.
+- PR 본문에는 관련 Issue를 연결한다.
+- 매일 진행상황은 Issue 댓글 또는 `docs/006-planning/daily-discussions/`에 남긴다.
+
+### 7.1 Issue 단위
+
+| 구분 | 기준 | 예시 |
+|---|---|---|
+| Weekly Issue | 한 주의 공통 목표와 담당자별 체크리스트 | `[WBS] Week 1 기반 개발 작업` |
+| Feature Issue | 하나의 기능 또는 도메인 작업 | `[feat] Auth JWT 로그인 skeleton` |
+| Bug Issue | 재현 가능한 오류 수정 | `[fix] 티켓 상태 변경 오류 수정` |
+| Docs Issue | 문서 구조, API 계약, WBS 정리 | `[docs] API 계약서 갱신` |
+
+매일 Daily Issue를 따로 만들지는 않는다.
+일 단위 기록은 `daily-discussions/YYYY-MM-DD.md`에 남기고, GitHub Issue는 추적 단위로 사용한다.
+
+### 7.2 Issue 작성 템플릿
+
+```md
+## 작업 목적
+-
+
+## 작업 범위
+- [ ]
+- [ ]
+- [ ]
+
+## 완료 기준
+- [ ]
+
+## 참고 문서
+-
+```
+
+### 7.3 Issue 기반 작업 흐름
+
+```text
+Issue 생성
+-> Issue 번호 기준으로 브랜치 생성
+-> skeleton 또는 기능 구현
+-> 로컬 테스트/API 수동 확인
+-> PR 생성
+-> PR 본문에 관련 Issue 연결
+```
+
+브랜치 예시:
+
+```text
+feat/auth-jwt-12
+feat/ticket-skeleton-13
+docs/week1-wbs-14
+```
+
+## 8. PR 규칙
+
+문서 PR 제목은 `docs: 작업 요약` 형식으로 통일한다.
+
+### 8.1 PR 크기
 
 - 한 PR은 가능하면 한 기능 또는 한 흐름만 포함한다.
 - DB migration, API 변경, 프론트 연동 변경은 PR 설명에 반드시 적는다.
 - 큰 기능은 skeleton PR → 세부 구현 PR → 연동 PR로 나눈다.
 
-### 7.2 PR 제목
+### 8.2 PR 제목
 
 ```text
-[type] 작업 요약
+type: 작업 요약
 ```
 
 예시:
 
 ```text
-[feat] Auth JWT 로그인 구현
-[feat] 워키 질문/답변 API 구현
-[docs] WBS 및 API 계약서 추가
+feat: Auth JWT 로그인 구현
+feat: 워키 질문/답변 API 구현
+docs: WBS 및 API 계약서 추가
 ```
 
-### 7.3 PR 설명 템플릿
+### 8.3 PR 설명 템플릿
 
 ```md
 ## 작업 내용
@@ -173,9 +236,12 @@ chore: Flyway migration 설정 추가
 
 ## 확인 필요
 - 
+
+## 관련 이슈
+- close #
 ```
 
-## 8. merge 규칙
+## 9. merge 규칙
 
 | 대상 브랜치 | merge 방식 | 규칙 |
 |---|---|---|
@@ -190,7 +256,7 @@ merge 전 체크:
 - DB 변경이 있으면 migration과 `docs/005-database/db-migration-guide.md`를 확인한다.
 - 프론트 영향이 있으면 황희수에게 공유한다.
 
-## 9. 리뷰 규칙
+## 10. 리뷰 규칙
 
 | 변경 유형 | 리뷰 기준 |
 |---|---|
@@ -201,7 +267,7 @@ merge 전 체크:
 | RAG/LLM/Embedding | 김진혁 + 관련 담당 확인 |
 | 관리자/admin_logs | 김가영 + 관련 담당 확인 |
 
-## 10. 충돌 줄이는 규칙
+## 11. 충돌 줄이는 규칙
 
 - 공통 파일(`build.gradle`, `application.yaml`, 공통 응답/예외)은 한 번에 여러 명이 수정하지 않는다.
 - API path나 request/response가 바뀌면 `docs/004-api/api-contract.md`를 먼저 수정한다.
@@ -209,10 +275,11 @@ merge 전 체크:
 - enum/status 값은 프론트가 의존하므로 변경 즉시 황희수에게 공유한다.
 - README.md는 발표/최종 산출물 정리 전까지 임의 수정하지 않는다.
 
-## 11. 브랜치 작업 흐름
+## 12. 브랜치 작업 흐름
 
 ```text
 통합 브랜치 최신화
+-> Issue 확인 또는 생성
 -> 기능 브랜치 생성
 -> 작은 단위 구현
 -> 로컬 테스트
@@ -235,7 +302,7 @@ git commit -m "feat: 티켓 이관 기능 추가"
 git push -u origin feat/ticket-transfer
 ```
 
-## 12. 배포 전 브랜치 운영
+## 13. 배포 전 브랜치 운영
 
 배포 목표일은 2026-06-26이다.
 
@@ -253,7 +320,123 @@ git push -u origin feat/ticket-transfer
 release/2026-06-26
 ```
 
-## 13. hotfix 전략
+## 14. GitHub Ruleset 권장 설정
+
+GitHub Ruleset은 브랜치별로 직접 push, PR 필수 여부, 리뷰, 상태 체크, 브랜치명 같은 규칙을 강제하기 위한 설정이다.
+우리 팀은 발표 일정이 짧으므로 너무 빡빡하게 막기보다 `main`과 `dev`를 보호하고, 기능 브랜치는 이름 규칙만 강제하는 정도로 시작한다.
+
+### 14.1 `main` 보호 Ruleset
+
+대상 브랜치:
+
+```text
+main
+```
+
+권장 규칙:
+
+- 직접 push 금지
+- PR을 통한 변경만 허용
+- 최소 1명 approve 필요
+- conversation resolution 필수
+- force push 금지
+- branch 삭제 금지
+- bypass는 repository admin 1명만 허용하거나, 가능하면 허용하지 않음
+
+`main`은 최종 발표/배포 기준 브랜치이므로 기능 개발자가 직접 작업하지 않는다.
+
+### 14.2 `dev` 보호 Ruleset
+
+대상 브랜치:
+
+```text
+dev
+```
+
+권장 규칙:
+
+- 직접 push 금지
+- PR을 통한 변경만 허용
+- 최소 1명 approve 필요
+- conversation resolution 필수
+- force push 금지
+- branch 삭제 금지
+- GitHub Actions 테스트가 생기면 required status check 추가
+
+초기에는 CI가 없을 수 있으므로 required status check는 만들지 않는다.
+빌드/테스트 workflow가 추가된 뒤 `build`, `test` 같은 check를 필수로 전환한다.
+
+### 14.3 `release/*` 보호 Ruleset
+
+대상 브랜치:
+
+```text
+release/*
+```
+
+권장 규칙:
+
+- 직접 push 금지
+- PR을 통한 변경만 허용
+- 최소 1명 approve 필요
+- force push 금지
+- branch 삭제 금지
+- 기능 추가 PR merge 금지, 버그픽스와 시연 차단 수정만 허용
+
+배포 후보 브랜치가 만들어지는 2026-06-25 전후부터 적용한다.
+
+### 14.4 브랜치 네이밍 Ruleset
+
+대상:
+
+```text
+모든 생성 브랜치
+```
+
+허용 패턴:
+
+```text
+feat/*
+fix/*
+hotfix/*
+docs/*
+chore/*
+refactor/*
+test/*
+release/*
+```
+
+권장 규칙:
+
+- 위 prefix 밖의 브랜치 생성을 제한한다.
+- 문서 작업은 `docs/*` 브랜치를 사용한다.
+- 기능 작업은 Issue 생성 후 `feat/*` 브랜치를 사용한다.
+
+### 14.5 Pull Request merge 방식
+
+권장 설정:
+
+- `dev` merge는 squash merge 권장
+- `main` merge는 PR merge만 허용
+- merge commit 허용 여부는 팀 합의로 정하되, 발표 전에는 squash merge로 이력을 단순화한다.
+
+### 14.6 지금 당장 적용할 최소 Ruleset
+
+처음부터 전부 켜면 개발 속도가 느려질 수 있으므로, 오늘 바로 적용할 최소값은 아래로 둔다.
+
+| 대상 | 필수 설정 |
+|---|---|
+| `main` | PR 필수, approve 1명, force push 금지, 삭제 금지 |
+| `dev` | PR 필수, approve 1명, force push 금지, 삭제 금지 |
+| 브랜치명 | `feat/*`, `fix/*`, `docs/*`, `chore/*`, `hotfix/*`, `release/*` 허용 |
+
+CI가 붙은 뒤 추가할 것:
+
+- required status check
+- stale approval dismiss
+- 최신 브랜치 기준 merge 요구
+
+## 15. hotfix 전략
 
 발표 직전 또는 배포 후보 브랜치에서 시연을 막는 문제가 생기면 `hotfix/*` 브랜치를 사용한다.
 
@@ -271,7 +454,7 @@ release/2026-06-26
 - 기능 추가는 hotfix로 처리하지 않는다.
 - hotfix 후 `develop`에도 반드시 반영한다.
 
-## 14. 금지 사항
+## 16. 금지 사항
 
 - 공유 브랜치에서 직접 큰 기능 개발 금지
 - 리뷰 없이 DB migration 변경 merge 금지
