@@ -133,29 +133,92 @@ chore: Flyway migration 설정 추가
 | `refactor` | 리팩터링 |
 | `test` | 테스트 |
 
-## 7. PR 규칙
+## 7. Issue 규칙
 
-### 7.1 PR 크기
+개발 작업은 Issue를 먼저 만들고 시작한다.
+Issue는 작업 범위, 담당자, 완료 기준을 팀이 같은 기준으로 이해하기 위한 단위다.
+
+기본 원칙:
+
+- skeleton 구현, 기능 구현, 버그 수정, 문서 정리는 작업 시작 전에 Issue를 만든다.
+- 브랜치는 Issue를 기준으로 만든다.
+- PR 본문에는 관련 Issue를 연결한다.
+- 매일 진행상황은 Issue 댓글 또는 `docs/006-planning/daily-discussions/`에 남긴다.
+
+### 7.1 Issue 단위
+
+| 구분 | 기준 | 예시 |
+|---|---|---|
+| Weekly Issue | 한 주의 공통 목표와 담당자별 체크리스트 | `[WBS] Week 1 기반 개발 작업` |
+| Feature Issue | 하나의 기능 또는 도메인 작업 | `[feat] Auth JWT 로그인 skeleton` |
+| Bug Issue | 재현 가능한 오류 수정 | `[fix] 티켓 상태 변경 오류 수정` |
+| Docs Issue | 문서 구조, API 계약, WBS 정리 | `[docs] API 계약서 갱신` |
+
+매일 Daily Issue를 따로 만들지는 않는다.
+일 단위 기록은 `daily-discussions/YYYY-MM-DD.md`에 남기고, GitHub Issue는 추적 단위로 사용한다.
+
+### 7.2 Issue 작성 템플릿
+
+```md
+## 작업 목적
+-
+
+## 작업 범위
+- [ ]
+- [ ]
+- [ ]
+
+## 완료 기준
+- [ ]
+
+## 참고 문서
+-
+```
+
+### 7.3 Issue 기반 작업 흐름
+
+```text
+Issue 생성
+-> Issue 번호 기준으로 브랜치 생성
+-> skeleton 또는 기능 구현
+-> 로컬 테스트/API 수동 확인
+-> PR 생성
+-> PR 본문에 관련 Issue 연결
+```
+
+브랜치 예시:
+
+```text
+feat/auth-jwt-12
+feat/ticket-skeleton-13
+docs/week1-wbs-14
+```
+
+## 8. PR 규칙
+
+문서 PR 제목은 `docs: 작업 요약` 형식으로 통일한다.
+
+### 8.1 PR 크기
 
 - 한 PR은 가능하면 한 기능 또는 한 흐름만 포함한다.
 - DB migration, API 변경, 프론트 연동 변경은 PR 설명에 반드시 적는다.
 - 큰 기능은 skeleton PR → 세부 구현 PR → 연동 PR로 나눈다.
 
-### 7.2 PR 제목
+### 8.2 PR 제목
 
 ```text
-[type] 작업 요약
+type: 작업 요약
 ```
 
 예시:
 
 ```text
-[feat] Auth JWT 로그인 구현
-[feat] 워키 질문/답변 API 구현
-[docs] WBS 및 API 계약서 추가
+feat: Auth JWT 로그인 구현
+feat: 워키 질문/답변 API 구현
+docs: WBS 및 API 계약서 추가
 ```
 
-### 7.3 PR 설명 템플릿
+### 8.3 PR 설명 템플릿
 
 ```md
 ## 작업 내용
@@ -173,9 +236,12 @@ chore: Flyway migration 설정 추가
 
 ## 확인 필요
 - 
+
+## 관련 이슈
+- close #
 ```
 
-## 8. merge 규칙
+## 9. merge 규칙
 
 | 대상 브랜치 | merge 방식 | 규칙 |
 |---|---|---|
@@ -190,7 +256,7 @@ merge 전 체크:
 - DB 변경이 있으면 migration과 `docs/005-database/db-migration-guide.md`를 확인한다.
 - 프론트 영향이 있으면 황희수에게 공유한다.
 
-## 9. 리뷰 규칙
+## 10. 리뷰 규칙
 
 | 변경 유형 | 리뷰 기준 |
 |---|---|
@@ -201,7 +267,7 @@ merge 전 체크:
 | RAG/LLM/Embedding | 김진혁 + 관련 담당 확인 |
 | 관리자/admin_logs | 김가영 + 관련 담당 확인 |
 
-## 10. 충돌 줄이는 규칙
+## 11. 충돌 줄이는 규칙
 
 - 공통 파일(`build.gradle`, `application.yaml`, 공통 응답/예외)은 한 번에 여러 명이 수정하지 않는다.
 - API path나 request/response가 바뀌면 `docs/004-api/api-contract.md`를 먼저 수정한다.
@@ -209,10 +275,11 @@ merge 전 체크:
 - enum/status 값은 프론트가 의존하므로 변경 즉시 황희수에게 공유한다.
 - README.md는 발표/최종 산출물 정리 전까지 임의 수정하지 않는다.
 
-## 11. 브랜치 작업 흐름
+## 12. 브랜치 작업 흐름
 
 ```text
 통합 브랜치 최신화
+-> Issue 확인 또는 생성
 -> 기능 브랜치 생성
 -> 작은 단위 구현
 -> 로컬 테스트
@@ -235,7 +302,7 @@ git commit -m "feat: 티켓 이관 기능 추가"
 git push -u origin feat/ticket-transfer
 ```
 
-## 12. 배포 전 브랜치 운영
+## 13. 배포 전 브랜치 운영
 
 배포 목표일은 2026-06-26이다.
 
@@ -253,7 +320,7 @@ git push -u origin feat/ticket-transfer
 release/2026-06-26
 ```
 
-## 13. hotfix 전략
+## 14. hotfix 전략
 
 발표 직전 또는 배포 후보 브랜치에서 시연을 막는 문제가 생기면 `hotfix/*` 브랜치를 사용한다.
 
