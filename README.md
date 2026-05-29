@@ -187,7 +187,7 @@ AI 답변 해결 건수
 <details>
 <summary>세부사항</summary>
 
-[📅 ERD](https://discordapp.com/channels/@me/1469291201554288814/1509468102356893747)
+[📅 ERD](https://www.erdcloud.com/d/RrGgjDNdgqAvsg8sZ)
 
 <img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/main/images/ERD.png?raw=true"/>
 </details>
