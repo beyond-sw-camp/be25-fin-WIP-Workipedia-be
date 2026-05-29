@@ -138,7 +138,8 @@ Response:
   "data": {
     "userId": 123,
     "role": "USER",
-    "nickname": "눈물흘리는데이지"
+    "nickname": "눈물흘리는데이지",
+    "status": "ACTIVE"
   }
 }
 ```
@@ -166,7 +167,8 @@ Response:
     "userId": 123,
     "departmentId": "1",
     "role": "USER",
-    "nickname": "눈물흘리는데이지"
+    "nickname": "눈물흘리는데이지",
+    "status": "ACTIVE"
   }
 }
 ```
