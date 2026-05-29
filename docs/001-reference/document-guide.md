@@ -26,7 +26,8 @@
 | WBS | `../006-planning/wbs.md` | 팀 역할, 일정, 주차별 작업 |
 | Daily Work Plan | `../006-planning/daily-work-plan.md` | 담당자별 하루 단위 실행 계획 |
 | Weekly WBS | `../006-planning/weekly-wbs/` | 금요일마다 확정하는 다음 주 실행 WBS |
-| Daily Discussions | `../006-planning/daily-discussions/` | 매일 종료 시 작성하는 다음 근무일 논의사항 |
+| Daily Discussion Guide | `../006-planning/daily-discussions/discussion-guide.md` | 매일 종료 시 작성하는 다음 근무일 논의사항 작성 규칙 |
+| Daily Discussions | `../006-planning/daily-discussions/` | 일자별 다음 근무일 논의사항 |
 | Member WBS | `../006-planning/member-wbs/` | 개인별 작업 범위 |
 | Harness Guide | `../007-quality/harness-engineering.md` | 출처, 개인정보, 권한, 워크플로우 검증 기준 |
 | Midterm Guide | `../008-presentation/midterm-presentation-guide.md` | 중간 발표 메시지와 시연 구성 |

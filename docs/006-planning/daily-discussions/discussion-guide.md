@@ -1,8 +1,8 @@
-# Daily Discussions
+# Daily Discussion Guide
 
 > 문서 유형: Daily Discussion Guide
 > 상태: Draft
-> 정본 위치: `docs/006-planning/daily-discussions/README.md`
+> 정본 위치: `docs/006-planning/daily-discussions/discussion-guide.md`
 > 관련 문서: `docs/006-planning/wbs.md`, `docs/006-planning/daily-work-plan.md`, `docs/006-planning/weekly-wbs/2026-06-01-week1.md`
 > 버전: v0.1
 > 최종 수정: 2026-05-29
