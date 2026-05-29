@@ -115,7 +115,7 @@ Authorization: Bearer <accessToken>
 | POST | `/auth/logout` | 로그아웃 | 필요 |
 | GET | `/me` | 내 정보 | 필요 |
 
-### POST `/v1/auth/signup`
+### POST `/auth/signup`
 
 Request:
 
@@ -144,7 +144,7 @@ Response:
 }
 ```
 
-### POST `/v1/auth/login`
+### POST `/auth/login`
 
 Request:
 
