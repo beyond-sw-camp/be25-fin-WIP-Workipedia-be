@@ -31,14 +31,16 @@
 Authorization: Bearer <accessToken>
 ```
 
-#### 인증 흐름 예시
+#### 로그인 인증 흐름
 
 1. 사용자는 사번과 비밀번호를 입력하여 로그인한다.
-2. 서버는 사용자 정보를 검증한 후 Access Token을 생성한다.
-3. 생성된 Access Token은 로그인 API의 Response Body를 통해 클라이언트에 반환된다.
-4. 클라이언트는 전달받은 Access Token을 저장한다.
-5. 이후 인증이 필요한 API를 호출할 때마다 Authorization Header에 Access Token을 포함하여 요청한다.
-6. 서버는 전달받은 Access Token을 검증한 후 사용자 인증을 수행한다.
+2. 서버는 사용자 정보를 검증한 후 JWT 토큰을 발급한다.
+3. 인증 성공 시 `Access Token`은 Response Body를 통해 반환된다.
+4. 인증 성공 시 `Refresh Token`은 쿠키(Set-Cookie)를 통해 발급된다.
+5. 서버는 발급한 `Refresh Token`을 Redis에 저장하여 관리한다.
+6. 클라이언트는 로그인 응답 Body에서 `Access Token`을 받아 저장한다.
+7. 이후 인증이 필요한 API를 호출할 때마다 `Authorization` 헤더에 `Access Token`을 포함하여 요청한다.
+8. 서버는 전달받은 `Access Token`을 검증한 후 사용자 인증 및 권한 검사를 수행한다.
 
 ### 2.3 공통 응답
 
@@ -112,7 +114,8 @@ Authorization: Bearer <accessToken>
 |---|---|---|---|
 | POST | `/auth/signup` | 회원가입 | 불필요 |
 | POST | `/auth/login` | 로그인 | 불필요 |
-| POST | `/auth/logout` | 로그아웃 | 필요 |
+| POST | `/auth/token/refresh` | Access Token 재발급 | Refresh Cookie 필요 |
+| POST | `/auth/logout` | 로그아웃 | Access Token 또는 Refresh Cookie 필요 |
 | GET | `/me` | 내 정보 | 필요 |
 
 ### POST `/auth/signup`
@@ -122,7 +125,7 @@ Request:
 ```json
 {
   "employeeId": "20260001",
-  "departmentId": "1",
+  "departmentId": 1,
   "email": "user@company.com",
   "password": "abc12345"
 }
@@ -165,12 +168,18 @@ Response:
   "data": {
     "accessToken": "jwt-access-token",
     "userId": 123,
-    "departmentId": "1",
+    "departmentId": 1,
     "role": "USER",
     "nickname": "눈물흘리는데이지",
     "status": "ACTIVE"
   }
 }
+```
+
+Response Header:
+
+```http
+Set-Cookie: refreshToken=jwt-refresh-token; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth
 ```
 
 ## 5. Chatbot API
@@ -565,8 +574,8 @@ Response:
 
 | 항목 | 상태 | 결정 필요자 |
 |---|---|---|
-| Access/Refresh Token 저장 위치 | 미정 | 이슬이, 황희수 |
-| refresh token API | 미정 | 이슬이 |
+| Refresh Token 저장소 | Redis | 이슬이 |
+| refresh token API | /auth/token/refresh | 이슬이 |
 | SYSTEM_ADMIN 담당 조직 | 기본: 경영지원팀, 회사별 조정 가능 | 김가영, 팀 전체 |
 | 티켓 자동 배정 점수 가중치 | 초안 확정 | 김진혁 |
 | 로컬 임베딩 모델 | 미정 | 김진혁, 팀 전체 |
