@@ -196,6 +196,8 @@ docs/week1-wbs-14
 
 ## 8. PR 규칙
 
+문서 PR 제목은 `docs: 작업 요약` 형식으로 통일한다.
+
 ### 8.1 PR 크기
 
 - 한 PR은 가능하면 한 기능 또는 한 흐름만 포함한다.
@@ -205,15 +207,15 @@ docs/week1-wbs-14
 ### 8.2 PR 제목
 
 ```text
-[type] 작업 요약
+type: 작업 요약
 ```
 
 예시:
 
 ```text
-[feat] Auth JWT 로그인 구현
-[feat] 워키 질문/답변 API 구현
-[docs] WBS 및 API 계약서 추가
+feat: Auth JWT 로그인 구현
+feat: 워키 질문/답변 API 구현
+docs: WBS 및 API 계약서 추가
 ```
 
 ### 8.3 PR 설명 템플릿
