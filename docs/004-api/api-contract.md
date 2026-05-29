@@ -17,11 +17,11 @@
 
 ### 2.1 Base URL
 
-| 환경 | Base URL |
-|---|---|
-| local | `http://localhost:8080/api` |
-| dev/staging | 미정 |
-| production | 미정 |
+| 환경 | Base URL                       |
+|---|--------------------------------|
+| local | `http://localhost:8080/api/v1` |
+| dev/staging | 미정                             |
+| production | 미정                             |
 
 ### 2.2 인증
 
@@ -110,8 +110,8 @@ Authorization: Bearer <accessToken>
 
 | Method | Path | 설명 | 인증 |
 |---|---|---|---|
-| POST | `/v1/auth/signup` | 회원가입 | 불필요 |
-| POST | `/v1/auth/login` | 로그인 | 불필요 |
+| POST | `/auth/signup` | 회원가입 | 불필요 |
+| POST | `/auth/login` | 로그인 | 불필요 |
 | POST | `/auth/logout` | 로그아웃 | 필요 |
 | GET | `/me` | 내 정보 | 필요 |
 
@@ -122,7 +122,7 @@ Request:
 ```json
 {
   "employeeId": "20260001",
-  "departmentName": "마케팅팀",
+  "departmentId": "1",
   "email": "user@company.com",
   "password": "abc12345"
 }
@@ -164,6 +164,7 @@ Response:
   "data": {
     "accessToken": "jwt-access-token",
     "userId": 123,
+    "departmentId": "1",
     "role": "USER",
     "nickname": "눈물흘리는데이지"
   }
