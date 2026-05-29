@@ -24,6 +24,7 @@
 | API Contract | `../004-api/api-contract.md` | 프론트/백엔드 요청·응답 계약 |
 | DB Migration Guide | `../005-database/db-migration-guide.md` | Flyway migration 규칙과 테이블 생성 순서 |
 | WBS | `../006-planning/wbs.md` | 팀 역할, 일정, 주차별 작업 |
+| Today | `../006-planning/today.md` | 팀원이 "나 오늘 뭐하면 돼?"라고 물었을 때 보는 당일 작업 진입점 |
 | Daily Work Plan | `../006-planning/daily-work-plan.md` | 담당자별 하루 단위 실행 계획 |
 | Weekly WBS | `../006-planning/weekly-wbs/` | 금요일마다 확정하는 다음 주 실행 WBS |
 | Daily Discussion Guide | `../006-planning/daily-discussions/discussion-guide.md` | 매일 종료 시 작성하는 다음 근무일 논의사항 작성 규칙 |
@@ -62,12 +63,13 @@
 10. `../004-api/api-contract.md`
 11. `../005-database/db-migration-guide.md`
 12. `../006-planning/wbs.md`
-13. `../006-planning/daily-work-plan.md`
-14. `../006-planning/weekly-wbs/`
-15. `../006-planning/daily-discussions/`
-16. `../007-quality/harness-engineering.md`
-17. `../008-presentation/midterm-presentation-guide.md`
-18. `../009-process/git-strategy.md`
+13. `../006-planning/today.md`
+14. `../006-planning/daily-work-plan.md`
+15. `../006-planning/weekly-wbs/`
+16. `../006-planning/daily-discussions/`
+17. `../007-quality/harness-engineering.md`
+18. `../008-presentation/midterm-presentation-guide.md`
+19. `../009-process/git-strategy.md`
 
 ## 관리 규칙
 
@@ -75,6 +77,7 @@
 - 질문/요청/티켓/지식화 흐름 변경은 `service-flow.md`에 먼저 반영한다.
 - 제품 범위 변경은 `prd.md`에 먼저 반영한 뒤 구현한다.
 - 기술 구조, 테이블, API 변경은 `trd.md` 또는 별도 기술 문서에 반영한다.
+- 당일 작업 시작점은 `../006-planning/today.md`로 둔다.
 - 매주 금요일에는 다음 주 실행 WBS를 `../006-planning/weekly-wbs/`에 작성한다.
 - 매일 작업 종료 전에는 다음 근무일 논의사항을 `../006-planning/daily-discussions/`에 작성한다.
 - 루트 `README.md`는 발표/최종 산출물 정리 시점에만 갱신한다.
