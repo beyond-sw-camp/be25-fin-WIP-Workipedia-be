@@ -25,11 +25,20 @@
 
 ### 2.2 인증
 
+우리 서비스는 JWT(JSON Web Token) 기반 인증 방식을 사용한다.
+
 ```http
 Authorization: Bearer <accessToken>
 ```
 
-Access Token 저장 방식은 프론트/백엔드 협의 후 확정한다.
+#### 인증 흐름 예시
+
+1. 사용자는 사번과 비밀번호를 입력하여 로그인한다.
+2. 서버는 사용자 정보를 검증한 후 Access Token을 생성한다.
+3. 생성된 Access Token은 로그인 API의 Response Body를 통해 클라이언트에 반환된다.
+4. 클라이언트는 전달받은 Access Token을 저장한다.
+5. 이후 인증이 필요한 API를 호출할 때마다 Authorization Header에 Access Token을 포함하여 요청한다.
+6. 서버는 전달받은 Access Token을 검증한 후 사용자 인증을 수행한다.
 
 ### 2.3 공통 응답
 
@@ -37,11 +46,10 @@ Access Token 저장 방식은 프론트/백엔드 협의 후 확정한다.
 
 ```json
 {
-  "data": {},
-  "error": null,
-  "meta": {
-    "timestamp": "2026-05-28T10:00:00"
-  }
+  "code": 200,
+  "status": "OK",
+  "message": "성공",
+  "data": {}
 }
 ```
 
@@ -49,14 +57,10 @@ Access Token 저장 방식은 프론트/백엔드 협의 후 확정한다.
 
 ```json
 {
-  "data": null,
-  "error": {
-    "code": "AUTH_INVALID_CREDENTIALS",
-    "message": "로그인 정보가 올바르지 않습니다."
-  },
-  "meta": {
-    "timestamp": "2026-05-28T10:00:00"
-  }
+  "code": 500,
+  "status": "INTERNAL_SERVER_ERROR",
+  "message": "서버 내부 오류가 발생했습니다.",
+  "data": null
 }
 ```
 
@@ -64,16 +68,21 @@ Access Token 저장 방식은 프론트/백엔드 협의 후 확정한다.
 
 ```json
 {
+  "code": 200,
+  "status": "OK",
+  "message": "성공",
   "data": {
-    "items": [],
-    "page": 0,
-    "size": 20,
-    "totalElements": 0,
-    "totalPages": 0
-  },
-  "error": null,
-  "meta": {
-    "timestamp": "2026-05-28T10:00:00"
+    "content": [
+      {}
+    ],
+    "pageInfo": {
+      "page": 1,
+      "size": 10,
+      "totalElements": 0,
+      "totalPages": 0,
+      "hasNext": false,
+      "hasPrevious": false
+    }
   }
 }
 ```
@@ -101,19 +110,19 @@ Access Token 저장 방식은 프론트/백엔드 협의 후 확정한다.
 
 | Method | Path | 설명 | 인증 |
 |---|---|---|---|
-| POST | `/auth/signup` | 회원가입 | 불필요 |
-| POST | `/auth/login` | 로그인 | 불필요 |
+| POST | `/v1/auth/signup` | 회원가입 | 불필요 |
+| POST | `/v1/auth/login` | 로그인 | 불필요 |
 | POST | `/auth/logout` | 로그아웃 | 필요 |
 | GET | `/me` | 내 정보 | 필요 |
 
-### POST `/auth/signup`
+### POST `/v1/auth/signup`
 
 Request:
 
 ```json
 {
   "employeeId": "20260001",
-  "departmentId": 1,
+  "departmentName": "마케팅팀",
   "email": "user@company.com",
   "password": "abc12345"
 }
@@ -123,14 +132,18 @@ Response:
 
 ```json
 {
-  "userId": 1,
-  "employeeId": "20260001",
-  "nickname": "노잇1234",
-  "role": "USER"
+  "code": 201,
+  "status": "CREATED",
+  "message": "회원가입 완료",
+  "data": {
+    "userId": 123,
+    "role": "USER",
+    "nickname": "눈물흘리는데이지"
+  }
 }
 ```
 
-### POST `/auth/login`
+### POST `/v1/auth/login`
 
 Request:
 
@@ -145,13 +158,14 @@ Response:
 
 ```json
 {
-  "accessToken": "jwt-access-token",
-  "refreshToken": "jwt-refresh-token",
-  "user": {
-    "userId": 1,
-    "nickname": "노잇1234",
+  "code": 200,
+  "status": "OK",
+  "message": "로그인 성공",
+  "data": {
+    "accessToken": "jwt-access-token",
+    "userId": 123,
     "role": "USER",
-    "departmentId": 1
+    "nickname": "눈물흘리는데이지"
   }
 }
 ```
