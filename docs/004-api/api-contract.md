@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/004-api/api-contract.md`
 > 관련 문서: `docs/001-reference/prd.md`, `docs/001-reference/trd.md`, `docs/006-planning/wbs.md`
-> 버전: v0.1
-> 최종 수정: 2026-05-28
+> 버전: v0.2
+> 최종 수정: 2026-05-31
 
 ## 1. 목적
 
@@ -44,14 +44,37 @@ Authorization: Bearer <accessToken>
 
 ### 2.3 공통 응답
 
-성공:
+모든 API 응답 Body는 공통 응답 객체로 감싼다.
+개별 API 명세의 `Response` 예시가 도메인 필드만 보여주는 경우에도 실제 응답에서는 아래 공통 응답의 `data` 안에 들어간다.
+
+| 필드 | 타입 | 설명 |
+|---|---|---|
+| `code` | Int | HTTP 상태 코드. 예: `200`, `201`, `400`, `401`, `500` |
+| `status` | String | HTTP 상태 이름 또는 에러 타입. 예: `OK`, `CREATED`, `BAD_REQUEST` |
+| `message` | String | 응답 메시지 |
+| `data` | Object / Array / null | 실제 응답 데이터. 단건은 객체, 목록은 배열 또는 페이지 객체, 응답 데이터가 없으면 `null` |
+
+성공 응답:
 
 ```json
 {
   "code": 200,
   "status": "OK",
-  "message": "성공",
+  "message": "조회 성공",
   "data": {}
+}
+```
+
+생성 성공 응답:
+
+```json
+{
+  "code": 201,
+  "status": "CREATED",
+  "message": "생성 완료",
+  "data": {
+    "id": 1
+  }
 }
 ```
 
@@ -65,6 +88,14 @@ Authorization: Bearer <accessToken>
   "data": null
 }
 ```
+
+구현 기준:
+
+- Spring Controller는 `ApiResponse<T>` 형태로 응답한다.
+- `data`는 배열로 고정하지 않고 제네릭으로 둔다.
+- 목록 조회에서 페이징이 필요하면 `data.content`, `data.pageInfo` 구조를 사용한다.
+- 에러 응답의 `data`는 기본적으로 `null`로 둔다.
+- HTTP status code와 Body의 `code` 값은 같은 값을 사용한다.
 
 ### 2.4 페이지 응답
 
