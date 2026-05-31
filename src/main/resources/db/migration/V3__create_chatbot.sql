@@ -38,3 +38,8 @@ CREATE TABLE chatbot_messages (
 CREATE INDEX idx_chatbot_sessions_user_id ON chatbot_sessions (user_id);
 CREATE INDEX idx_chatbot_messages_session_id ON chatbot_messages (session_id);
 CREATE INDEX idx_chatbot_messages_created_at ON chatbot_messages (created_at);
+
+ALTER TABLE worki_questions
+    ADD CONSTRAINT fk_worki_questions_source_chatbot_message
+        FOREIGN KEY (source_chatbot_message_id)
+        REFERENCES chatbot_messages (message_id);
