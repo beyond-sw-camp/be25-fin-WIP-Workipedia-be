@@ -24,6 +24,7 @@
 | API Contract | `../004-api/api-contract.md` | 프론트/백엔드 요청·응답 계약 |
 | DB Migration Guide | `../005-database/db-migration-guide.md` | Flyway migration 규칙과 테이블 생성 순서 |
 | WBS | `../006-planning/wbs.md` | 팀 역할, 일정, 주차별 작업 |
+| Team Operation Guide | `../006-planning/team-operation-guide.md` | 김진혁 기준 WBS/Daily/Docs PR 운영 절차 |
 | Daily Plan Guide | `../006-planning/daily-plans/guide.md` | 팀원이 "나 오늘 뭐하면 돼?"라고 물었을 때 보는 당일 작업 진입점 |
 | Daily Work Plan | `../006-planning/daily-work-plan.md` | 담당자별 하루 단위 실행 계획 |
 | Weekly WBS | `../006-planning/weekly-wbs/` | 금요일마다 확정하는 다음 주 실행 WBS |
@@ -75,18 +76,19 @@
 15. `../004-api/api-contract.md`
 16. `../005-database/db-migration-guide.md`
 17. `../006-planning/wbs.md`
-18. `../006-planning/daily-plans/guide.md`
-19. `../006-planning/daily-work-plan.md`
-20. `../006-planning/weekly-wbs/`
-21. `../006-planning/daily-reports/guide.md`
-22. `../006-planning/daily-discussions/`
-23. `../006-planning/definition-of-done.md`
-24. `../007-quality/harness-engineering.md`
-25. `../009-process/git-strategy.md`
-26. `../010-development/agent-workflow.md`
-27. `../010-development/domain-guides/overview.md`
-28. `../998-handoffs/`
-29. `../999-presentation/midterm-presentation-guide.md`
+18. `../006-planning/team-operation-guide.md`
+19. `../006-planning/daily-plans/guide.md`
+20. `../006-planning/daily-work-plan.md`
+21. `../006-planning/weekly-wbs/`
+22. `../006-planning/daily-reports/guide.md`
+23. `../006-planning/daily-discussions/`
+24. `../006-planning/definition-of-done.md`
+25. `../007-quality/harness-engineering.md`
+26. `../009-process/git-strategy.md`
+27. `../010-development/agent-workflow.md`
+28. `../010-development/domain-guides/overview.md`
+29. `../998-handoffs/`
+30. `../999-presentation/midterm-presentation-guide.md`
 
 ## 관리 규칙
 
