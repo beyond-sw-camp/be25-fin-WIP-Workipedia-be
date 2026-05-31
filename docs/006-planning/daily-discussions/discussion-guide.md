@@ -26,9 +26,33 @@
 → 팀원이 자연어로 오늘 한 일 공유
 → 정리 담당이 완료/미완료/다음 근무일 논의/API·DB·화면 영향으로 분류
 → 다음 근무일 daily-discussions/YYYY-MM-DD.md에 정리
+→ daily 전용 브랜치/PR에 반영
 ```
 
 금요일에는 다음 월요일 논의 파일을 작성한다.
+
+## 0.1 daily 공유 방식
+
+`daily-discussions`는 팀원이 다음 날 `dev`를 pull 받아 확인할 수 있어야 하므로 근무일마다 `dev`에 반영하는 것을 원칙으로 한다.
+다만 팀원마다 daily PR을 따로 만들면 같은 파일에서 충돌이 자주 발생하므로, 하루 daily는 **하나의 공용 브랜치/PR**에 모아 올린다.
+
+```text
+브랜치: docs/daily-YYYY-MM-DD
+PR 제목: docs: YYYY-MM-DD daily discussion 정리
+```
+
+운영 순서:
+
+```text
+1. 정리 담당이 daily 전용 브랜치와 PR을 먼저 만든다.
+2. 팀원들은 본인 작업 종료 후 해당 브랜치에 본인 행만 추가한다.
+3. 같은 daily PR에 추가 push한다.
+4. 모든 팀원 행이 정리되면 리뷰 1명 확인 후 dev에 merge한다.
+5. 다음 근무일 아침 팀원들은 dev를 pull 받아 daily를 확인한다.
+```
+
+기능 개발, API 변경, DB 변경, 화면 구현은 daily PR에 섞지 않는다.
+기능 변경은 별도 `feat/*`, `fix/*`, `docs/*` 브랜치와 PR로 올린다.
 
 ## 1. 파일명 규칙
 
