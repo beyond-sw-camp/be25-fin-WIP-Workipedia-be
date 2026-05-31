@@ -4,7 +4,7 @@
 > 상태: Draft
 > 정본 위치: `docs/010-development/domain-guides/chatbot-rag.md`
 > 관련 문서: `docs/003-adr/002-rag-strategy.md`, `docs/003-adr/008-local-llm-security-strategy.md`, `docs/007-quality/harness-engineering.md`, `docs/004-api/api-contract.md`
-> 버전: v0.1
+> 버전: v0.2
 > 최종 수정: 2026-05-31
 
 ## 개발 목표
@@ -34,7 +34,7 @@
 
 - `chatbot_sessions`
 - `chatbot_messages`
-- `chatbot_messages.references`
+- `chatbot_messages.references_json`
 - manual/worki chunks
 - embedding adapter
 - chatbot query API

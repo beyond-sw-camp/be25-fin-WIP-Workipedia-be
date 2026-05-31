@@ -4,7 +4,7 @@
 > 상태: Draft
 > 정본 위치: `docs/005-database/db-migration-guide.md`
 > 관련 문서: `docs/001-reference/trd.md`, `docs/004-api/api-contract.md`
-> 버전: v0.3
+> 버전: v0.4
 > 최종 수정: 2026-05-31
 
 ## 1. 목적
@@ -190,7 +190,7 @@ deleted_at DATETIME NULL
 |---|---|
 | 이슬이 | `users.role`은 `USER`, `TEAM_ADMIN`, `SYSTEM_ADMIN`만 허용 |
 | 민정기 | 워키 질문/답변은 USER hard delete 금지 |
-| 김진혁 | `chatbot_messages.references`는 JSON으로 남기고, 티켓 라우팅 점수/근거/이관 이력을 보존 |
+| 김진혁 | `chatbot_messages.references_json`은 JSON으로 남기고, 티켓 라우팅 점수/근거/이관 이력을 보존 |
 | 김가영 | TEAM_ADMIN/SYSTEM_ADMIN 작업은 `admin_logs`에 기록하고, 팀 큐/공통 접수 큐/ESG 지표를 조회 가능하게 설계 |
 | 황희수 | 프론트에서 의존하는 enum/status 값 변경 시 즉시 공유 |
 

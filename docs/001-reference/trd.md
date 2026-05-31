@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/001-reference/trd.md`
 > 관련 문서: `docs/001-reference/constitution.md`, `docs/001-reference/service-flow.md`, `docs/001-reference/prd.md`
-> 버전: v0.1
-> 최종 수정: 2026-05-28
+> 버전: v0.2
+> 최종 수정: 2026-05-31
 
 ---
 
@@ -118,19 +118,23 @@
 - `view_count`, `like_count`, `created_at` 등
 
 #### worki_answers
-- `answer_id` PK, `question_id` FK, `user_id` FK
-- `content`, `is_accepted` BOOLEAN, `accepted_at`
+- `answer_id` PK, `question_id` FK, `author_id` FK
+- `ticket_id` FK NULL (티켓 공식 답변에서 생성된 경우)
+- `content`, `official` BOOLEAN, `accepted` BOOLEAN, `accepted_at`
 
 #### tickets
 - `ticket_id` PK
-- `question_id` FK → worki_questions (NULL 허용: 챗봇 직접 발행 케이스)
-- `source_chat_id` FK → chatbot_messages
-- `user_id` (요청자), `assigned_department_id` NULL 허용
+- `requester_id` FK → users
+- `question_id` FK → worki_questions NULL 허용
+- `source_chatbot_message_id` FK → chatbot_messages NULL 허용
+- `category_id` FK → categories NULL 허용
+- `title`, `content`
 - `assignee_id` FK → users NULL 허용 (TEAM_ADMIN이 담당 팀원 배정)
+- `assigned_department_id` FK → departments NULL 허용
 - `routing_confidence_score` DECIMAL(5,2)
-- `routing_reason` JSON (키워드, 문서 유사도, 카테고리, 과거 티켓, LLM 분류 근거)
+- `routing_decision` (AUTO_ASSIGNED / ADMIN_REVIEW / COMMON_QUEUE / NEED_MORE_INFO)
 - `status` (RECEIVED / COMMON_QUEUE / ASSIGNED / IN_PROGRESS / COMPLETED / REJECTED / DELETED)
-- `due_at`
+- `completed_at`, 시간컬럼
 
 #### ticket_assignments
 - `assignment_id` PK
@@ -142,10 +146,11 @@
 #### ticket_routing_logs
 - `routing_log_id` PK
 - `ticket_id` FK → tickets
-- `candidate_department_id` FK → departments
-- `confidence_score`
+- `confidence_score` DECIMAL(5,2)
+- `candidate_departments_json` JSON
+- `reasons_json` JSON
+- `routed_by` FK → users NULL 허용
 - `decision` (AUTO_ASSIGNED / ADMIN_REVIEW / COMMON_QUEUE / NEED_MORE_INFO)
-- `reason_detail` JSON
 - `created_at`
 
 #### knowledge_candidates
@@ -158,20 +163,24 @@
 - `published_worki_question_id` 또는 `manual_id` NULL 허용
 
 #### ticket_transfer_requests
-- `request_id` PK
+- `transfer_request_id` PK
 - `ticket_id` FK → tickets
 - `from_department_id`, `suggested_department_id` NULL 허용
-- `requested_by` FK → users (TEAM_ADMIN)
-- `decided_by` FK → users NULL 허용 (SYSTEM_ADMIN)
+- `requester_id` FK → users (TEAM_ADMIN)
 - `status` (REQUESTED / ASSIGNED_FROM_QUEUE / REJECTED)
-- `reason`, `decision_comment`, 시간컬럼
+- `reason`, 시간컬럼
 - 이관 요청이 생성되면 티켓은 `COMMON_QUEUE` 상태로 이동하며, `SYSTEM_ADMIN`이 공통 접수 큐에서 담당 부서를 재배정한다.
 
 #### chatbot_messages
-- `message_id` PK, `session_id` FK, `user_id` FK
-- `role` (USER / ASSISTANT)
-- `content`, `references` JSON (참조한 매뉴얼/워키 ID 목록)
-- `question_id` FK NULL (워키 질문으로 전환된 경우)
+- `message_id` PK, `session_id` FK
+- `sender_type` (USER / ASSISTANT / SYSTEM)
+- `content`
+- `answerable` BOOLEAN NULL
+- `next_action` (SHOW_SOURCES / CREATE_WORKI / CREATE_TICKET)
+- `references_json` JSON (참조한 매뉴얼/워키 chunk 목록)
+- `source_worki_question_id` FK NULL (워키 질문으로 전환된 경우)
+- `source_ticket_id` FK NULL (요청 티켓으로 전환된 경우)
+- `created_at`, `updated_at`, `deleted_at`
 
 #### worki_chunks / manual_chunks
 - `chunk_id` PK

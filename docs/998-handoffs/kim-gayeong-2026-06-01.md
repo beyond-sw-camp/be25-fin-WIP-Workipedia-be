@@ -4,7 +4,7 @@
 > 상태: Draft
 > 정본 위치: `docs/998-handoffs/kim-gayeong-2026-06-01.md`
 > 관련 문서: `docs/006-planning/today.md`, `docs/006-planning/weekly-wbs/2026-06-01-week1.md`, `docs/006-planning/member-wbs/kim-gayeong.md`, `docs/001-reference/service-flow.md`, `docs/004-api/api-contract.md`
-> 버전: v0.2
+> 버전: v0.3
 > 최종 수정: 2026-05-31
 
 김가영은 2026-06-01 월요일부터 관리자 대시보드, 포인트, 뱃지, ESG 지표 개발을 시작한다.
@@ -32,7 +32,7 @@
 | Issue 규칙 | skeleton/기능 개발 시작 전 GitHub Issue 먼저 생성 | 관리자/포인트/뱃지 작업 시작 전 Issue 필요 |
 | 티켓 흐름 | 요청 티켓은 자동 배정 또는 공통 접수 큐로 이동 | 관리자 대시보드에서 팀 큐/공통 접수 큐를 보여줘야 함 |
 | 지식화 | 처리 완료 티켓은 지식화 후보로 등록되고 TEAM_ADMIN이 검수 | 지식화 후보 검수 화면/API가 관리자 영역에 포함 |
-| 챗봇 출처 | 챗봇 답변 출처는 `chatbot_messages.source_references`에 JSON 저장 | ESG/운영 지표에서 출처 기반 답변 비율로 활용 가능 |
+| 챗봇 출처 | 챗봇 답변 출처는 `chatbot_messages.references_json`에 JSON 저장 | ESG/운영 지표에서 출처 기반 답변 비율로 활용 가능 |
 | FE 기준 | 황희수는 Figma Make 화면 정합성 점검 후 FE skeleton 진행 | 관리자 화면 mock 데이터/API 응답 형식 공유 필요 |
 
 ## 3. 서비스 흐름 변경 요약

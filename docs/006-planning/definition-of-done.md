@@ -4,7 +4,7 @@
 > 상태: Draft
 > 정본 위치: `docs/006-planning/definition-of-done.md`
 > 관련 문서: `docs/004-api/api-contract.md`, `docs/005-database/db-migration-guide.md`, `docs/007-quality/harness-engineering.md`, `docs/010-development/agent-workflow.md`
-> 버전: v0.1
+> 버전: v0.2
 > 최종 수정: 2026-05-31
 
 본 문서는 팀원과 에이전트가 "작업 완료"를 같은 기준으로 판단하기 위한 완료 기준이다.
@@ -35,7 +35,7 @@
 - [ ] 챗봇 답변에는 매뉴얼/워키 출처가 포함된다.
 - [ ] 출처가 없으면 그럴듯한 답변을 생성하지 않는다.
 - [ ] 답변 실패/불충분/공식 처리 필요 시 요청 티켓 전환 액션을 제공한다.
-- [ ] `chatbot_messages.source_references` 저장 구조를 확인했다.
+- [ ] `chatbot_messages.references_json` 저장 구조를 확인했다.
 - [ ] 개인정보 포함 질문에 대한 마스킹/거부 정책을 확인했다.
 
 ## 4. Ticket 완료 기준
