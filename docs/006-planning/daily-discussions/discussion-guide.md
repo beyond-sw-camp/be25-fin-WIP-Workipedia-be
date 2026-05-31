@@ -4,7 +4,7 @@
 > 상태: Draft
 > 정본 위치: `docs/006-planning/daily-discussions/discussion-guide.md`
 > 관련 문서: `docs/006-planning/wbs.md`, `docs/006-planning/daily-work-plan.md`, `docs/006-planning/weekly-wbs/2026-06-01-week1.md`
-> 버전: v0.2
+> 버전: v0.3
 > 최종 수정: 2026-05-31
 
 이 폴더는 daily report를 바탕으로 **팀 합의가 필요한 논의사항과 결정사항**을 남기는 곳이다.
@@ -12,12 +12,12 @@
 
 ## 0. 운영 흐름
 
-팀원이 "나 오늘 뭐하면 돼?"라고 물으면 `docs/006-planning/today.md`를 먼저 확인한다.
-`today.md`는 매일 갱신되는 진입점이고, 실제 상세 작업은 주간 WBS와 개인별 WBS를 따른다.
+팀원이 "나 오늘 뭐하면 돼?"라고 물으면 해당 날짜의 `docs/006-planning/daily-plans/YYYY-MM-DD.md`를 먼저 확인한다.
+Daily plan은 날짜별로 보관되는 진입점이고, 실제 상세 작업은 주간 WBS와 개인별 WBS를 따른다.
 
 ```text
 아침
-→ today.md 확인
+→ daily-plans/YYYY-MM-DD.md 확인
 → 본인 member-wbs 확인
 → weekly-wbs 확인
 → 작업 진행
@@ -71,6 +71,25 @@ YYYY-MM-DD-topic.md
 - API/DB/화면 영향이 여러 담당자에게 걸려 있을 때
 - 다음날 오전에 팀 합의가 필요한 이슈가 생겼을 때
 - 정책, 역할, 권한, 서비스 흐름 변경이 필요할 때
+
+## 2.1 작성 판단 책임
+
+Daily discussion 생성 여부는 정리 담당이 판단한다.
+현재 정리 담당은 김진혁으로 둔다.
+
+각 팀원 또는 각자의 에이전트는 daily report의 `다음 근무일 논의`와 `API/DB/화면 영향` 항목에 논의 후보를 남긴다.
+정리 담당은 merge된 daily report를 확인한 뒤 아래 기준으로 판단한다.
+
+| 상황 | 처리 |
+|---|---|
+| 개인 작업 기록만 있고 팀 합의가 필요 없음 | daily discussion을 만들지 않음 |
+| 한 명의 작업에서만 닫을 수 있는 질문 | 해당 담당자의 다음 daily plan 또는 issue로 넘김 |
+| API/DB/화면/권한이 여러 담당자에게 영향 | daily discussion 작성 |
+| 서비스 흐름, 역할, 일정 우선순위 변경 필요 | daily discussion 작성 |
+| 다음 근무일 오전에 팀이 같이 결정해야 함 | daily discussion 작성 |
+
+즉, daily discussion은 매일 자동 생성되는 문서가 아니라 정리 담당이 필요하다고 판단할 때만 생성한다.
+다만 각 팀원의 에이전트는 daily report 작성 시 discussion 후보를 자동으로 분류할 수 있어야 한다.
 
 ## 3. 작성 원칙
 

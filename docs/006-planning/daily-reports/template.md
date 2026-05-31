@@ -3,7 +3,7 @@
 > 문서 유형: Daily Report
 > 상태: Draft
 > 정본 위치: `docs/006-planning/daily-reports/YYYY-MM-DD/name.md`
-> 관련 문서: `docs/006-planning/today.md`, `docs/006-planning/weekly-wbs/2026-06-01-week1.md`
+> 관련 문서: `docs/006-planning/daily-plans/YYYY-MM-DD.md`, `docs/006-planning/weekly-wbs/2026-06-01-week1.md`
 > 버전: v0.1
 > 최종 수정: YYYY-MM-DD
 

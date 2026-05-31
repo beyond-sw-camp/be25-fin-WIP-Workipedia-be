@@ -3,8 +3,8 @@
 > 문서 유형: Agent Workflow
 > 상태: Draft
 > 정본 위치: `docs/010-development/agent-workflow.md`
-> 관련 문서: `docs/001-reference/document-guide.md`, `docs/006-planning/today.md`, `docs/006-planning/daily-reports/guide.md`, `docs/006-planning/definition-of-done.md`
-> 버전: v0.1
+> 관련 문서: `docs/001-reference/document-guide.md`, `docs/006-planning/daily-plans/YYYY-MM-DD.md`, `docs/006-planning/daily-reports/guide.md`, `docs/006-planning/definition-of-done.md`
+> 버전: v0.2
 > 최종 수정: 2026-05-31
 
 본 문서는 팀원이 Codex/Claude 같은 에이전트와 작업할 때 사용하는 공통 절차를 정의한다.
@@ -16,13 +16,13 @@
 
 ```text
 나 [이름]인데 오늘 뭐해?
-today.md, weekly-wbs, member-wbs, 전날 daily-reports를 기준으로 오늘 할 일을 정리해줘.
+daily-plans/YYYY-MM-DD.md, weekly-wbs, member-wbs, 전날 daily-reports를 기준으로 오늘 할 일을 정리해줘.
 내가 수정해도 되는 문서와 리뷰가 필요한 문서도 같이 알려줘.
 ```
 
 에이전트는 아래 문서를 우선 확인한다.
 
-1. `docs/006-planning/today.md`
+1. `docs/006-planning/daily-plans/YYYY-MM-DD.md`
 2. `docs/006-planning/weekly-wbs/`
 3. `docs/006-planning/member-wbs/{member}.md`
 4. `docs/006-planning/daily-reports/`
@@ -81,6 +81,10 @@ PR 제목: docs: YYYY-MM-DD 이름 daily report 작성
 ## 5. 다음 근무일 논의 정리
 
 daily report가 여러 개 merge된 뒤, 정리 담당은 필요할 때만 `daily-discussions`를 만든다.
+현재 정리 담당은 김진혁으로 둔다.
+
+각 팀원의 에이전트는 daily report 작성 시 논의 후보를 표시한다.
+정리 담당의 에이전트는 여러 daily report를 모아보고 daily discussion 생성 여부를 판단한다.
 
 ```text
 docs/006-planning/daily-reports/YYYY-MM-DD/ 아래 보고서를 보고
@@ -89,6 +93,7 @@ docs/006-planning/daily-reports/YYYY-MM-DD/ 아래 보고서를 보고
 ```
 
 `daily-discussions`는 매일 필수 문서가 아니라 팀 합의가 필요한 날 작성하는 논의 문서다.
+논의할 내용이 없으면 파일을 만들지 않고, 다음 daily plan에 각자 할 일만 반영한다.
 
 ## 6. PR 전 확인 문장
 
