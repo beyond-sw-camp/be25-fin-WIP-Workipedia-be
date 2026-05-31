@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/005-database/db-migration-guide.md`
 > 관련 문서: `docs/001-reference/trd.md`, `docs/004-api/api-contract.md`
-> 버전: v0.1
-> 최종 수정: 2026-05-28
+> 버전: v0.2
+> 최종 수정: 2026-05-31
 
 ## 1. 목적
 
@@ -38,7 +38,32 @@ V7__create_manuals_and_chunks.sql
 V8__create_badges_and_esg_metrics.sql
 ```
 
-## 4. 권장 생성 순서
+## 4. Migration 불변 원칙
+
+한 번 커밋되었거나 팀원에게 공유된 migration 파일은 수정하지 않는다.
+Flyway는 이미 적용된 migration의 checksum을 관리하므로, 기존 `V1`~`V8` 파일을 나중에 수정하면 로컬/공유 DB의 migration 이력과 파일 내용이 달라져 오류가 발생할 수 있다.
+
+스키마 변경은 항상 다음 번호의 새 파일로 추가한다.
+
+```text
+이미 공유된 파일 수정 금지:
+V1__create_departments_and_users.sql
+
+추가 변경은 새 파일로 작성:
+V9__add_ticket_routing_tables.sql
+V10__alter_manual_status.sql
+```
+
+예외적으로 기존 migration을 수정할 수 있는 경우는 아래 두 가지뿐이다.
+
+| 상황 | 허용 여부 |
+|---|---|
+| 아직 커밋하지 않았고 아무도 적용하지 않은 개인 작업 중 migration | 수정 가능 |
+| 이미 PR에 올라갔거나 dev에 merge되었거나 팀원이 pull 받은 migration | 수정 금지, 다음 번호로 추가 |
+
+초기 개발 단계라도 팀원이 함께 작업하는 저장소에서는 `V1` 하나에 모든 테이블을 계속 몰아넣지 않는다. 테이블을 도메인별 migration으로 나누면 리뷰 범위가 작아지고, 담당자별 변경 이력과 충돌 원인을 추적하기 쉽다.
+
+## 5. 권장 생성 순서
 
 | 순서 | 파일 | 주요 담당 | 포함 테이블 |
 |---|---|---|---|
@@ -50,8 +75,9 @@ V8__create_badges_and_esg_metrics.sql
 | 6 | `V6__create_admin_logs.sql` | 김가영 | `admin_logs` |
 | 7 | `V7__create_manuals_and_chunks.sql` | 김진혁 | `manuals`, `manual_chunks`, `worki_chunks` |
 | 8 | `V8__create_badges_and_esg_metrics.sql` | 김가영 | `badges`, `user_badges`, `esg_metric_snapshots` |
+| 9 이후 | `V9__...sql` | 변경 담당자 | 기존 migration 수정 대신 추가/변경 DDL |
 
-## 5. 공통 컬럼 규칙
+## 6. 공통 컬럼 규칙
 
 가능하면 모든 주요 테이블에 아래 컬럼을 둔다.
 
@@ -63,7 +89,7 @@ deleted_at DATETIME NULL
 
 삭제 정책이 필요한 테이블은 hard delete 대신 `deleted_at` 기반 soft delete를 우선한다.
 
-## 6. 네이밍 규칙
+## 7. 네이밍 규칙
 
 | 대상 | 규칙 | 예시 |
 |---|---|---|
@@ -73,7 +99,7 @@ deleted_at DATETIME NULL
 | 상태 | VARCHAR + CHECK 또는 enum-like string | `WAITING`, `ANSWERED` |
 | 시간 | `_at` suffix | `created_at`, `accepted_at` |
 
-## 7. 상태값 초안
+## 8. 상태값 초안
 
 ### worki_questions.status
 
@@ -161,7 +187,7 @@ deleted_at DATETIME NULL
 | `FIRST_ACCEPTED_ANSWER` | 첫 채택 답변 |
 | `ANSWER_HELPER` | 답변 5개 이상 |
 
-## 8. 담당자별 주의사항
+## 9. 담당자별 주의사항
 
 | 담당 | 주의사항 |
 |---|---|
@@ -171,10 +197,11 @@ deleted_at DATETIME NULL
 | 김가영 | TEAM_ADMIN/SYSTEM_ADMIN 작업은 `admin_logs`에 기록하고, 팀 큐/공통 접수 큐/ESG 지표를 조회 가능하게 설계 |
 | 황희수 | 프론트에서 의존하는 enum/status 값 변경 시 즉시 공유 |
 
-## 9. PR 체크리스트
+## 10. PR 체크리스트
 
 - [ ] migration 파일명이 순서대로 되어 있다.
 - [ ] 기존 migration 파일을 수정하지 않았다.
+- [ ] 이미 공유된 migration 변경이 필요하면 다음 번호 migration으로 작성했다.
 - [ ] 새 테이블에 PK가 있다.
 - [ ] 필요한 FK와 index가 있다.
 - [ ] soft delete 대상에는 `deleted_at`이 있다.
