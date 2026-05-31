@@ -2,7 +2,7 @@
 
 > 문서 유형: Presentation Guide
 > 상태: Draft
-> 정본 위치: `docs/008-presentation/midterm-presentation-guide.md`
+> 정본 위치: `docs/999-presentation/midterm-presentation-guide.md`
 > 관련 문서: `docs/001-reference/prd.md`, `docs/001-reference/trd.md`, `docs/006-planning/wbs.md`
 > 버전: v0.1
 > 최종 수정: 2026-05-28

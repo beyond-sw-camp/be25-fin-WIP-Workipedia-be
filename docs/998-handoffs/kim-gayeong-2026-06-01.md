@@ -2,7 +2,7 @@
 
 > 문서 유형: Handoff
 > 상태: Draft
-> 정본 위치: `docs/006-planning/handoffs/kim-gayeong-2026-06-01.md`
+> 정본 위치: `docs/998-handoffs/kim-gayeong-2026-06-01.md`
 > 관련 문서: `docs/006-planning/today.md`, `docs/006-planning/weekly-wbs/2026-06-01-week1.md`, `docs/006-planning/member-wbs/kim-gayeong.md`, `docs/001-reference/service-flow.md`, `docs/004-api/api-contract.md`
 > 버전: v0.2
 > 최종 수정: 2026-05-31
