@@ -22,7 +22,7 @@ main
   ↑
 release/2026-06-26
   ↑
-develop
+dev
   ↑
 feature branches
 ```
@@ -30,19 +30,19 @@ feature branches
 기본 원칙:
 
 - `main`은 발표/배포 가능한 안정 버전만 둔다.
-- 실제 개발 통합은 `develop`에서 한다.
+- 실제 개발 통합은 `dev`에서 한다.
 - 각 기능은 `feat/*` 브랜치에서 작업한다.
 - 배포 직전에는 `release/2026-06-26` 브랜치를 만들어 기능 추가를 막고 안정화한다.
 - 발표 직전 급한 수정은 `hotfix/*` 브랜치에서 처리한다.
 
-현재 브랜치가 `chore/init-setting`이라면, 이 브랜치에 초기 설정과 문서 작업을 모은 뒤 팀 합의로 `develop`을 새로 만들거나 `chore/init-setting`을 `develop`에 병합한다.
+현재 브랜치가 `chore/init-setting`이라면, 이 브랜치에 초기 설정과 문서 작업을 모은 뒤 팀 합의로 `dev`를 새로 만들거나 `chore/init-setting`을 `dev`에 병합한다.
 
 ## 3. 기본 브랜치
 
 | 브랜치 | 역할 |
 |---|---|
 | `main` | 최종 발표/배포 기준 브랜치. 직접 작업 금지 |
-| `develop` | 통합 개발 브랜치. 기능 PR이 모이는 곳 |
+| `dev` | 통합 개발 브랜치. 기능 PR이 모이는 곳 |
 | `release/2026-06-26` | 배포 후보 브랜치. 2026-06-25 전후 생성 |
 | `feat/*` | 기능 개발 브랜치 |
 | `fix/*` | 일반 버그 수정 브랜치 |
@@ -53,10 +53,10 @@ feature branches
 추천 흐름:
 
 ```text
-feat/auth-jwt -> develop
-feat/worki-question -> develop
-feat/local-rag -> develop
-develop -> release/2026-06-26
+feat/auth-jwt -> dev
+feat/worki-question -> dev
+feat/local-rag -> dev
+dev -> release/2026-06-26
 release/2026-06-26 -> main
 hotfix/demo-login -> release/2026-06-26 -> main
 ```
@@ -218,7 +218,40 @@ feat: 워키 질문/답변 API 구현
 docs: WBS 및 API 계약서 추가
 ```
 
-### 8.3 PR 설명 템플릿
+### 8.3 Daily Discussion PR
+
+`daily-discussions`는 근무일마다 팀 공유가 필요한 문서이므로, 하루 단위로 `dev`에 반영한다.
+단, 팀원별로 PR을 따로 만들지 않고 **그날 daily 전용 브랜치/PR 하나**에 모아 올린다.
+
+브랜치명:
+
+```text
+docs/daily-YYYY-MM-DD
+```
+
+PR 제목:
+
+```text
+docs: YYYY-MM-DD daily discussion 정리
+```
+
+운영 기준:
+
+- 정리 담당이 daily 전용 브랜치와 PR을 먼저 만든다.
+- 팀원은 본인 작업 종료 후 같은 daily 브랜치에 본인 행만 추가한다.
+- 하루 daily PR에는 `docs/006-planning/daily-discussions/YYYY-MM-DD.md` 변경만 넣는 것을 원칙으로 한다.
+- 모든 팀원 행이 채워지면 리뷰 1명 확인 후 `dev`에 merge한다.
+- 다음 근무일 아침 팀원은 `dev`를 pull 받아 전날 논의 내용을 확인한다.
+- 기능 구현, API 계약 변경, DB migration, 화면 구현은 daily PR에 섞지 않고 별도 PR로 올린다.
+
+예시:
+
+```text
+docs/daily-2026-06-01
+-> docs: 2026-06-01 daily discussion 정리
+```
+
+### 8.4 PR 설명 템플릿
 
 ```md
 ## 작업 내용
@@ -245,7 +278,7 @@ docs: WBS 및 API 계약서 추가
 
 | 대상 브랜치 | merge 방식 | 규칙 |
 |---|---|---|
-| `develop` | Squash merge 권장 | 기능 단위 이력을 깔끔하게 유지 |
+| `dev` | Squash merge 권장 | 기능 단위 이력을 깔끔하게 유지 |
 | `release/*` | Merge commit 또는 PR merge | 안정화 이력 보존 |
 | `main` | PR merge만 허용 | 직접 push 금지 |
 
@@ -445,14 +478,14 @@ release/2026-06-26
   -> hotfix/demo-ticket-status
   -> release/2026-06-26
   -> main
-  -> develop 역반영
+  -> dev 역반영
 ```
 
 규칙:
 
 - hotfix는 시연 차단 버그만 허용한다.
 - 기능 추가는 hotfix로 처리하지 않는다.
-- hotfix 후 `develop`에도 반드시 반영한다.
+- hotfix 후 `dev`에도 반드시 반영한다.
 
 ## 16. 금지 사항
 
