@@ -62,6 +62,7 @@ docs: 2026-06-01 이슬이 daily report 작성
 규칙:
 
 - 본인 daily report 파일만 수정한다.
+- 날짜별 폴더가 없으면 먼저 만들고, 5명 파일을 템플릿 기준으로 준비한다.
 - 기능 코드, API 계약, DB migration은 daily report PR에 섞지 않는다.
 - 기능 변경은 별도 `feat/*`, `fix/*`, `docs/*` PR로 올린다.
 - daily report가 merge되면 다음 근무일 아침 Codex가 이 문서를 참고해 할 일을 안내한다.
