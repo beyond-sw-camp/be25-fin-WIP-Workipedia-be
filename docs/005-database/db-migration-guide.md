@@ -4,7 +4,7 @@
 > 상태: Draft
 > 정본 위치: `docs/005-database/db-migration-guide.md`
 > 관련 문서: `docs/001-reference/trd.md`, `docs/004-api/api-contract.md`
-> 버전: v0.2
+> 버전: v0.3
 > 최종 수정: 2026-05-31
 
 ## 1. 목적
@@ -28,54 +28,51 @@ V{번호}__{설명}.sql
 예시:
 
 ```text
-V1__create_departments_and_users.sql
-V2__create_worki.sql
-V3__create_chatbot.sql
-V4__create_tickets.sql
-V5__create_points_and_notifications.sql
-V6__create_admin_logs.sql
-V7__create_manuals_and_chunks.sql
-V8__create_badges_and_esg_metrics.sql
+V1__create_initial_schema.sql
+V2__add_ticket_status_logs.sql
+V3__alter_manual_status.sql
 ```
 
 ## 4. Migration 불변 원칙
 
-한 번 커밋되었거나 팀원에게 공유된 migration 파일은 수정하지 않는다.
-Flyway는 이미 적용된 migration의 checksum을 관리하므로, 기존 `V1`~`V8` 파일을 나중에 수정하면 로컬/공유 DB의 migration 이력과 파일 내용이 달라져 오류가 발생할 수 있다.
+현재 DB는 초안 확정 전 단계이므로 전체 초기 스키마를 `V1__create_initial_schema.sql` 하나에 담는다.
+단, 이 `V1`이 팀원에게 공유되거나 PR에 올라가거나 dev에 merge된 뒤에는 절대 수정하지 않는다.
 
-스키마 변경은 항상 다음 번호의 새 파일로 추가한다.
+Flyway는 이미 적용된 migration의 checksum을 관리하므로, 공유된 `V1` 파일을 나중에 수정하면 로컬/공유 DB의 migration 이력과 파일 내용이 달라져 오류가 발생할 수 있다.
+공유 이후 스키마 변경은 항상 다음 번호의 새 파일로 추가한다.
 
 ```text
 이미 공유된 파일 수정 금지:
-V1__create_departments_and_users.sql
+V1__create_initial_schema.sql
 
 추가 변경은 새 파일로 작성:
-V9__add_ticket_routing_tables.sql
-V10__alter_manual_status.sql
+V2__add_ticket_status_logs.sql
+V3__alter_manual_status.sql
 ```
 
 예외적으로 기존 migration을 수정할 수 있는 경우는 아래 두 가지뿐이다.
 
 | 상황 | 허용 여부 |
 |---|---|
-| 아직 커밋하지 않았고 아무도 적용하지 않은 개인 작업 중 migration | 수정 가능 |
-| 이미 PR에 올라갔거나 dev에 merge되었거나 팀원이 pull 받은 migration | 수정 금지, 다음 번호로 추가 |
+| 아직 팀원에게 공유하지 않았고 아무도 적용하지 않은 초안 migration | 수정 가능 |
+| PR에 올라갔거나 dev에 merge되었거나 팀원이 pull 받은 migration | 수정 금지, 다음 번호로 추가 |
 
-초기 개발 단계라도 팀원이 함께 작업하는 저장소에서는 `V1` 하나에 모든 테이블을 계속 몰아넣지 않는다. 테이블을 도메인별 migration으로 나누면 리뷰 범위가 작아지고, 담당자별 변경 이력과 충돌 원인을 추적하기 쉽다.
+요약하면 현재 한 번만 `V1`에 전체 초기 스키마를 정리하고, 그 이후부터는 `V1`을 불변 파일로 취급한다.
 
 ## 5. 권장 생성 순서
 
-| 순서 | 파일 | 주요 담당 | 포함 테이블 |
-|---|---|---|---|
-| 1 | `V1__create_departments_and_users.sql` | 이슬이 | `departments`, `users` |
-| 2 | `V2__create_worki.sql` | 민정기 | `worki_questions`, `worki_answers`, `reactions` |
-| 3 | `V3__create_chatbot.sql` | 이슬이, 김진혁 | `chatbot_sessions`, `chatbot_messages` |
-| 4 | `V4__create_tickets.sql` | 김진혁 | `tickets`, `ticket_answers`, `ticket_transfer_requests`, `ticket_assignments`, `ticket_routing_logs`, `knowledge_candidates` |
-| 5 | `V5__create_points_and_notifications.sql` | 김가영, 민정기 | `point_history`, `notifications` |
-| 6 | `V6__create_admin_logs.sql` | 김가영 | `admin_logs` |
-| 7 | `V7__create_manuals_and_chunks.sql` | 김진혁 | `manuals`, `manual_chunks`, `worki_chunks` |
-| 8 | `V8__create_badges_and_esg_metrics.sql` | 김가영 | `badges`, `user_badges`, `esg_metric_snapshots` |
-| 9 이후 | `V9__...sql` | 변경 담당자 | 기존 migration 수정 대신 추가/변경 DDL |
+| 순서 | 파일 | 목적 |
+|---|---|---|
+| 1 | `V1__create_initial_schema.sql` | 최초 전체 스키마 생성 |
+| 2 이후 | `V2__...sql` | 공유 이후 추가/변경 DDL |
+
+`V2` 이후 파일명은 변경 목적이 드러나게 작성한다.
+
+```text
+V2__add_manual_versions.sql
+V3__alter_ticket_status.sql
+V4__create_worki_search_logs.sql
+```
 
 ## 6. 공통 컬럼 규칙
 
@@ -200,8 +197,8 @@ deleted_at DATETIME NULL
 ## 10. PR 체크리스트
 
 - [ ] migration 파일명이 순서대로 되어 있다.
-- [ ] 기존 migration 파일을 수정하지 않았다.
-- [ ] 이미 공유된 migration 변경이 필요하면 다음 번호 migration으로 작성했다.
+- [ ] 공유된 `V1__create_initial_schema.sql`을 수정하지 않았다.
+- [ ] 공유 이후 변경이 필요하면 다음 번호 migration으로 작성했다.
 - [ ] 새 테이블에 PK가 있다.
 - [ ] 필요한 FK와 index가 있다.
 - [ ] soft delete 대상에는 `deleted_at`이 있다.
