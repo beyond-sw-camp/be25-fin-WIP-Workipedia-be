@@ -21,9 +21,6 @@ CREATE TABLE tickets (
     CONSTRAINT fk_tickets_question
         FOREIGN KEY (question_id)
         REFERENCES worki_questions (question_id),
-    CONSTRAINT fk_tickets_category
-        FOREIGN KEY (category_id)
-        REFERENCES categories (category_id),
     CONSTRAINT fk_tickets_source_chatbot_message
         FOREIGN KEY (source_chatbot_message_id)
         REFERENCES chatbot_messages (message_id),
@@ -53,26 +50,6 @@ CREATE TABLE ticket_answers (
     CONSTRAINT fk_ticket_answers_author
         FOREIGN KEY (author_id)
         REFERENCES users (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE ticket_status_logs (
-    status_log_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    ticket_id BIGINT NOT NULL,
-    changed_by BIGINT NULL,
-    previous_status VARCHAR(30) NULL,
-    new_status VARCHAR(30) NOT NULL,
-    reason VARCHAR(1000) NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_ticket_status_logs_ticket
-        FOREIGN KEY (ticket_id)
-        REFERENCES tickets (ticket_id),
-    CONSTRAINT fk_ticket_status_logs_changed_by
-        FOREIGN KEY (changed_by)
-        REFERENCES users (user_id),
-    CONSTRAINT ck_ticket_status_logs_previous_status
-        CHECK (previous_status IS NULL OR previous_status IN ('RECEIVED', 'COMMON_QUEUE', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'REJECTED', 'DELETED')),
-    CONSTRAINT ck_ticket_status_logs_new_status
-        CHECK (new_status IN ('RECEIVED', 'COMMON_QUEUE', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'REJECTED', 'DELETED'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE ticket_transfer_requests (
@@ -182,11 +159,9 @@ ALTER TABLE chatbot_messages
 
 CREATE INDEX idx_tickets_requester_id ON tickets (requester_id);
 CREATE INDEX idx_tickets_status ON tickets (status);
-CREATE INDEX idx_tickets_category_id ON tickets (category_id);
 CREATE INDEX idx_tickets_assigned_department_id ON tickets (assigned_department_id);
 CREATE INDEX idx_tickets_assignee_id ON tickets (assignee_id);
 CREATE INDEX idx_ticket_answers_ticket_id ON ticket_answers (ticket_id);
-CREATE INDEX idx_ticket_status_logs_ticket_id ON ticket_status_logs (ticket_id);
 CREATE INDEX idx_ticket_transfer_requests_ticket_id ON ticket_transfer_requests (ticket_id);
 CREATE INDEX idx_ticket_routing_logs_ticket_id ON ticket_routing_logs (ticket_id);
 CREATE INDEX idx_knowledge_candidates_ticket_id ON knowledge_candidates (ticket_id);
