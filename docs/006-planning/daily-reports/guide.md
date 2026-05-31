@@ -4,7 +4,7 @@
 > 상태: Draft
 > 정본 위치: `docs/006-planning/daily-reports/guide.md`
 > 관련 문서: `docs/006-planning/daily-reports/template.md`, `docs/006-planning/daily-discussions/discussion-guide.md`, `docs/010-development/agent-workflow.md`
-> 버전: v0.2
+> 버전: v0.3
 > 최종 수정: 2026-05-31
 
 이 폴더는 팀원별 하루 작업 보고서를 관리한다.
@@ -45,24 +45,28 @@ docs/006-planning/daily-reports/2026-06-01/kim-jinhyeok.md
 
 ## 3. PR 기준
 
-daily report는 개인별 PR로 올린다.
+daily report는 개인별 파일로 작성하지만, PR은 하루에 하나로 묶는다.
+정리 담당이 `daily-reports`, 다음 근무일 `daily-plans`, 필요한 경우 `daily-discussions`를 모아 daily 문서 PR을 만든다.
 
 ```text
-브랜치: docs/daily-YYYY-MM-DD-name
-PR 제목: docs: YYYY-MM-DD 이름 daily report 작성
+브랜치: docs/daily-YYYY-MM-DD
+PR 제목: docs: YYYY-MM-DD daily 정리
 ```
 
 예시:
 
 ```text
-docs/daily-2026-06-01-lee-seuli
-docs: 2026-06-01 이슬이 daily report 작성
+docs/daily-2026-06-01
+docs: 2026-06-01 daily 정리
 ```
 
 규칙:
 
 - 본인 daily report 파일만 수정한다.
 - 날짜별 폴더가 없으면 먼저 만들고, 5명 파일을 템플릿 기준으로 준비한다.
+- 개인별 daily report는 각자 작성하되, 정리 담당이 하루 1개 PR로 묶는다.
+- daily 문서 PR에는 다음 근무일 daily plan을 함께 넣는다.
+- 팀 합의가 필요한 안건이 있으면 daily discussion을 같은 PR에 포함한다.
 - 기능 코드, API 계약, DB migration은 daily report PR에 섞지 않는다.
 - 기능 변경은 별도 `feat/*`, `fix/*`, `docs/*` PR로 올린다.
 - daily report가 merge되면 다음 근무일 아침 Codex가 이 문서를 참고해 할 일을 안내한다.

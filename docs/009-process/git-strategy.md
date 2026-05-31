@@ -4,7 +4,7 @@
 > 상태: Draft
 > 정본 위치: `docs/009-process/git-strategy.md`
 > 관련 문서: `docs/006-planning/wbs.md`, `docs/004-api/api-contract.md`, `docs/005-database/db-migration-guide.md`
-> 버전: v0.2
+> 버전: v0.3
 > 최종 수정: 2026-05-31
 
 ## 1. 목적
@@ -218,35 +218,44 @@ feat: 워키 질문/답변 API 구현
 docs: WBS 및 API 계약서 추가
 ```
 
-### 8.3 Daily Report PR
+### 8.3 Daily 문서 PR
 
-`daily-reports`는 근무일마다 팀원별로 작성한다.
-같은 파일을 여러 명이 수정하면 충돌이 나므로, 각 팀원은 본인 daily report 파일만 수정한다.
+Daily 문서 PR은 하루 작업 기록과 다음 날 계획을 한 번에 정리하는 문서 PR이다.
+개인별 daily report를 각각 PR로 올리면 PR이 너무 많아지므로, 정리 담당이 하루 1개 PR로 묶는다.
 
 브랜치명:
 
 ```text
-docs/daily-YYYY-MM-DD-name
+docs/daily-YYYY-MM-DD
 ```
 
 PR 제목:
 
 ```text
-docs: YYYY-MM-DD 이름 daily report 작성
+docs: YYYY-MM-DD daily 정리
 ```
 
 운영 기준:
 
-- daily report PR에는 `docs/006-planning/daily-reports/YYYY-MM-DD/{member}.md` 변경만 넣는 것을 원칙으로 한다.
+- daily 문서 PR은 정리 담당이 만든다. 현재 정리 담당은 김진혁으로 둔다.
+- daily 문서 PR에는 해당 날짜의 개인별 daily report와 다음 근무일 daily plan을 함께 넣는다.
+- 팀 합의가 필요한 안건이 있으면 daily discussion도 같은 PR에 포함할 수 있다.
 - 기능 구현, API 계약 변경, DB migration, 화면 구현은 daily report PR에 섞지 않고 별도 PR로 올린다.
-- daily report가 merge되면 다음 근무일 아침 팀원은 `dev`를 pull 받아 전날 보고서를 확인한다.
-- daily report들을 보고 팀 합의가 필요한 항목이 있으면 정리 담당이 별도 `daily-discussions` PR을 만든다.
+- daily 문서 PR이 merge되면 다음 근무일 아침 팀원은 `dev`를 pull 받아 daily plan과 전날 report를 확인한다.
+
+포함 파일 예시:
+
+```text
+docs/006-planning/daily-reports/2026-06-01/*.md
+docs/006-planning/daily-plans/2026-06-02.md
+docs/006-planning/daily-discussions/2026-06-02.md  # 필요할 때만
+```
 
 예시:
 
 ```text
-docs/daily-2026-06-01-lee-seuli
--> docs: 2026-06-01 이슬이 daily report 작성
+docs/daily-2026-06-01
+-> docs: 2026-06-01 daily 정리
 ```
 
 ### 8.4 PR 설명 템플릿
