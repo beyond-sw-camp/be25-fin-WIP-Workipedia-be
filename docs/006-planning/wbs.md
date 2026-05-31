@@ -3,9 +3,9 @@
 > 문서 유형: WBS
 > 상태: Draft
 > 정본 위치: `docs/006-planning/wbs.md`
-> 관련 문서: `docs/001-reference/service-flow.md`, `docs/001-reference/prd.md`, `docs/001-reference/trd.md`, `docs/002-architecture/project-structure.md`, `docs/006-planning/daily-work-plan.md`, `docs/006-planning/weekly-wbs/`, `docs/006-planning/daily-discussions/`, `docs/007-quality/harness-engineering.md`
-> 버전: v0.1
-> 최종 수정: 2026-05-28
+> 관련 문서: `docs/001-reference/service-flow.md`, `docs/001-reference/prd.md`, `docs/001-reference/trd.md`, `docs/002-architecture/project-structure.md`, `docs/006-planning/daily-work-plan.md`, `docs/006-planning/weekly-wbs/`, `docs/006-planning/daily-reports/`, `docs/006-planning/daily-discussions/`, `docs/007-quality/harness-engineering.md`
+> 버전: v0.2
+> 최종 수정: 2026-05-31
 
 ## 0. 작업 조건
 
@@ -26,7 +26,8 @@
 - 백엔드는 4명이 나누되, 챗봇은 `김진혁`, `이슬이`가 경계를 명확히 나눠 병렬 개발한다.
 - RAG는 `local embedding first, mock fallback` 전략으로 간다.
 - 매주 금요일에는 다음 주 실행 WBS를 `docs/006-planning/weekly-wbs/`에 작성한다.
-- 매일 작업 종료 전에는 다음 근무일 논의사항을 `docs/006-planning/daily-discussions/`에 작성한다.
+- 매일 작업 종료 전에는 본인 daily report를 `docs/006-planning/daily-reports/YYYY-MM-DD/{member}.md`에 작성한다.
+- 팀 합의가 필요한 논의사항은 필요할 때만 `docs/006-planning/daily-discussions/`에 작성한다.
 
 ## 2. 팀 역할
 

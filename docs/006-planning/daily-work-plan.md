@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/006-planning/daily-work-plan.md`
 > 관련 문서: `docs/006-planning/wbs.md`, `docs/001-reference/service-flow.md`, `docs/004-api/api-contract.md`
-> 버전: v0.1
-> 최종 수정: 2026-05-28
+> 버전: v0.2
+> 최종 수정: 2026-05-31
 
 본 문서는 `WBS`를 하루 단위 실행 계획으로 풀어쓴 문서다.
 작업은 월-금 기준으로 관리하며, 2026-06-26까지 배포 가능한 상태를 만들고 2026-06-29부터는 발표 준비와 치명 버그 수정만 진행한다.
@@ -20,7 +20,8 @@
 - 하루 완료 기준은 "코드 작성"이 아니라 "담당자가 직접 실행 또는 API 호출로 확인"이다.
 - 금요일은 새 기능을 크게 벌리기보다 통합, 정리, 버그 수정에 둔다.
 - 금요일 종료 전에는 다음 주 실행 WBS를 `docs/006-planning/weekly-wbs/`에 작성한다.
-- 매일 종료 전에는 다음 근무일 논의사항을 `docs/006-planning/daily-discussions/`에 작성한다.
+- 매일 종료 전에는 본인 daily report를 `docs/006-planning/daily-reports/YYYY-MM-DD/{member}.md`에 작성한다.
+- 다음 근무일 팀 합의가 필요한 사항은 필요할 때만 `docs/006-planning/daily-discussions/`에 정리한다.
 
 ## 1. Week 0 — 구조 확정
 
