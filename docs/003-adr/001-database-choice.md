@@ -1,8 +1,8 @@
-# ADR 0001 - Database Choice
+# ADR 001 - Database Choice
 
 > 문서 유형: ADR
 > 상태: Draft
-> 정본 위치: `docs/003-adr/0001-database-choice.md`
+> 정본 위치: `docs/003-adr/001-database-choice.md`
 > 관련 문서: `docs/001-reference/trd.md`, `docs/005-database/db-migration-guide.md`
 > 버전: v0.1
 > 최종 수정: 2026-05-28

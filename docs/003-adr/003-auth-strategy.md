@@ -1,8 +1,8 @@
-# ADR 0003 - Auth Strategy
+# ADR 003 - Auth Strategy
 
 > 문서 유형: ADR
 > 상태: Draft
-> 정본 위치: `docs/003-adr/0003-auth-strategy.md`
+> 정본 위치: `docs/003-adr/003-auth-strategy.md`
 > 관련 문서: `docs/001-reference/prd.md`, `docs/001-reference/trd.md`, `docs/004-api/api-contract.md`
 > 버전: v0.1
 > 최종 수정: 2026-05-28

@@ -1,8 +1,8 @@
-# ADR 0002 - RAG Strategy
+# ADR 002 - RAG Strategy
 
 > 문서 유형: ADR
 > 상태: Draft
-> 정본 위치: `docs/003-adr/0002-rag-strategy.md`
+> 정본 위치: `docs/003-adr/002-rag-strategy.md`
 > 관련 문서: `docs/001-reference/constitution.md`, `docs/001-reference/trd.md`, `docs/007-quality/harness-engineering.md`
 > 버전: v0.1
 > 최종 수정: 2026-05-28
