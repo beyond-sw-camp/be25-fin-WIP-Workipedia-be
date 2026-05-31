@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/002-architecture/project-structure.md`
 > 관련 문서: `docs/001-reference/constitution.md`, `docs/001-reference/service-flow.md`, `docs/001-reference/prd.md`, `docs/001-reference/trd.md`
-> 버전: v0.1
-> 최종 수정: 2026-05-28
+> 버전: v0.2
+> 최종 수정: 2026-05-31
 
 ## 1. 추천 방향
 
@@ -242,21 +242,15 @@ rag/adapter/
 
 ## 6. DB 마이그레이션 순서
 
-초기 Flyway migration은 기능 개발 순서와 맞춰 나눈다.
+현재 DB는 초안 확정 전 단계이므로 초기 Flyway migration은 전체 스키마를 하나의 파일에 담는다.
 
 ```text
 src/main/resources/db/migration/
-  V1__create_departments_and_users.sql
-  V2__create_worki.sql
-  V3__create_chatbot.sql
-  V4__create_tickets.sql
-  V5__create_points_and_notifications.sql
-  V6__create_admin_logs.sql
-  V7__create_manuals_and_chunks.sql
-  V8__create_badges_and_esg_metrics.sql
+  V1__create_initial_schema.sql
 ```
 
-처음부터 모든 컬럼을 완벽하게 넣으려 하기보다, 테이블 명세서의 P0/P1 컬럼부터 반영한다.
+단, 이 `V1`이 팀원에게 공유되거나 PR에 올라가거나 dev에 merge된 뒤에는 수정하지 않는다.
+공유 이후 스키마 변경은 `V2__...sql`, `V3__...sql`처럼 다음 번호 migration으로만 추가한다.
 
 ## 7. MVP 개발 순서
 

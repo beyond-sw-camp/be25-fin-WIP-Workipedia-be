@@ -1,11 +1,11 @@
-# ADR 0002 - RAG Strategy
+# ADR 002 - RAG Strategy
 
 > 문서 유형: ADR
 > 상태: Draft
-> 정본 위치: `docs/003-adr/0002-rag-strategy.md`
+> 정본 위치: `docs/003-adr/002-rag-strategy.md`
 > 관련 문서: `docs/001-reference/constitution.md`, `docs/001-reference/trd.md`, `docs/007-quality/harness-engineering.md`
-> 버전: v0.1
-> 최종 수정: 2026-05-28
+> 버전: v0.2
+> 최종 수정: 2026-05-31
 
 ## Context
 
@@ -25,7 +25,7 @@ MVP RAG 전략은 **local embedding first, mock fallback**으로 한다.
 - top-k 유사 chunk 검색
 - 검색된 chunk 기반 답변 생성
 - 답변에 출처 포함
-- `chatbot_messages.references` JSON 저장
+- `chatbot_messages.references_json` JSON 저장
 - 근거 부족 시 워키 질문 또는 요청 티켓 전환 액션 반환
 - 개인정보 마스킹 기본 케이스
 - 로컬 모델 또는 임베딩 실패 시 mock RAG fallback
@@ -61,7 +61,7 @@ seed manual/worki data
 -> top-k retrieval
 -> answer generation
 -> reference validation
--> chatbot_messages.references 저장
+-> chatbot_messages.references_json 저장
 -> no-answer이면 워키 질문 또는 요청 티켓 전환
 ```
 
