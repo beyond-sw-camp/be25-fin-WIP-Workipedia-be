@@ -4,8 +4,9 @@ CREATE TABLE departments (
     code VARCHAR(50) NOT NULL,
     description VARCHAR(255) NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT uk_departments_code UNIQUE (code),
     CONSTRAINT uk_departments_name UNIQUE (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -16,8 +17,9 @@ CREATE TABLE categories (
     code VARCHAR(50) NOT NULL,
     description VARCHAR(255) NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT uk_categories_code UNIQUE (code),
     CONSTRAINT uk_categories_name UNIQUE (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -29,8 +31,9 @@ CREATE TABLE department_category_mappings (
     priority INT NOT NULL DEFAULT 1,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_department_category_mappings_department
         FOREIGN KEY (department_id)
         REFERENCES departments (department_id),
@@ -51,8 +54,9 @@ CREATE TABLE users (
     role VARCHAR(30) NOT NULL DEFAULT 'USER',
     status VARCHAR(30) NOT NULL DEFAULT 'ACTIVE',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT uk_users_employee_id UNIQUE (employee_id),
     CONSTRAINT uk_users_email UNIQUE (email),
     CONSTRAINT uk_users_nickname UNIQUE (nickname),
@@ -70,8 +74,9 @@ CREATE TABLE chatbot_sessions (
     user_id BIGINT NOT NULL,
     title VARCHAR(255) NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_chatbot_sessions_user
         FOREIGN KEY (user_id)
         REFERENCES users (user_id)
@@ -88,8 +93,9 @@ CREATE TABLE chatbot_messages (
     source_worki_question_id BIGINT NULL,
     source_ticket_id BIGINT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_chatbot_messages_session
         FOREIGN KEY (session_id)
         REFERENCES chatbot_sessions (session_id),
@@ -109,8 +115,9 @@ CREATE TABLE worki_questions (
     accepted_answer_id BIGINT NULL,
     view_count BIGINT NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_worki_questions_author
         FOREIGN KEY (author_id)
         REFERENCES users (user_id),
@@ -131,8 +138,9 @@ CREATE TABLE worki_answers (
     accepted BOOLEAN NOT NULL DEFAULT FALSE,
     accepted_at DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_worki_answers_question
         FOREIGN KEY (question_id)
         REFERENCES worki_questions (question_id),
@@ -158,8 +166,9 @@ CREATE TABLE reactions (
     target_id BIGINT NOT NULL,
     reaction_type VARCHAR(30) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_reactions_user
         FOREIGN KEY (user_id)
         REFERENCES users (user_id),
@@ -185,8 +194,9 @@ CREATE TABLE tickets (
     routing_decision VARCHAR(50) NULL,
     completed_at DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_tickets_requester
         FOREIGN KEY (requester_id)
         REFERENCES users (user_id),
@@ -217,8 +227,9 @@ CREATE TABLE ticket_answers (
     author_id BIGINT NOT NULL,
     content TEXT NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_ticket_answers_ticket
         FOREIGN KEY (ticket_id)
         REFERENCES tickets (ticket_id),
@@ -235,6 +246,9 @@ CREATE TABLE ticket_status_logs (
     new_status VARCHAR(30) NOT NULL,
     reason VARCHAR(1000) NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_ticket_status_logs_ticket
         FOREIGN KEY (ticket_id)
         REFERENCES tickets (ticket_id),
@@ -256,8 +270,9 @@ CREATE TABLE ticket_transfer_requests (
     reason TEXT NOT NULL,
     status VARCHAR(30) NOT NULL DEFAULT 'REQUESTED',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_ticket_transfer_requests_ticket
         FOREIGN KEY (ticket_id)
         REFERENCES tickets (ticket_id),
@@ -281,6 +296,9 @@ CREATE TABLE ticket_assignments (
     assigned_by BIGINT NOT NULL,
     memo VARCHAR(500) NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_ticket_assignments_ticket
         FOREIGN KEY (ticket_id)
         REFERENCES tickets (ticket_id),
@@ -301,6 +319,9 @@ CREATE TABLE ticket_routing_logs (
     reasons_json JSON NULL,
     routed_by BIGINT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_ticket_routing_logs_ticket
         FOREIGN KEY (ticket_id)
         REFERENCES tickets (ticket_id),
@@ -324,8 +345,9 @@ CREATE TABLE knowledge_candidates (
     reviewed_at DATETIME NULL,
     published_at DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_knowledge_candidates_ticket
         FOREIGN KEY (ticket_id)
         REFERENCES tickets (ticket_id),
@@ -360,21 +382,62 @@ CREATE TABLE point_history (
     related_type VARCHAR(50) NULL,
     related_id BIGINT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_point_history_user
         FOREIGN KEY (user_id)
         REFERENCES users (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE points_daily_limit (
+    user_id BIGINT NOT NULL,
+    point_date DATE NOT NULL,
+    today_point BIGINT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
+    PRIMARY KEY (user_id, point_date),
+    CONSTRAINT fk_points_daily_limit_user
+        FOREIGN KEY (user_id)
+        REFERENCES users (user_id),
+    CONSTRAINT ck_points_daily_limit_today_point
+        CHECK (today_point >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE esg_grade (
+    grade_id INT AUTO_INCREMENT PRIMARY KEY,
+    grade_name VARCHAR(20) NOT NULL,
+    min_score BIGINT NOT NULL,
+    max_score BIGINT NULL,
+    badge_image_url VARCHAR(500) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
+    CONSTRAINT uk_esg_grade_grade_name UNIQUE (grade_name),
+    CONSTRAINT ck_esg_grade_min_score
+        CHECK (min_score >= 0),
+    CONSTRAINT ck_esg_grade_max_score
+        CHECK (max_score IS NULL OR max_score > min_score)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE user_points (
     user_id BIGINT PRIMARY KEY,
+    grade_id INT NOT NULL,
     current_point BIGINT NOT NULL DEFAULT 0,
     esg_score BIGINT NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_user_points_user
         FOREIGN KEY (user_id)
         REFERENCES users (user_id),
+    CONSTRAINT fk_user_points_grade
+        FOREIGN KEY (grade_id)
+        REFERENCES esg_grade (grade_id),
     CONSTRAINT ck_user_points_current_point
         CHECK (current_point >= 0),
     CONSTRAINT ck_user_points_esg_score
@@ -392,8 +455,9 @@ CREATE TABLE notifications (
     target_url VARCHAR(500) NULL,
     read_at DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_notifications_user
         FOREIGN KEY (user_id)
         REFERENCES users (user_id),
@@ -418,6 +482,9 @@ CREATE TABLE admin_logs (
     description VARCHAR(1000) NULL,
     metadata_json JSON NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_admin_logs_actor
         FOREIGN KEY (actor_id)
         REFERENCES users (user_id),
@@ -448,8 +515,9 @@ CREATE TABLE manuals (
     version VARCHAR(50) NULL,
     created_by BIGINT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_manuals_department
         FOREIGN KEY (department_id)
         REFERENCES departments (department_id),
@@ -460,6 +528,25 @@ CREATE TABLE manuals (
         CHECK (status IN ('DRAFT', 'PUBLISHED', 'ARCHIVED', 'DELETED'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE manual_versions (
+    manual_version_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    manual_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    manual_num VARCHAR(20) NOT NULL,
+    update_reason TEXT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
+    CONSTRAINT fk_manual_versions_manual
+        FOREIGN KEY (manual_id)
+        REFERENCES manuals (manual_id),
+    CONSTRAINT fk_manual_versions_user
+        FOREIGN KEY (user_id)
+        REFERENCES users (user_id),
+    CONSTRAINT uk_manual_versions_manual_num UNIQUE (manual_id, manual_num)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE manual_chunks (
     manual_chunk_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     manual_id BIGINT NOT NULL,
@@ -467,12 +554,33 @@ CREATE TABLE manual_chunks (
     content TEXT NOT NULL,
     embedding_json JSON NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_manual_chunks_manual
         FOREIGN KEY (manual_id)
         REFERENCES manuals (manual_id),
     CONSTRAINT uk_manual_chunks_manual_index UNIQUE (manual_id, chunk_index)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE manual_citations (
+    citation_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    source_type VARCHAR(30) NOT NULL,
+    source_id BIGINT NOT NULL,
+    manual_id BIGINT NOT NULL,
+    manual_chunk_id BIGINT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
+    CONSTRAINT fk_manual_citations_manual
+        FOREIGN KEY (manual_id)
+        REFERENCES manuals (manual_id),
+    CONSTRAINT fk_manual_citations_manual_chunk
+        FOREIGN KEY (manual_chunk_id)
+        REFERENCES manual_chunks (manual_chunk_id),
+    CONSTRAINT ck_manual_citations_source_type
+        CHECK (source_type IN ('CHATBOT_MESSAGE', 'WORKI_ANSWER', 'TICKET_ANSWER'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE worki_chunks (
@@ -485,8 +593,9 @@ CREATE TABLE worki_chunks (
     content TEXT NOT NULL,
     embedding_json JSON NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_worki_chunks_question
         FOREIGN KEY (question_id)
         REFERENCES worki_questions (question_id),
@@ -498,14 +607,32 @@ CREATE TABLE worki_chunks (
     CONSTRAINT uk_worki_chunks_source_index UNIQUE (source_type, source_id, chunk_index)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE worki_search_logs (
+    search_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    query_text VARCHAR(500) NOT NULL,
+    selected_target_type VARCHAR(30) NULL,
+    selected_target_id BIGINT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
+    CONSTRAINT fk_worki_search_logs_user
+        FOREIGN KEY (user_id)
+        REFERENCES users (user_id),
+    CONSTRAINT ck_worki_search_logs_selected_target_type
+        CHECK (selected_target_type IS NULL OR selected_target_type IN ('QUESTION', 'ANSWER'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE badges (
     badge_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(50) NOT NULL,
     name VARCHAR(100) NOT NULL,
     description VARCHAR(255) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT uk_badges_code UNIQUE (code),
     CONSTRAINT ck_badges_code
         CHECK (code IN ('FIRST_QUESTION', 'FIRST_ACCEPTED_ANSWER', 'ANSWER_HELPER'))
@@ -517,8 +644,9 @@ CREATE TABLE user_badges (
     badge_id BIGINT NOT NULL,
     earned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
+    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_user_badges_user
         FOREIGN KEY (user_id)
         REFERENCES users (user_id),
@@ -526,24 +654,6 @@ CREATE TABLE user_badges (
         FOREIGN KEY (badge_id)
         REFERENCES badges (badge_id),
     CONSTRAINT uk_user_badges_user_badge UNIQUE (user_id, badge_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE esg_metric_snapshots (
-    esg_metric_snapshot_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    target_type VARCHAR(30) NOT NULL,
-    target_id BIGINT NULL,
-    knowledge_share_count BIGINT NOT NULL DEFAULT 0,
-    accepted_answer_count BIGINT NOT NULL DEFAULT 0,
-    estimated_saved_minutes BIGINT NOT NULL DEFAULT 0,
-    source_backed_answer_rate DECIMAL(5,4) NOT NULL DEFAULT 0,
-    ticket_completion_rate DECIMAL(5,4) NOT NULL DEFAULT 0,
-    measured_date DATE NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at DATETIME NULL,
-    CONSTRAINT ck_esg_metric_snapshots_target_type
-        CHECK (target_type IN ('USER', 'TEAM', 'SYSTEM')),
-    CONSTRAINT uk_esg_metric_snapshots_target_date UNIQUE (target_type, target_id, measured_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE INDEX idx_department_category_mappings_category_id ON department_category_mappings (category_id);
@@ -571,6 +681,8 @@ CREATE INDEX idx_knowledge_candidates_ticket_id ON knowledge_candidates (ticket_
 CREATE INDEX idx_knowledge_candidates_status ON knowledge_candidates (status);
 CREATE INDEX idx_point_history_user_id ON point_history (user_id);
 CREATE INDEX idx_point_history_reason_type ON point_history (reason_type);
+CREATE INDEX idx_points_daily_limit_point_date ON points_daily_limit (point_date);
+CREATE INDEX idx_user_points_grade_id ON user_points (grade_id);
 CREATE INDEX idx_user_points_current_point ON user_points (current_point);
 CREATE INDEX idx_user_points_esg_score ON user_points (esg_score);
 CREATE INDEX idx_notifications_user_id ON notifications (user_id);
@@ -581,9 +693,13 @@ CREATE INDEX idx_admin_logs_action_type ON admin_logs (action_type);
 CREATE INDEX idx_admin_logs_target ON admin_logs (target_type, target_id);
 CREATE INDEX idx_manuals_department_id ON manuals (department_id);
 CREATE INDEX idx_manuals_status ON manuals (status);
+CREATE INDEX idx_manual_versions_manual_id ON manual_versions (manual_id);
 CREATE INDEX idx_manual_chunks_manual_id ON manual_chunks (manual_id);
+CREATE INDEX idx_manual_citations_source ON manual_citations (source_type, source_id);
+CREATE INDEX idx_manual_citations_manual_chunk_id ON manual_citations (manual_chunk_id);
 CREATE INDEX idx_worki_chunks_source ON worki_chunks (source_type, source_id);
 CREATE INDEX idx_worki_chunks_question_id ON worki_chunks (question_id);
 CREATE INDEX idx_worki_chunks_answer_id ON worki_chunks (answer_id);
+CREATE INDEX idx_worki_search_logs_user_id ON worki_search_logs (user_id);
+CREATE INDEX idx_worki_search_logs_selected_target ON worki_search_logs (selected_target_type, selected_target_id);
 CREATE INDEX idx_user_badges_user_id ON user_badges (user_id);
-CREATE INDEX idx_esg_metric_snapshots_measured_date ON esg_metric_snapshots (measured_date);

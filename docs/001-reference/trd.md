@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/001-reference/trd.md`
 > 관련 문서: `docs/001-reference/constitution.md`, `docs/001-reference/service-flow.md`, `docs/001-reference/prd.md`
-> 버전: v0.2
-> 최종 수정: 2026-05-31
+> 버전: v0.3
+> 최종 수정: 2026-06-01
 
 ---
 
@@ -48,10 +48,12 @@
 | Backend | Spring Boot 3.x (Java 21) |
 | ORM | JPA(Hibernate) |
 | RDB | MariaDB/MySQL 계열 |
-| Vector Store | MVP는 local vector adapter 또는 RDB 기반 최소 저장, 추후 pgvector/OpenSearch 검토 |
+| Vector Store | Elasticsearch (kNN 검색, 민정기 담당) — ADR 009 참조 |
 | 인증 | JWT (Access + Refresh), 비밀번호 BCrypt |
+| 세션 저장 | Redis (Refresh Token 저장) — ADR 003 참조 |
 | LLM | 로컬 LLM 또는 검색 결과 기반 template 답변, 외부 LLM은 후순위 |
 | Embedding | 로컬 임베딩 모델 우선 |
+| 메시지 브로커 | Kafka (이벤트 기반 알림 등) |
 | 배치 | Spring Scheduler/Quartz 우선 |
 | 인프라 | Docker, Kubernetes(선택), CI/CD: GitHub Actions |
 | 모니터링 | Prometheus + Grafana, 로그: ELK / Loki |
@@ -95,12 +97,15 @@
 | `ticket_assignments` | 티켓 담당자 배정 이력 |
 | `ticket_routing_logs` | 자동 배정 점수와 근거 |
 | `knowledge_candidates` | 처리 완료 티켓의 지식화 후보 |
-| `points` / `point_history` | 포인트 적립 이력 |
+| `user_points` / `point_history` / `points_daily_limit` | 사용자 현재 포인트, 포인트 적립 이력, 일일 적립 한도 |
+| `esg_grade` | ESG 점수 기반 등급 기준 |
 | `badges` / `user_badges` | 뱃지 마스터 및 부여 |
-| `esg_metric_snapshots` | ESG/운영 지표 스냅샷 |
 | `notifications` | 알림 |
 | `worki_chunks` | 워키 문장 조각 (검색·인용 단위) |
+| `worki_search_logs` | 워키 검색어와 선택한 검색 결과 로그 |
 | `manual_chunks` | 매뉴얼 문장 조각 (검색·인용 단위) |
+| `manual_versions` | 매뉴얼 버전 이력 |
+| `manual_citations` | RAG/답변에서 참조한 매뉴얼 조각 인용 이력 |
 | `admin_logs` | 관리자 작업 로그 |
 
 ### 3.2 핵심 컬럼 메모

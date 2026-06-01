@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/006-planning/daily-work-plan.md`
 > 관련 문서: `docs/006-planning/wbs.md`, `docs/001-reference/service-flow.md`, `docs/004-api/api-contract.md`
-> 버전: v0.3
-> 최종 수정: 2026-05-31
+> 버전: v0.4
+> 최종 수정: 2026-06-01
 
 본 문서는 `WBS`를 하루 단위 실행 계획으로 풀어쓴 문서다.
 작업은 월-금 기준으로 관리하며, 2026-06-26까지 배포 가능한 상태를 만들고 2026-06-29부터는 발표 준비와 치명 버그 수정만 진행한다.
@@ -34,11 +34,11 @@
 
 | 날짜 | 민정기 | 김가영 | 김진혁 | 이슬이 | 황희수 | 완료 기준 |
 |---|---|---|---|---|---|---|
-| 2026-06-01 | 워키 질문/답변 기본 엔티티와 API skeleton | admin_logs, 포인트, 뱃지 기본 엔티티 skeleton | 티켓 엔티티, 상태값, 생성/조회 API skeleton | 사용자/부서/역할 모델, 회원가입/로그인 skeleton | 프론트 프로젝트 구조, 라우팅, 공통 레이아웃 | 각 영역의 기본 서버/화면이 실행됨 |
-| 2026-06-02 | 워키 질문 등록/조회/상세 API | 관리자 기본 대시보드 조회 API skeleton | 티켓 목록/상세/내 티켓 조회 API | JWT 발급/검증, 내 정보 조회 API | 로그인, 공통 네비게이션, 권한별 메뉴 skeleton | 로그인 후 기본 화면 진입 |
-| 2026-06-03 | 워키 답변 등록/조회, 채택 API skeleton | 포인트 적립/이력 API skeleton | local RAG seed 문서 검색 skeleton | 챗봇 세션 생성/메시지 저장 API | 챗봇 화면, 메시지 UI, mock 응답 연결 | 챗봇 질문/응답 mock 흐름 확인 |
-| 2026-06-04 | FAQ 기본 조회 API, 워키 API 문서 초안 | 뱃지 조건/조회 API skeleton | 챗봇 응답 API skeleton, references 구조 초안 | 챗봇 세션별 메시지 조회 API | 워키 목록/상세/작성 화면 skeleton | 워키와 챗봇 기본 화면 확인 |
-| 2026-06-05 | 워키/FAQ 1차 smoke test, 미완료 API 정리 | 관리자/포인트/뱃지 1차 smoke test | 티켓/챗봇 1차 smoke test, API 문서 보강 | Auth/챗봇 세션 1차 smoke test | 티켓/관리자 화면 mock skeleton | Week 1 기능이 깨지지 않고 실행됨 |
+| 2026-06-01 | 워키 질문/답변 엔티티, 질문 생성/목록/상세 API 시작 | admin_logs, 포인트, 뱃지 엔티티와 관리자 큐 API 설계 | 티켓 JPA 엔티티, 생성/조회/상태/배정 API, AI 라우팅 client 경계 | 사용자/부서/역할 엔티티, 회원가입/로그인 API 시작 | Figma 정합성 점검, FE 구조, 라우팅, 공통 레이아웃, API client 준비 | 각 영역의 기본 서버/화면이 실행됨 |
+| 2026-06-02 | 워키 질문 수정/삭제 정책, 답변 등록 API | 팀 큐/공통 접수 큐 조회 API, 관리자 지표 mock | TEAM_ADMIN 팀 큐, SYSTEM_ADMIN 공통 큐, 티켓 상태 전이 검증 | JWT 발급/검증, 내 정보 조회, 비활성 사용자 차단 초안 | 로그인, 공통 네비게이션, 권한별 메뉴, 티켓 생성 화면 | 로그인 후 기본 화면 진입 |
+| 2026-06-03 | 답변 조회/채택 API, FAQ 기본 조회 API | 포인트 적립/이력 API, 뱃지 기본 조회 API | local RAG seed 검색 adapter, 챗봇 답변 API 경계 | 챗봇 세션 생성/메시지 저장/조회 API | 챗봇 화면, 메시지 UI, 티켓 전환 CTA | 챗봇 질문/응답 mock 흐름 확인 |
+| 2026-06-04 | 알림 생성/조회 API, 워키 API 문서 보강 | 지식화 후보 검수 API 초안, ESG 지표 mock API | 챗봇 no-answer 응답, 요청 티켓 초안 전환 API 경계 | 챗봇 메시지 저장 후 응답 생성 호출 경계 | 워키 목록/상세/작성, 관리자 큐 화면 skeleton | 워키와 챗봇 기본 화면 확인 |
+| 2026-06-05 | 워키/FAQ/알림 1차 smoke test, API 문서 보강 | 관리자/포인트/뱃지/ESG 1차 smoke test | 티켓/챗봇/RAG 1차 smoke test, API 문서 보강 | Auth/챗봇 세션 1차 smoke test, 보안 설정 정리 | 주요 화면 mock + API 연동 smoke test | Week 1 기능이 깨지지 않고 실행됨 |
 
 ## 3. Week 2 — 핵심 기능 구현
 
