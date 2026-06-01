@@ -1,0 +1,17 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+
+  datasource:
+    url: jdbc:mariadb://localhost:${MARIADB_PORT:3306}/${MARIADB_TEST_DATABASE:workipedia_test}
+    driver-class-name: org.mariadb.jdbc.Driver
+    username: ${MARIADB_USER:workipedia}
+    password: ${MARIADB_PASSWORD:workipedia}
+
+  jpa:
+    database-platform: org.hibernate.dialect.MariaDBDialect
+    hibernate:
+      ddl-auto: ${TEST_JPA_DDL_AUTO:validate}
+    properties:
+      hibernate:
+        format_sql: true
