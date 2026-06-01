@@ -99,7 +99,6 @@
 | `knowledge_candidates` | 처리 완료 티켓의 지식화 후보 |
 | `user_points` / `point_history` / `points_daily_limit` | 사용자 현재 포인트, 포인트 적립 이력, 일일 적립 한도 |
 | `esg_grade` | ESG 점수 기반 등급 기준 |
-| `badges` / `user_badges` | 뱃지 마스터 및 부여 |
 | `notifications` | 알림 |
 | `worki_chunks` | 워키 문장 조각 (검색·인용 단위) |
 | `worki_search_logs` | 워키 검색어와 선택한 검색 결과 로그 |
@@ -237,7 +236,6 @@
 | POST | `/tickets/{id}/knowledge-candidates` | 처리 완료 티켓 지식화 후보 등록 |
 | PATCH | `/knowledge-candidates/{id}/review` | 지식화 후보 승인/반려 |
 | GET  | `/manuals` / GET `/manuals/{id}` | 매뉴얼 조회 |
-| GET  | `/badges/me` | 내 뱃지 조회 |
 | GET  | `/esg/metrics/me` | 내 ESG 지표 조회 |
 | GET  | `/admin/dashboard` | 관리자 대시보드 데이터 |
 | DELETE | `/admin/worki/{id}` | 워키 삭제(관리자 전용) |
