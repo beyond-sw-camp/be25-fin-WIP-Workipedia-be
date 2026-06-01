@@ -3,9 +3,9 @@
 > 문서 유형: WBS
 > 상태: Draft
 > 정본 위치: `docs/006-planning/wbs.md`
-> 관련 문서: `docs/001-reference/service-flow.md`, `docs/001-reference/prd.md`, `docs/001-reference/trd.md`, `docs/002-architecture/project-structure.md`, `docs/006-planning/daily-work-plan.md`, `docs/006-planning/weekly-wbs/`, `docs/006-planning/daily-discussions/`, `docs/007-quality/harness-engineering.md`
-> 버전: v0.1
-> 최종 수정: 2026-05-28
+> 관련 문서: `docs/001-reference/service-flow.md`, `docs/001-reference/prd.md`, `docs/001-reference/trd.md`, `docs/002-architecture/project-structure.md`, `docs/006-planning/daily-work-plan.md`, `docs/006-planning/weekly-wbs/`, `docs/006-planning/daily-reports/`, `docs/006-planning/daily-discussions/`, `docs/007-quality/harness-engineering.md`
+> 버전: v0.3
+> 최종 수정: 2026-05-31
 
 ## 0. 작업 조건
 
@@ -20,13 +20,14 @@
 - 2026-06-26 금요일까지 배포 가능한 상태를 만든다.
 - 2026-06-29 월요일부터 2026-07-02 목요일까지는 발표 준비, 시연 안정화, 치명 버그 수정만 한다.
 - README는 산출물 정리용으로 유지하고, 작업 문서는 `docs/` 아래 별도 md 파일로 관리한다.
-- 팀원이 "나 오늘 뭐하면 돼?"라고 물으면 `docs/006-planning/today.md`를 먼저 확인한다.
+- 팀원이 "나 오늘 뭐하면 돼?"라고 물으면 해당 날짜의 `docs/006-planning/daily-plans/YYYY-MM-DD.md`를 먼저 확인한다.
 - 문서 담당은 `민정기`, `김진혁` 2명으로 고정한다.
 - 프론트엔드는 `황희수` 1명이 전담하므로 화면 범위는 핵심 시연 흐름 중심으로 제한하되, 알림/뱃지/ESG는 얇게라도 화면에 노출한다.
 - 백엔드는 4명이 나누되, 챗봇은 `김진혁`, `이슬이`가 경계를 명확히 나눠 병렬 개발한다.
 - RAG는 `local embedding first, mock fallback` 전략으로 간다.
 - 매주 금요일에는 다음 주 실행 WBS를 `docs/006-planning/weekly-wbs/`에 작성한다.
-- 매일 작업 종료 전에는 다음 근무일 논의사항을 `docs/006-planning/daily-discussions/`에 작성한다.
+- 매일 작업 종료 전에는 본인 daily report를 `docs/006-planning/daily-reports/YYYY-MM-DD/{member}.md`에 작성한다.
+- 팀 합의가 필요한 논의사항은 필요할 때만 `docs/006-planning/daily-discussions/`에 작성한다.
 
 ## 2. 팀 역할
 
