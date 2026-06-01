@@ -411,7 +411,7 @@ CREATE TABLE esg_grade (
     grade_name VARCHAR(20) NOT NULL,
     min_score BIGINT NOT NULL,
     max_score BIGINT NULL,
-    badge_image_url VARCHAR(500) NULL,
+    grade_image_url VARCHAR(500) NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
@@ -468,8 +468,7 @@ CREATE TABLE notifications (
             'TICKET_STATUS_CHANGED',
             'TICKET_TRANSFER_REQUESTED',
             'COMMON_QUEUE_ASSIGNED',
-            'POINT_EARNED',
-            'BADGE_EARNED'
+            'POINT_EARNED'
         ))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -624,38 +623,6 @@ CREATE TABLE worki_search_logs (
         CHECK (selected_target_type IS NULL OR selected_target_type IN ('QUESTION', 'ANSWER'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE badges (
-    badge_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(50) NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    description VARCHAR(255) NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at DATETIME NULL,
-    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
-    CONSTRAINT uk_badges_code UNIQUE (code),
-    CONSTRAINT ck_badges_code
-        CHECK (code IN ('FIRST_QUESTION', 'FIRST_ACCEPTED_ANSWER', 'ANSWER_HELPER'))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE user_badges (
-    user_badge_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    badge_id BIGINT NOT NULL,
-    earned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at DATETIME NULL,
-    is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
-    CONSTRAINT fk_user_badges_user
-        FOREIGN KEY (user_id)
-        REFERENCES users (user_id),
-    CONSTRAINT fk_user_badges_badge
-        FOREIGN KEY (badge_id)
-        REFERENCES badges (badge_id),
-    CONSTRAINT uk_user_badges_user_badge UNIQUE (user_id, badge_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 CREATE INDEX idx_department_category_mappings_category_id ON department_category_mappings (category_id);
 CREATE INDEX idx_users_department_id ON users (department_id);
 CREATE INDEX idx_users_role ON users (role);
@@ -702,4 +669,3 @@ CREATE INDEX idx_worki_chunks_question_id ON worki_chunks (question_id);
 CREATE INDEX idx_worki_chunks_answer_id ON worki_chunks (answer_id);
 CREATE INDEX idx_worki_search_logs_user_id ON worki_search_logs (user_id);
 CREATE INDEX idx_worki_search_logs_selected_target ON worki_search_logs (selected_target_type, selected_target_id);
-CREATE INDEX idx_user_badges_user_id ON user_badges (user_id);
