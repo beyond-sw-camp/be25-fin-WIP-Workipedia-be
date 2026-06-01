@@ -1,29 +1,24 @@
 package com.wip.workipedia.common.exception;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 
+@Getter
+@RequiredArgsConstructor
 public enum ErrorType {
 
-	BAD_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
-	UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증되지 않은 사용자입니다."),
-	FORBIDDEN(HttpStatus.FORBIDDEN, "권한이 없습니다."),
-	NOT_FOUND(HttpStatus.NOT_FOUND, "리소스를 찾을 수 없습니다."),
-	CONFLICT(HttpStatus.CONFLICT, "요청이 현재 상태와 충돌합니다."),
-	INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.");
+	BAD_REQUEST("bad_request", "잘못된 요청입니다.", HttpStatus.BAD_REQUEST),
+	UNAUTHORIZED("unauthorized", "인증되지 않은 사용자입니다.", HttpStatus.UNAUTHORIZED),
+	FORBIDDEN("forbidden", "권한이 없습니다.", HttpStatus.FORBIDDEN),
+	NOT_FOUND("not_found", "리소스를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+	CONFLICT("conflict", "요청이 현재 상태와 충돌합니다.", HttpStatus.CONFLICT),
+	INTERNAL_ERROR("internal_error", "서버 내부 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
 
-	private final HttpStatus httpStatus;
+	// ticket
+	TICKET_NOT_FOUND("ticket-001", "티켓을 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+
+	private final String status;
 	private final String message;
-
-	ErrorType(HttpStatus httpStatus, String message) {
-		this.httpStatus = httpStatus;
-		this.message = message;
-	}
-
-	public HttpStatus getHttpStatus() {
-		return httpStatus;
-	}
-
-	public String getMessage() {
-		return message;
-	}
+	private final HttpStatus httpStatus;
 }

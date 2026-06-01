@@ -222,6 +222,7 @@ $RECYCLE.BIN/
 ### Gradle / build outputs ###
 .gradle/
 build/
+.env
 *.msix
 *.msm
 *.msp
