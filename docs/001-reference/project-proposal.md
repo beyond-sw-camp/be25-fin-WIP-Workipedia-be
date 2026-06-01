@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/001-reference/project-proposal.md`
 > 관련 문서: `docs/001-reference/constitution.md`, `docs/001-reference/service-flow.md`, `docs/001-reference/prd.md`, `docs/006-planning/wbs.md`, `docs/006-planning/daily-work-plan.md`
-> 버전: v0.1
-> 최종 수정: 2026-05-28
+> 버전: v0.2
+> 최종 수정: 2026-06-01
 
 ---
 
@@ -240,7 +240,7 @@ Workipedia의 기획 의도는 다음 세 가지다.
 
 | 이름 | 역할 |
 |---|---|
-| 민정기 | 워키 게시판, FAQ, 알림, 문서 정리 |
+| 민정기 | 워키 게시판, FAQ, 알림, Elasticsearch, 문서 정리 |
 | 김가영 | 관리자 대시보드, 포인트, 뱃지, ESG 지표 |
 | 김진혁 | 티켓, 자동 배정, 챗봇 응답/RAG, 문서 정리 |
 | 이슬이 | Auth, 챗봇 세션/메시지, 보안 흐름 |

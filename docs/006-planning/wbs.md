@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/006-planning/wbs.md`
 > 관련 문서: `docs/001-reference/service-flow.md`, `docs/001-reference/prd.md`, `docs/001-reference/trd.md`, `docs/002-architecture/project-structure.md`, `docs/006-planning/daily-work-plan.md`, `docs/006-planning/weekly-wbs/`, `docs/006-planning/daily-reports/`, `docs/006-planning/daily-discussions/`, `docs/007-quality/harness-engineering.md`
-> 버전: v0.3
-> 최종 수정: 2026-05-31
+> 버전: v0.4
+> 최종 수정: 2026-06-01
 
 ## 0. 작업 조건
 
@@ -33,7 +33,7 @@
 
 | 이름 | 구분 | 주 책임 | 보조 책임 |
 |---|---|---|---|
-| 민정기 | 백엔드 + 문서 | 워키 게시판, FAQ, 알림 | 문서 정리, API 문서 |
+| 민정기 | 백엔드 + 문서 | 워키 게시판, FAQ, 알림, Elasticsearch | 문서 정리, API 문서 |
 | 김가영 | 백엔드 | 관리자 대시보드, 포인트, 뱃지, ESG 지표 | admin_logs, 운영 지표 |
 | 김진혁 | 백엔드 + 문서 | 티켓, TEAM_ADMIN 이관 요청, 챗봇 응답/RAG 흐름 | 문서 정리, 하네스 보조 |
 | 이슬이 | 백엔드 | Auth, 챗봇 세션/메시지 | Security, 사용자 인증 흐름 |
@@ -48,6 +48,7 @@
 | 워키 게시판 | 민정기 | 질문, 답변, 채택, 반응, 삭제 정책 |
 | FAQ | 민정기 | 인기 매뉴얼/워키 조회, 메인 요약 데이터 |
 | 알림 | 민정기 | 답변/채택/티켓 상태 변경 알림, SSE 기반 실시간 알림, 폴링 fallback |
+| Elasticsearch | 민정기 | Vector Store 구성, 매뉴얼/워키 chunk 인덱싱, kNN 유사도 검색 adapter |
 | 티켓 | 김진혁 | 요청 티켓 생성, 자동 배정/공통 접수 큐, TEAM_ADMIN 이관 요청, 팀원 배정, 상태 전이, 공식 답변 |
 | 지식화 | 김진혁, 김가영 | 처리 완료 티켓의 지식화 후보 등록, TEAM_ADMIN 검수, 워키 반영 |
 | 관리자 대시보드 | 김가영 | TEAM_ADMIN 팀 큐, SYSTEM_ADMIN 공통 접수 큐/운영 지표, admin_logs |
@@ -138,14 +139,14 @@
 
 | ID | 작업 | 담당 | 산출물 | 완료 기준 |
 |---|---|---|---|---|
-| W1-01 | Auth skeleton | 이슬이 | auth API | 회원가입/로그인/JWT 기본 동작 |
-| W1-02 | 챗봇 세션/메시지 skeleton | 이슬이 | chatbot session API | 세션 생성/메시지 저장 |
-| W1-03 | local RAG skeleton | 김진혁 | chatbot answer API | seed 문서 기반 검색/응답 골격 |
-| W1-04 | 티켓 skeleton | 김진혁 | ticket API | 티켓 생성/조회 기본 동작 |
-| W1-05 | 워키 질문/답변 skeleton | 민정기 | worki API | 질문/답변/채택 기본 동작 |
-| W1-06 | 관리자/포인트/뱃지 skeleton | 김가영 | admin/point/badge API | 관리자 지표와 보상 기본 구조 |
-| W1-07 | 프론트 skeleton | 황희수 | frontend app | 라우팅/레이아웃/로그인/챗봇 mock 화면 |
-| W1-08 | 문서/API 초안 | 민정기, 김진혁 | docs 문서 | 기능별 API 목록 초안 |
+| W1-01 | Auth/JWT 1차 구현 | 이슬이 | auth API | 회원가입/로그인/JWT 발급·검증/내 정보 동작 |
+| W1-02 | 챗봇 세션/메시지 API 구현 | 이슬이 | chatbot session API | 세션 생성/메시지 저장/조회 가능 |
+| W1-03 | local RAG 경계 구현 | 김진혁 | chatbot answer API | seed 검색 adapter와 출처 구조 초안 반환 |
+| W1-04 | 티켓 JPA API 구현 | 김진혁 | ticket API | 티켓 생성/조회/상태/배정이 DB 기준으로 동작 |
+| W1-05 | 워키/FAQ/알림 1차 API 구현 | 민정기 | worki API | 질문 CRUD, 답변/채택, FAQ 조회, 알림 생성 동작 |
+| W1-06 | 관리자/보상/ESG 1차 API 구현 | 김가영 | admin/point/badge API | 팀 큐/공통 큐/포인트/뱃지/ESG 기본 조회 동작 |
+| W1-07 | 프론트 skeleton + API 연동 준비 | 황희수 | frontend app | 라우팅/주요 화면/API client 구조 확인 가능 |
+| W1-08 | API 계약 1차 정리 | 민정기, 김진혁 | docs 문서 | 프론트 연동용 request/response 예시 반영 |
 
 ### Week 2: 2026-06-08 ~ 2026-06-12
 

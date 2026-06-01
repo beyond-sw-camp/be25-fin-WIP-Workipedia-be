@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/001-reference/prd.md`
 > 관련 문서: `docs/001-reference/constitution.md`, `docs/001-reference/service-flow.md`, `docs/001-reference/trd.md`
-> 버전: v0.1
-> 최종 수정: 2026-05-28
+> 버전: v0.2
+> 최종 수정: 2026-06-01
 
 ---
 
@@ -106,9 +106,9 @@ Workipedia는 사내 구성원이 회사 규정·매뉴얼·동료의 경험 지
 | TICKET_006 | TEAM_ADMIN은 자기 팀 티켓 확인 및 팀원 배정 | 상 |
 | TICKET_007 | 담당 팀원은 요청 처리 결과를 작성하고 처리 완료 | 상 |
 | TICKET_008 | 처리 완료 티켓은 지식화 후보 등록 가능 | 상 |
-| TICKET_009 | TEAM_ADMIN만 티켓 이관을 요청할 수 있음 | 중 |
-| TICKET_010 | 이관 요청된 티켓은 다른 부서로 직접 이동하지 않고 공통 접수 큐로 이동 | 중 |
-| TICKET_011 | SYSTEM_ADMIN은 공통 접수 큐의 이관 티켓을 확인하고 담당 부서로 재배정 | 중 |
+| TICKET_009 | TEAM_ADMIN만 티켓 이관을 요청할 수 있음 | 상 |
+| TICKET_010 | 이관 요청된 티켓은 다른 부서로 직접 이동하지 않고 공통 접수 큐로 이동 | 상 |
+| TICKET_011 | SYSTEM_ADMIN은 공통 접수 큐의 이관 티켓을 확인하고 담당 부서로 재배정 | 상 |
 | - | 담당 부서가 답변 시 답변자 닉네임 + 부서명 함께 노출 | 상 |
 
 ### 4.6 지식화 (KNOWLEDGE)
