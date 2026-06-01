@@ -581,6 +581,8 @@ Response:
   "knowledgeShareCount": 12,
   "acceptedAnswerCount": 4,
   "estimatedSavedMinutes": 60,
+  "esgScore": 320,
+  "gradeName": "SILVER",
   "sourceBackedAnswerRate": 0.85,
   "ticketCompletionRate": 0.72
 }

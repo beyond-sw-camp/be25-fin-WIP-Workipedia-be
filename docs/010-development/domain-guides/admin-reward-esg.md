@@ -31,12 +31,15 @@
 
 ## API/DB 영향
 
-- `points`
+- `user_points`
+- `point_history`
+- `points_daily_limit`
+- `esg_grade`
 - `badges`
 - `user_badges`
 - `admin_logs`
 - dashboard summary APIs
-- ESG metric APIs
+- ESG grade/score APIs
 
 ## 권한/보안 체크
 
