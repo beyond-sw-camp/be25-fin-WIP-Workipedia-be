@@ -522,7 +522,6 @@ Response:
 |---|---|---|---|
 | GET | `/points/me` | 내 포인트 | 필요 |
 | GET | `/points/me/history` | 내 포인트 이력 | 필요 |
-| GET | `/points/ranking` | 포인트 랭킹 | 필요 |
 
 ## 11. Badge API
 
@@ -558,7 +557,10 @@ Response:
   "acceptedAnswerCount": 4,
   "estimatedSavedMinutes": 60,
   "sourceBackedAnswerRate": 0.85,
-  "ticketCompletionRate": 0.72
+  "ticketCompletionRate": 0.72,
+  "knowledgeConversionRate": 0.35,
+  "autoAssignmentSuccessRate": 0.82,
+  "esgRank": 3
 }
 ```
 

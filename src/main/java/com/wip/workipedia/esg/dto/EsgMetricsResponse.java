@@ -7,6 +7,7 @@ public record EsgMetricsResponse(
 	double sourceBackedAnswerRate,
 	double ticketCompletionRate,
 	double knowledgeConversionRate,
-	double autoAssignmentSuccessRate // 자동 배정 성공률
+	double autoAssignmentSuccessRate, // 자동 배정 성공률
+	int esgRank
 ) {
 }

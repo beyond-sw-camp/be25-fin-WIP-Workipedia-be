@@ -7,10 +7,10 @@ import org.springframework.stereotype.Service;
 public class EsgMetricsService {
 
 	public EsgMetricsResponse getMyMetrics() {
-		return new EsgMetricsResponse(12, 4, 60, 0.85, 0.72, 0.35, 0.82);
+		return new EsgMetricsResponse(0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0);
 	}
 
 	public EsgMetricsResponse getAdminMetrics() {
-		return new EsgMetricsResponse(58, 21, 420, 0.78, 0.74, 0.41, 0.80);
+		return new EsgMetricsResponse(0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0);
 	}
 }

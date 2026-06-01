@@ -3,7 +3,6 @@ package com.wip.workipedia.point.controller;
 import com.wip.workipedia.common.response.ApiResponse;
 import com.wip.workipedia.point.dto.MyPointResponse;
 import com.wip.workipedia.point.dto.PointHistoryResponse;
-import com.wip.workipedia.point.dto.PointRankingResponse;
 import com.wip.workipedia.point.service.PointService;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -32,8 +31,4 @@ public class PointController {
 		return ApiResponse.success(HttpStatus.OK, "내 포인트 이력 조회 성공", pointService.getMyPointHistory());
 	}
 
-	@GetMapping("/ranking")
-	public ResponseEntity<ApiResponse<List<PointRankingResponse>>> getRanking() {
-		return ApiResponse.success(HttpStatus.OK, "포인트 랭킹 조회 성공", pointService.getRanking());
-	}
 }
