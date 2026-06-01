@@ -50,7 +50,7 @@ Authorization: Bearer <accessToken>
 | 필드 | 타입 | 설명 |
 |---|---|---|
 | `code` | Int | HTTP 상태 코드. 예: `200`, `201`, `400`, `401`, `500` |
-| `status` | String | HTTP 상태 이름 또는 에러 타입. 예: `OK`, `CREATED`, `BAD_REQUEST` |
+| `status` | String | 성공 시 HTTP 상태 이름, 실패 시 비즈니스 에러 코드. 예: `OK`, `CREATED`, `bad_request`, `ticket-001` |
 | `message` | String | 응답 메시지 |
 | `data` | Object / Array / null | 실제 응답 데이터. 단건은 객체, 목록은 배열 또는 페이지 객체, 응답 데이터가 없으면 `null` |
 
@@ -82,9 +82,9 @@ Authorization: Bearer <accessToken>
 
 ```json
 {
-  "code": 500,
-  "status": "INTERNAL_SERVER_ERROR",
-  "message": "서버 내부 오류가 발생했습니다.",
+  "code": 404,
+  "status": "ticket-001",
+  "message": "티켓을 찾을 수 없습니다.",
   "data": null
 }
 ```
@@ -96,6 +96,10 @@ Authorization: Bearer <accessToken>
 - 목록 조회에서 페이징이 필요하면 `data.content`, `data.pageInfo` 구조를 사용한다.
 - 에러 응답의 `data`는 기본적으로 `null`로 둔다.
 - HTTP status code와 Body의 `code` 값은 같은 값을 사용한다.
+- 성공 응답의 `status`는 `HttpStatus.name()` 값을 사용한다. 예: `OK`, `CREATED`
+- 실패 응답의 `status`는 `ErrorType.status`에 정의한 비즈니스 에러 코드를 사용한다.
+- 공통 에러 코드는 `bad_request`, `unauthorized`, `forbidden`, `not_found`, `conflict`, `internal_error`를 사용한다.
+- 도메인 에러 코드는 `{domain}-{number}` 형식을 사용한다. 예: `auth-001`, `ticket-001`, `worki-001`
 
 ### 2.4 페이지 응답
 
@@ -528,10 +532,11 @@ Response:
 | Method | Path | 설명 | 인증 |
 |---|---|---|---|
 | GET | `/notifications` | 알림 목록 | 필요 |
-| GET | `/notifications/stream` | 실시간 알림 스트림(SSE 우선) | 필요 |
 | PATCH | `/notifications/{notificationId}/read` | 개별 읽음 | 필요 |
 | PATCH | `/notifications/read-all` | 모두 읽음 | 필요 |
 | DELETE | `/notifications/{notificationId}` | 알림 삭제 | 필요 |
+
+> Phase 2: `GET /notifications/stream` (SSE 실시간 알림) — MVP는 DB 저장 + 조회 API 기반으로 시작 (ADR 007)
 
 ## 10. Point API
 
