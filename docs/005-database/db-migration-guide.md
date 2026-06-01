@@ -115,7 +115,6 @@ deleted_at DATETIME NULL
 | `RECEIVED` | 접수 완료 |
 | `COMMON_QUEUE` | 공통 접수 큐 대기 |
 | `ASSIGNED` | 담당 부서 배정 |
-| `IN_PROGRESS` | 담당자 처리 중 |
 | `COMPLETED` | 처리 완료 |
 | `REJECTED` | 반려 |
 | `DELETED` | 삭제 처리 |
@@ -164,12 +163,11 @@ deleted_at DATETIME NULL
 | 값 | 의미 |
 |---|---|
 | `USER_DEACTIVATE` | 사용자 비활성화 |
-| `WORKI_READ` | 관리자 워키 조회 |
 | `WORKI_UPDATE` | 관리자 워키 수정 |
 | `WORKI_DELETE` | 관리자 워키 삭제 |
+| `MANUAL_CREATE` | 매뉴얼 생성 |
 | `MANUAL_UPDATE` | 매뉴얼 수정 |
 | `MANUAL_DELETE` | 매뉴얼 삭제 |
-| `TICKET_ASSIGN` | 팀원 담당자 배정 |
 | `TICKET_TRANSFER_REQUEST` | TEAM_ADMIN의 티켓 이관 요청 |
 | `TICKET_ROUTE_OVERRIDE` | 자동 라우팅 결과 수동 변경 |
 | `COMMON_QUEUE_ASSIGN` | 공통 접수 큐 티켓 부서 배정 |
