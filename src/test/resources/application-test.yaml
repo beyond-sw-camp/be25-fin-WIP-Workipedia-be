@@ -8,6 +8,9 @@ spring:
     username: ${MARIADB_USER:workipedia}
     password: ${MARIADB_PASSWORD:workipedia}
 
+  flyway:
+    validate-on-migrate: false
+
   jpa:
     database-platform: org.hibernate.dialect.MariaDBDialect
     hibernate:
