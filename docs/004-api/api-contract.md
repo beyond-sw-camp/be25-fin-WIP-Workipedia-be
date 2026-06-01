@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/004-api/api-contract.md`
 > 관련 문서: `docs/001-reference/prd.md`, `docs/001-reference/trd.md`, `docs/006-planning/wbs.md`
-> 버전: v0.1
-> 최종 수정: 2026-05-28
+> 버전: v0.2
+> 최종 수정: 2026-05-31
 
 ## 1. 목적
 
@@ -17,30 +17,63 @@
 
 ### 2.1 Base URL
 
-| 환경 | Base URL |
-|---|---|
-| local | `http://localhost:8080/api` |
-| dev/staging | 미정 |
-| production | 미정 |
+| 환경 | Base URL                       |
+|---|--------------------------------|
+| local | `http://localhost:8080/api/v1` |
+| dev/staging | 미정                             |
+| production | 미정                             |
 
 ### 2.2 인증
+
+우리 서비스는 JWT(JSON Web Token) 기반 인증 방식을 사용한다.
 
 ```http
 Authorization: Bearer <accessToken>
 ```
 
-Access Token 저장 방식은 프론트/백엔드 협의 후 확정한다.
+#### 로그인 인증 흐름
+
+1. 사용자는 사번과 비밀번호를 입력하여 로그인한다.
+2. 서버는 사용자 정보를 검증한 후 JWT 토큰을 발급한다.
+3. 인증 성공 시 `Access Token`은 Response Body를 통해 반환된다.
+4. 인증 성공 시 `Refresh Token`은 쿠키(Set-Cookie)를 통해 발급된다.
+5. 서버는 발급한 `Refresh Token`을 Redis에 저장하여 관리한다.
+6. 클라이언트는 로그인 응답 Body에서 `Access Token`을 받아 저장한다.
+7. 이후 인증이 필요한 API를 호출할 때마다 `Authorization` 헤더에 `Access Token`을 포함하여 요청한다.
+8. 서버는 전달받은 `Access Token`을 검증한 후 사용자 인증 및 권한 검사를 수행한다.
 
 ### 2.3 공통 응답
 
-성공:
+모든 API 응답 Body는 공통 응답 객체로 감싼다.
+개별 API 명세의 `Response` 예시가 도메인 필드만 보여주는 경우에도 실제 응답에서는 아래 공통 응답의 `data` 안에 들어간다.
+
+| 필드 | 타입 | 설명 |
+|---|---|---|
+| `code` | Int | HTTP 상태 코드. 예: `200`, `201`, `400`, `401`, `500` |
+| `status` | String | HTTP 상태 이름 또는 에러 타입. 예: `OK`, `CREATED`, `BAD_REQUEST` |
+| `message` | String | 응답 메시지 |
+| `data` | Object / Array / null | 실제 응답 데이터. 단건은 객체, 목록은 배열 또는 페이지 객체, 응답 데이터가 없으면 `null` |
+
+성공 응답:
 
 ```json
 {
-  "data": {},
-  "error": null,
-  "meta": {
-    "timestamp": "2026-05-28T10:00:00"
+  "code": 200,
+  "status": "OK",
+  "message": "조회 성공",
+  "data": {}
+}
+```
+
+생성 성공 응답:
+
+```json
+{
+  "code": 201,
+  "status": "CREATED",
+  "message": "생성 완료",
+  "data": {
+    "id": 1
   }
 }
 ```
@@ -49,31 +82,40 @@ Access Token 저장 방식은 프론트/백엔드 협의 후 확정한다.
 
 ```json
 {
-  "data": null,
-  "error": {
-    "code": "AUTH_INVALID_CREDENTIALS",
-    "message": "로그인 정보가 올바르지 않습니다."
-  },
-  "meta": {
-    "timestamp": "2026-05-28T10:00:00"
-  }
+  "code": 500,
+  "status": "INTERNAL_SERVER_ERROR",
+  "message": "서버 내부 오류가 발생했습니다.",
+  "data": null
 }
 ```
+
+구현 기준:
+
+- Spring Controller는 `ApiResponse<T>` 형태로 응답한다.
+- `data`는 배열로 고정하지 않고 제네릭으로 둔다.
+- 목록 조회에서 페이징이 필요하면 `data.content`, `data.pageInfo` 구조를 사용한다.
+- 에러 응답의 `data`는 기본적으로 `null`로 둔다.
+- HTTP status code와 Body의 `code` 값은 같은 값을 사용한다.
 
 ### 2.4 페이지 응답
 
 ```json
 {
+  "code": 200,
+  "status": "OK",
+  "message": "성공",
   "data": {
-    "items": [],
-    "page": 0,
-    "size": 20,
-    "totalElements": 0,
-    "totalPages": 0
-  },
-  "error": null,
-  "meta": {
-    "timestamp": "2026-05-28T10:00:00"
+    "content": [
+      {}
+    ],
+    "pageInfo": {
+      "page": 1,
+      "size": 10,
+      "totalElements": 0,
+      "totalPages": 0,
+      "hasNext": false,
+      "hasPrevious": false
+    }
   }
 }
 ```
@@ -103,7 +145,8 @@ Access Token 저장 방식은 프론트/백엔드 협의 후 확정한다.
 |---|---|---|---|
 | POST | `/auth/signup` | 회원가입 | 불필요 |
 | POST | `/auth/login` | 로그인 | 불필요 |
-| POST | `/auth/logout` | 로그아웃 | 필요 |
+| POST | `/auth/token/refresh` | Access Token 재발급 | Refresh Cookie 필요 |
+| POST | `/auth/logout` | 로그아웃 | Access Token 또는 Refresh Cookie 필요 |
 | GET | `/me` | 내 정보 | 필요 |
 
 ### POST `/auth/signup`
@@ -123,10 +166,15 @@ Response:
 
 ```json
 {
-  "userId": 1,
-  "employeeId": "20260001",
-  "nickname": "노잇1234",
-  "role": "USER"
+  "code": 201,
+  "status": "CREATED",
+  "message": "회원가입 완료",
+  "data": {
+    "userId": 123,
+    "role": "USER",
+    "nickname": "눈물흘리는데이지",
+    "status": "ACTIVE"
+  }
 }
 ```
 
@@ -145,15 +193,24 @@ Response:
 
 ```json
 {
-  "accessToken": "jwt-access-token",
-  "refreshToken": "jwt-refresh-token",
-  "user": {
-    "userId": 1,
-    "nickname": "노잇1234",
+  "code": 200,
+  "status": "OK",
+  "message": "로그인 성공",
+  "data": {
+    "accessToken": "jwt-access-token",
+    "userId": 123,
+    "departmentId": 1,
     "role": "USER",
-    "departmentId": 1
+    "nickname": "눈물흘리는데이지",
+    "status": "ACTIVE"
   }
 }
+```
+
+Response Header:
+
+```http
+Set-Cookie: refreshToken=jwt-refresh-token; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth
 ```
 
 ## 5. Chatbot API
@@ -548,8 +605,8 @@ Response:
 
 | 항목 | 상태 | 결정 필요자 |
 |---|---|---|
-| Access/Refresh Token 저장 위치 | 미정 | 이슬이, 황희수 |
-| refresh token API | 미정 | 이슬이 |
+| Refresh Token 저장소 | Redis | 이슬이 |
+| refresh token API | /auth/token/refresh | 이슬이 |
 | SYSTEM_ADMIN 담당 조직 | 기본: 경영지원팀, 회사별 조정 가능 | 김가영, 팀 전체 |
 | 티켓 자동 배정 점수 가중치 | 초안 확정 | 김진혁 |
 | 로컬 임베딩 모델 | 미정 | 김진혁, 팀 전체 |

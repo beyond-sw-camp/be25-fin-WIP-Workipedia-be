@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/001-reference/constitution.md`
 > 관련 문서: `docs/001-reference/document-guide.md`
-> 버전: v0.1
-> 최종 수정: 2026-05-28
+> 버전: v0.2
+> 최종 수정: 2026-05-31
 
 ---
 
@@ -72,7 +72,7 @@ Workipedia는 **사내 구성원이 신뢰할 수 있는 지식에 가장 빠르
 - Vector Store는 검색 인덱스일 뿐 정본이 아니다. 손실되어도 정본에서 재구축 가능해야 한다.
 
 ### T2. RAG의 모든 답변은 추적 가능해야 한다
-- 챗봇 응답은 어떤 chunk를 참조했는지 `chatbot_messages.references`에 JSON으로 남긴다.
+- 챗봇 응답은 어떤 chunk를 참조했는지 `chatbot_messages.references_json`에 JSON으로 남긴다.
 - 사후 감사·디버깅·품질 개선에 활용된다.
 
 ### T3. 변경은 마이그레이션과 함께 한다
