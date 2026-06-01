@@ -333,11 +333,9 @@ Response:
 | GET | `/tickets` | 티켓 목록 | 필요 |
 | GET | `/tickets/{ticketId}` | 티켓 상세 | 필요 |
 | PATCH | `/tickets/{ticketId}/status` | 티켓 상태 변경 | 필요 |
-| PATCH | `/tickets/{ticketId}/assignee` | 팀원 담당자 배정 | TEAM_ADMIN |
 | POST | `/tickets/{ticketId}/transfer-requests` | TEAM_ADMIN 티켓 이관 요청 | TEAM_ADMIN |
-| POST | `/tickets/{ticketId}/answers` | 담당 부서 공식 답변 | 필요 |
-| POST | `/tickets/{ticketId}/knowledge-candidates` | 처리 완료 티켓 지식화 후보 등록 | 필요 |
-| PATCH | `/knowledge-candidates/{candidateId}/review` | 지식화 후보 승인/반려 | TEAM_ADMIN |
+| POST | `/tickets/{ticketId}/answers` | 담당 부서 공식 답변 및 처리 완료 | 필요 |
+| PATCH | `/admin/team/knowledge-review-tickets/{ticketId}/review` | 처리 완료 티켓 지식화 여부 선택 | TEAM_ADMIN |
 
 ### POST `/tickets`
 
@@ -397,14 +395,13 @@ Response:
 }
 ```
 
-### PATCH `/tickets/{ticketId}/assignee`
+### POST `/tickets/{ticketId}/answers`
 
 Request:
 
 ```json
 {
-  "assigneeId": 12,
-  "memo": "VPN 계정 확인 후 처리 부탁드립니다."
+  "content": "VPN 계정 상태를 확인했고 보안 프로그램 재실행 후 정상 접속 가능합니다."
 }
 ```
 
@@ -413,11 +410,16 @@ Response:
 ```json
 {
   "ticketId": 1,
-  "status": "IN_PROGRESS",
-  "assigneeId": 12,
-  "assigneeNickname": "노잇4821"
+  "ticketAnswerId": 1,
+  "status": "COMPLETED",
+  "completedById": 12,
+  "completedByNickname": "노잇4821",
+  "knowledgeCandidateId": 1,
+  "knowledgeCandidateStatus": "REVIEW_REQUESTED"
 }
 ```
+
+최초 공식 답변을 등록한 사용자가 티켓 처리자로 기록된다. 공식 답변 등록 시 티켓은 `COMPLETED`가 되고 지식화 검수 후보가 자동 생성된다.
 
 ### POST `/tickets/{ticketId}/transfer-requests`
 
@@ -469,28 +471,7 @@ Response:
 }
 ```
 
-### POST `/tickets/{ticketId}/knowledge-candidates`
-
-Request:
-
-```json
-{
-  "draftTitle": "VPN 접속 오류 처리 절차",
-  "draftContent": "VPN 접속 오류가 발생하면 계정 상태와 보안 프로그램 실행 여부를 먼저 확인한 뒤 IT지원팀에 요청합니다."
-}
-```
-
-Response:
-
-```json
-{
-  "candidateId": 1,
-  "ticketId": 1,
-  "status": "REVIEW_REQUESTED"
-}
-```
-
-### PATCH `/knowledge-candidates/{candidateId}/review`
+### PATCH `/admin/team/knowledge-review-tickets/{ticketId}/review`
 
 Request:
 
@@ -505,8 +486,8 @@ Response:
 
 ```json
 {
-  "candidateId": 1,
-  "status": "PUBLISHED",
+  "ticketId": 1,
+  "knowledgeReviewStatus": "PUBLISHED",
   "publishedWorkiQuestionId": 30
 }
 ```
@@ -541,7 +522,6 @@ Response:
 |---|---|---|---|
 | GET | `/points/me` | 내 포인트 | 필요 |
 | GET | `/points/me/history` | 내 포인트 이력 | 필요 |
-| GET | `/points/ranking` | 포인트 랭킹 | 필요 |
 
 ## 11. Badge API
 
@@ -577,7 +557,10 @@ Response:
   "acceptedAnswerCount": 4,
   "estimatedSavedMinutes": 60,
   "sourceBackedAnswerRate": 0.85,
-  "ticketCompletionRate": 0.72
+  "ticketCompletionRate": 0.72,
+  "knowledgeConversionRate": 0.35,
+  "autoAssignmentSuccessRate": 0.82,
+  "esgRank": 3
 }
 ```
 
@@ -588,7 +571,7 @@ Response:
 | Method | Path | 설명 | 인증 |
 |---|---|---|---|
 | GET | `/admin/team/tickets` | 자기 팀 티켓 큐 | TEAM_ADMIN |
-| GET | `/admin/team/knowledge-candidates` | 자기 팀 지식화 후보 목록 | TEAM_ADMIN |
+| GET | `/admin/team/knowledge-review-tickets` | 자기 팀 처리 완료 티켓의 지식화 검토 목록 | TEAM_ADMIN |
 | GET | `/admin/dashboard` | 운영 대시보드 | SYSTEM_ADMIN |
 | GET | `/admin/common-queue/tickets` | 공통 접수 큐 | SYSTEM_ADMIN |
 | PATCH | `/admin/common-queue/tickets/{ticketId}/department` | 공통 접수 큐 티켓 부서 배정 | SYSTEM_ADMIN |

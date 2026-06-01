@@ -92,7 +92,6 @@
 | `chatbot_messages` | 챗봇 메시지(질문/답변 단위) |
 | `tickets` | 부서 배정 티켓 |
 | `ticket_transfer_requests` | 티켓 이관 요청 및 처리 이력 |
-| `ticket_assignments` | 티켓 담당자 배정 이력 |
 | `ticket_routing_logs` | 자동 배정 점수와 근거 |
 | `knowledge_candidates` | 처리 완료 티켓의 지식화 후보 |
 | `points` / `point_history` | 포인트 적립 이력 |
@@ -129,19 +128,12 @@
 - `source_chatbot_message_id` FK → chatbot_messages NULL 허용
 - `category_id` FK → categories NULL 허용
 - `title`, `content`
-- `assignee_id` FK → users NULL 허용 (TEAM_ADMIN이 담당 팀원 배정)
+- `completed_by` FK → users NULL 허용 (최초 공식 답변 등록자)
 - `assigned_department_id` FK → departments NULL 허용
 - `routing_confidence_score` DECIMAL(5,2)
 - `routing_decision` (AUTO_ASSIGNED / ADMIN_REVIEW / COMMON_QUEUE / NEED_MORE_INFO)
-- `status` (RECEIVED / COMMON_QUEUE / ASSIGNED / IN_PROGRESS / COMPLETED / REJECTED / DELETED)
+- `status` (RECEIVED / COMMON_QUEUE / ASSIGNED / COMPLETED / REJECTED / DELETED)
 - `completed_at`, 시간컬럼
-
-#### ticket_assignments
-- `assignment_id` PK
-- `ticket_id` FK → tickets
-- `assignee_id` FK → users
-- `assigned_by` FK → users (TEAM_ADMIN 또는 SYSTEM_ADMIN)
-- `assigned_at`, `memo`
 
 #### ticket_routing_logs
 - `routing_log_id` PK
@@ -191,7 +183,7 @@
 
 #### admin_logs
 - `admin_log_id` PK, `user_id` (관리자) FK
-- `action_type` CHECK IN ('USER_DEACTIVATE','WORKI_READ','WORKI_UPDATE','WORKI_DELETE','MANUAL_UPDATE','MANUAL_DELETE','TICKET_ASSIGN','TICKET_TRANSFER_REQUEST','TICKET_ROUTE_OVERRIDE','COMMON_QUEUE_ASSIGN','KNOWLEDGE_REVIEW','KNOWLEDGE_PUBLISH', ...)
+- `action_type` CHECK IN ('USER_DEACTIVATE','WORKI_UPDATE','WORKI_DELETE','MANUAL_CREATE','MANUAL_UPDATE','MANUAL_DELETE','TICKET_TRANSFER_REQUEST','TICKET_ROUTE_OVERRIDE','COMMON_QUEUE_ASSIGN','KNOWLEDGE_REVIEW','KNOWLEDGE_PUBLISH', ...)
 - `action_detail` TEXT, `created_at`
 
 > 상세 컬럼·제약은 별도 `테이블_명세서`를 정본으로 한다.
@@ -226,10 +218,9 @@
 | GET  | `/tickets` | 티켓 목록 (본인/부서) |
 | POST | `/tickets` | 요청 티켓 생성 |
 | PATCH | `/tickets/{id}/status` | 상태 변경 |
-| PATCH | `/tickets/{id}/assignee` | 팀원 담당자 배정 |
 | POST | `/tickets/{id}/transfer-requests` | TEAM_ADMIN 티켓 이관 요청 |
 | PATCH | `/admin/common-queue/tickets/{id}/department` | SYSTEM_ADMIN 공통 접수 큐 티켓 부서 재배정 |
-| POST | `/tickets/{id}/knowledge-candidates` | 처리 완료 티켓 지식화 후보 등록 |
+| POST | `/tickets/{id}/answers` | 공식 답변 등록 및 처리 완료 |
 | PATCH | `/knowledge-candidates/{id}/review` | 지식화 후보 승인/반려 |
 | GET  | `/manuals` / GET `/manuals/{id}` | 매뉴얼 조회 |
 | GET  | `/badges/me` | 내 뱃지 조회 |
