@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
 	@Transactional
-	public SignupResponse signup(SignupRequest request) {
+	public SignupResponse signup(SignupRequest signupRequest) {
 		throw new UnsupportedOperationException("회원가입 도메인 구현이 필요합니다.");
 	}
 }

@@ -7,18 +7,18 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record SignupRequest(
-	@NotBlank
+	@NotBlank(message = "사번을 입력해주세요.")
 	String employeeId,
 
-	@NotNull
+	@NotNull(message = "부서를 선택해주세요.")
 	Long departmentId,
 
-	@NotBlank
-	@Email
+	@NotBlank(message = "이메일을 입력해주세요.")
+	@Email(message = "올바른 이메일 형식이 아닙니다.")
 	String email,
 
-	@NotBlank
-	@Size(min = 8, max = 16)
+	@NotBlank(message = "비밀번호를 입력해주세요.")
+	@Size(min = 8, max = 16, message = "비밀번호는 8~16자여야 합니다.")
 	@Pattern(
 		regexp = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,16}$",
 		message = "비밀번호는 영문자, 숫자 조합의 8~16자리를 사용해야 합니다."

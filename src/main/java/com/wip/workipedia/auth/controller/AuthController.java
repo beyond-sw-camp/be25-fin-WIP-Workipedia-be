@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
-
 	private final AuthService authService;
 
 	public AuthController(AuthService authService) {
@@ -24,9 +23,10 @@ public class AuthController {
 
 	@PostMapping("/signup")
 	public ResponseEntity<ApiResponse<SignupResponse>> signup(
-		@Valid @RequestBody SignupRequest request
+		@Valid @RequestBody SignupRequest signupRequest
 	) {
-		SignupResponse response = authService.signup(request);
-		return ApiResponse.success(HttpStatus.CREATED, "회원가입 완료", response);
+		SignupResponse signupResponse = authService.signup(signupRequest);
+
+		return ApiResponse.success(HttpStatus.CREATED, "회원가입 완료", signupResponse);
 	}
 }
