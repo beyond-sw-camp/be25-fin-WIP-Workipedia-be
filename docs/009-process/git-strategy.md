@@ -81,7 +81,7 @@ hotfix/demo-login -> release/2026-06-26 -> main
 | 담당 | 브랜치 예시 |
 |---|---|
 | 민정기 | `feat/worki-question`, `feat/notification-sse` |
-| 김가영 | `feat/admin-dashboard`, `feat/point-badge` |
+| 김가영 | `feat/admin-dashboard`, `feat/point-esg-grade` |
 | 김진혁 | `feat/ticket-transfer`, `feat/local-rag` |
 | 이슬이 | `feat/auth-jwt`, `feat/chatbot-session` |
 | 황희수 | `feat/frontend-chatbot`, `feat/frontend-admin` |
@@ -91,7 +91,7 @@ hotfix/demo-login -> release/2026-06-26 -> main
 | 담당 | 1차 브랜치 | 작업 |
 |---|---|---|
 | 민정기 | `feat/worki-faq-notification` | 워키, FAQ, 알림 |
-| 김가영 | `feat/admin-point-badge-esg` | 관리자, 포인트, 뱃지, ESG |
+| 김가영 | `feat/admin-point-esg` | 관리자, 포인트, ESG 등급, ESG |
 | 김진혁 | `feat/ticket-local-rag` | 티켓, 이관, local RAG |
 | 이슬이 | `feat/auth-chatbot-session` | Auth, 챗봇 세션/메시지 |
 | 황희수 | `feat/frontend-core-flow` | 로그인, 챗봇, 워키, 티켓, 관리자 화면 |
@@ -101,7 +101,7 @@ hotfix/demo-login -> release/2026-06-26 -> main
 | 큰 브랜치 | 분리 예시 |
 |---|---|
 | `feat/worki-faq-notification` | `feat/worki-question`, `feat/faq-summary`, `feat/notification-sse` |
-| `feat/admin-point-badge-esg` | `feat/admin-dashboard`, `feat/point-badge`, `feat/esg-metrics` |
+| `feat/admin-point-esg` | `feat/admin-dashboard`, `feat/point-esg-grade`, `feat/esg-metrics` |
 | `feat/ticket-local-rag` | `feat/ticket-transfer`, `feat/local-rag`, `feat/chatbot-escalation` |
 | `feat/auth-chatbot-session` | `feat/auth-jwt`, `feat/chatbot-session` |
 | `feat/frontend-core-flow` | `feat/frontend-auth`, `feat/frontend-chatbot`, `feat/frontend-admin` |

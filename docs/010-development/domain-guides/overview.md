@@ -28,7 +28,7 @@
 | Ticket | 김진혁 | `ticket.md` | ADR 004, ADR 005, Service Flow |
 | Chatbot/RAG | 김진혁, 이슬이 | `chatbot-rag.md` | ADR 002, ADR 008, Harness Guide |
 | Worki/FAQ/Notification | 민정기 | `worki-notification.md` | ADR 006, ADR 007, Service Flow |
-| Admin/Point/Badge/ESG | 김가영 | `admin-reward-esg.md` | ADR 005, ADR 006, Project Proposal |
+| Admin/Point/ESG Grade/ESG | 김가영 | `admin-reward-esg.md` | ADR 005, ADR 006, Project Proposal |
 | Frontend Integration | 황희수 | `frontend-integration.md` | API Contract, Service Flow, Figma 기준 |
 
 ## 개발 시작 기준

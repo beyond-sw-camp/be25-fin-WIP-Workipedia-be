@@ -37,6 +37,7 @@
 - 인증/권한 적용 전 skeleton API를 permit-all로 둘 수 있는 기간 확인 필요
 - 상향 조정된 Week 1 WBS를 팀원별 기능 Issue로 쪼개고 담당자별 동의 필요
 - `harness-engineering.md`에 Kafka가 명시되어 있으나 proposal/TRD/ADR 어디에도 도입 결정 없음. Kafka 사용 여부 팀 결정 후 도입 시 ADR 작성 필요, 미도입 시 harness에서 제거 필요
+- 챗봇 API 구조 논의 필요: Notion 명세는 flat(`/chatbot/messages`), 현재 contract는 세션 기반(`/chatbot/sessions/{id}/messages`). DB 스키마가 세션 기반(`chatbot_sessions` 테이블)으로 설계되어 있어 세션 기반으로 가닥을 잡았으나 이슬이와 최종 합의 필요
 
 ## API/DB/화면 영향
 

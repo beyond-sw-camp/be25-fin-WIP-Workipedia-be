@@ -158,7 +158,6 @@ is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N'))
 | `TICKET_TRANSFER_REQUESTED` | TEAM_ADMIN의 티켓 이관 요청 |
 | `COMMON_QUEUE_ASSIGNED` | 공통 접수 큐 티켓 재배정 |
 | `POINT_EARNED` | 포인트 획득 |
-| `BADGE_EARNED` | 뱃지 획득 |
 
 ### admin_logs.action_type
 
@@ -175,14 +174,6 @@ is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N'))
 | `COMMON_QUEUE_ASSIGN` | 공통 접수 큐 티켓 부서 배정 |
 | `KNOWLEDGE_REVIEW` | 지식화 후보 검수 |
 | `KNOWLEDGE_PUBLISH` | 지식화 후보 워키 반영 |
-
-### badges.code
-
-| 값 | 의미 |
-|---|---|
-| `FIRST_QUESTION` | 첫 질문 |
-| `FIRST_ACCEPTED_ANSWER` | 첫 채택 답변 |
-| `ANSWER_HELPER` | 답변 5개 이상 |
 
 ## 9. 담당자별 주의사항
 

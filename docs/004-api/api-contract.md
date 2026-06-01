@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/004-api/api-contract.md`
 > 관련 문서: `docs/001-reference/prd.md`, `docs/001-reference/trd.md`, `docs/006-planning/wbs.md`
-> 버전: v0.2
-> 최종 수정: 2026-05-31
+> 버전: v0.3
+> 최종 수정: 2026-06-01
 
 ## 1. 목적
 
@@ -137,8 +137,9 @@ Authorization: Bearer <accessToken>
 | 티켓 | 김진혁 | 황희수 |
 | 티켓 지식화 | 김진혁, 김가영 | 황희수 |
 | 관리자 대시보드 | 김가영 | 황희수 |
+| 관리자 매뉴얼/부서/사용자 | 김가영 | 황희수 |
 | 포인트 | 김가영 | 황희수 |
-| 뱃지 | 김가영 | 황희수 |
+| ESG 등급 | 김가영 | 황희수 |
 | ESG 지표 | 김가영 | 황희수 |
 
 ## 4. Auth API
@@ -151,6 +152,9 @@ Authorization: Bearer <accessToken>
 | POST | `/auth/login` | 로그인 | 불필요 |
 | POST | `/auth/token/refresh` | Access Token 재발급 | Refresh Cookie 필요 |
 | POST | `/auth/logout` | 로그아웃 | Access Token 또는 Refresh Cookie 필요 |
+| POST | `/auth/password-reset/code` | 비밀번호 재설정 인증코드 발송 | 불필요 |
+| POST | `/auth/password-reset/code/verify` | 인증코드 확인 | 불필요 |
+| PATCH | `/auth/password-reset` | 비밀번호 재설정 | 불필요 |
 | GET | `/me` | 내 정보 | 필요 |
 
 ### POST `/auth/signup`
@@ -227,6 +231,7 @@ Set-Cookie: refreshToken=jwt-refresh-token; HttpOnly; Secure; SameSite=Lax; Path
 | GET | `/chatbot/sessions` | 내 세션 목록 | 필요 |
 | GET | `/chatbot/sessions/{sessionId}/messages` | 세션 메시지 조회 | 필요 |
 | POST | `/chatbot/sessions/{sessionId}/messages` | 질문 전송 및 답변 생성 | 필요 |
+| GET | `/chatbot/sessions/{sessionId}/messages/{messageId}/worki-support` | 워키 질문 등록 지원 (챗봇 메시지 기반 초안 반환) | 필요 |
 
 ### POST `/chatbot/sessions/{sessionId}/messages`
 
@@ -301,8 +306,9 @@ Response:
 | GET | `/worki/questions/{questionId}` | 질문 상세 | 필요 |
 | PATCH | `/worki/questions/{questionId}` | 질문 수정 | 필요 |
 | POST | `/worki/questions/{questionId}/answers` | 답변 등록 | 필요 |
-| POST | `/worki/answers/{answerId}/accept` | 답변 채택 | 필요 |
-| POST | `/worki/{targetType}/{targetId}/reactions` | 좋아요/싫어요 | 필요 |
+| POST | `/worki/questions/{questionId}/ticket-answers` | 티켓 공식 답변 워키 등록 | 필요 |
+| PATCH | `/worki/answers/{answerId}/adopt` | 답변 채택 | 필요 |
+| PUT | `/worki/questions/{questionId}/reaction` | 좋아요/싫어요 | 필요 |
 
 ### POST `/worki/questions`
 
@@ -340,6 +346,7 @@ Response:
 | POST | `/tickets/{ticketId}/transfer-requests` | TEAM_ADMIN 티켓 이관 요청 | TEAM_ADMIN |
 | POST | `/tickets/{ticketId}/answers` | 담당 부서 공식 답변 및 처리 완료 | 필요 |
 | PATCH | `/admin/team/knowledge-review-tickets/{ticketId}/review` | 처리 완료 티켓 지식화 여부 선택 | TEAM_ADMIN |
+| PATCH | `/tickets/{ticketId}/refuse` | 티켓 반려 | TEAM_ADMIN |
 
 ### POST `/tickets`
 
@@ -502,9 +509,9 @@ Response:
 
 | Method | Path | 설명 | 인증 |
 |---|---|---|---|
-| GET | `/faq/manuals/popular` | 인기 매뉴얼 | 필요 |
 | GET | `/faq/worki/popular` | 인기 워키 | 필요 |
-| GET | `/faq/summary` | 메인 FAQ 요약 | 필요 |
+| GET | `/faq/manuals/popular` | 인기 매뉴얼 | 필요 |
+| GET | `/faq/manuals/recent` | 최근 등록 매뉴얼 | 필요 |
 
 ## 9. Notification API
 
@@ -513,6 +520,7 @@ Response:
 | Method | Path | 설명 | 인증 |
 |---|---|---|---|
 | GET | `/notifications` | 알림 목록 | 필요 |
+| GET | `/notifications/unread-count` | 미읽은 알림 갯수 | 필요 |
 | PATCH | `/notifications/{notificationId}/read` | 개별 읽음 | 필요 |
 | PATCH | `/notifications/read-all` | 모두 읽음 | 필요 |
 | DELETE | `/notifications/{notificationId}` | 알림 삭제 | 필요 |
@@ -528,24 +536,7 @@ Response:
 | GET | `/points/me` | 내 포인트 | 필요 |
 | GET | `/points/me/history` | 내 포인트 이력 | 필요 |
 
-## 11. Badge API
-
-담당: 김가영
-
-| Method | Path | 설명 | 인증 |
-|---|---|---|---|
-| GET | `/badges/me` | 내 뱃지 목록 | 필요 |
-| GET | `/badges` | 전체 뱃지 기준 | 필요 |
-
-기본 뱃지 조건:
-
-| Badge | 조건 |
-|---|---|
-| `FIRST_QUESTION` | 첫 워키 질문 등록 |
-| `FIRST_ACCEPTED_ANSWER` | 첫 채택 답변 |
-| `ANSWER_HELPER` | 답변 5개 이상 |
-
-## 12. ESG Metrics API
+## 11. ESG Metrics API
 
 담당: 김가영
 
@@ -571,7 +562,7 @@ Response:
 }
 ```
 
-## 13. Admin API
+## 12. Admin API
 
 담당: 김가영
 
@@ -583,22 +574,28 @@ Response:
 | GET | `/admin/common-queue/tickets` | 공통 접수 큐 | SYSTEM_ADMIN |
 | PATCH | `/admin/common-queue/tickets/{ticketId}/department` | 공통 접수 큐 티켓 부서 배정 | SYSTEM_ADMIN |
 | GET | `/admin/users` | 사용자 목록 | SYSTEM_ADMIN |
-| PATCH | `/admin/users/{userId}/deactivate` | 사용자 비활성화 | SYSTEM_ADMIN |
+| PATCH | `/admin/users/{userId}/status` | 사용자 상태 변경 (활성/비활성) | SYSTEM_ADMIN |
 | DELETE | `/admin/worki/questions/{questionId}` | 워키 질문 soft delete | TEAM_ADMIN, SYSTEM_ADMIN |
-| GET | `/admin/tickets/metrics` | 팀 단위 티켓 운영 지표 | SYSTEM_ADMIN |
+| GET | `/admin/manuals` | 매뉴얼 목록 | SYSTEM_ADMIN |
+| POST | `/admin/manuals` | 매뉴얼 추가 | SYSTEM_ADMIN |
+| PUT | `/admin/manuals/{manualId}` | 매뉴얼 수정 | SYSTEM_ADMIN |
+| DELETE | `/admin/manuals/{manualId}` | 매뉴얼 삭제 | SYSTEM_ADMIN |
+| GET | `/admin/departments` | 부서 목록 | SYSTEM_ADMIN |
+| POST | `/admin/departments` | 부서 추가 | SYSTEM_ADMIN |
+| DELETE | `/admin/departments/{departmentId}` | 부서 삭제 | SYSTEM_ADMIN |
+| GET | `/admin/points` | 포인트 현황 조회 | SYSTEM_ADMIN |
+| PATCH | `/admin/points/{employeeId}/deduct` | 포인트 차감 | SYSTEM_ADMIN |
 | GET | `/admin/logs` | 관리자 작업 로그 | SYSTEM_ADMIN |
-| GET | `/admin/points` | 포인트 현황 | SYSTEM_ADMIN |
-| GET | `/admin/badges` | 뱃지 현황 | SYSTEM_ADMIN |
 | GET | `/admin/esg/metrics` | ESG 지표 | SYSTEM_ADMIN |
 
-## 14. 미정 항목
+## 13. 미정 항목
 
 | 항목 | 상태 | 결정 필요자 |
 |---|---|---|
-| Refresh Token 저장소 | Redis | 이슬이 |
-| refresh token API | /auth/token/refresh | 이슬이 |
+| Refresh Token 저장소 | Redis 확정 | 이슬이 |
 | SYSTEM_ADMIN 담당 조직 | 기본: 경영지원팀, 회사별 조정 가능 | 김가영, 팀 전체 |
-| 티켓 자동 배정 점수 가중치 | 초안 확정 | 김진혁 |
+| 티켓 자동 배정 점수 가중치 | 초안 확정 필요 | 김진혁 |
 | 로컬 임베딩 모델 | 미정 | 김진혁, 팀 전체 |
-| Vector 저장 방식 | 미정 | 김진혁 |
+| Elasticsearch 인덱스 차원수/similarity | 미정 (임베딩 모델 확정 후 결정) | 민정기, 김진혁 |
 | 알림 구현 방식 | SSE 우선, 폴링 fallback | 민정기, 황희수 |
+| 챗봇 세션 구조 | 세션 기반 확정, 이슬이와 최종 합의 필요 | 이슬이, 김진혁 |
