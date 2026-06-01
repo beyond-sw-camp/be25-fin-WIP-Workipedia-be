@@ -69,22 +69,24 @@ V3__alter_manual_status.sql
 `V2` 이후 파일명은 변경 목적이 드러나게 작성한다.
 
 ```text
-V2__add_manual_versions.sql
-V3__alter_ticket_status.sql
-V4__create_worki_search_logs.sql
+V2__alter_ticket_status.sql
+V3__add_new_feature_table.sql
 ```
+
+`manual_versions`, `manual_citations`, `worki_search_logs`, `points_daily_limit`, `esg_grade`는 초기 합의에 따라 `V1__create_initial_schema.sql`에 포함한다.
 
 ## 6. 공통 컬럼 규칙
 
-가능하면 모든 주요 테이블에 아래 컬럼을 둔다.
+모든 테이블에 아래 컬럼을 둔다.
 
 ```sql
-created_at DATETIME NOT NULL,
-updated_at DATETIME NOT NULL,
-deleted_at DATETIME NULL
+created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+deleted_at DATETIME NULL,
+is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N'))
 ```
 
-삭제 정책이 필요한 테이블은 hard delete 대신 `deleted_at` 기반 soft delete를 우선한다.
+삭제 정책이 필요한 테이블은 hard delete 대신 `deleted_at`과 `is_deleted` 기반 soft delete를 우선한다.
 
 ## 7. 네이밍 규칙
 
@@ -157,7 +159,6 @@ deleted_at DATETIME NULL
 | `TICKET_TRANSFER_REQUESTED` | TEAM_ADMIN의 티켓 이관 요청 |
 | `COMMON_QUEUE_ASSIGNED` | 공통 접수 큐 티켓 재배정 |
 | `POINT_EARNED` | 포인트 획득 |
-| `BADGE_EARNED` | 뱃지 획득 |
 
 ### admin_logs.action_type
 
@@ -175,14 +176,6 @@ deleted_at DATETIME NULL
 | `COMMON_QUEUE_ASSIGN` | 공통 접수 큐 티켓 부서 배정 |
 | `KNOWLEDGE_REVIEW` | 지식화 후보 검수 |
 | `KNOWLEDGE_PUBLISH` | 지식화 후보 워키 반영 |
-
-### badges.code
-
-| 값 | 의미 |
-|---|---|
-| `FIRST_QUESTION` | 첫 질문 |
-| `FIRST_ACCEPTED_ANSWER` | 첫 채택 답변 |
-| `ANSWER_HELPER` | 답변 5개 이상 |
 
 ## 9. 담당자별 주의사항
 

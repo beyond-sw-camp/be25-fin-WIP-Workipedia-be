@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/002-architecture/project-structure.md`
 > 관련 문서: `docs/001-reference/constitution.md`, `docs/001-reference/service-flow.md`, `docs/001-reference/prd.md`, `docs/001-reference/trd.md`
-> 버전: v0.2
-> 최종 수정: 2026-05-31
+> 버전: v0.3
+> 최종 수정: 2026-06-01
 
 ## 1. 추천 방향
 
@@ -34,15 +34,16 @@ Spring Boot API
   +-- manual
   +-- worki
   +-- ticket
-  +-- point / badge
+  +-- point / esggrade
   +-- notification
   +-- admin
   +-- esg
   +-- batch
   |
-  +-- RDB: MariaDB/MySQL or PostgreSQL
-  +-- Redis
-  +-- Vector Store
+  +-- RDB: MariaDB
+  +-- Redis (Refresh Token)
+  +-- Elasticsearch (Vector Store)
+  +-- Kafka (이벤트 브로커)
   +-- LLM API
   +-- Embedding API
 ```
@@ -123,7 +124,7 @@ src/main/java/com/wip/workipedia/
     domain/
     repository/
 
-  badge/
+  esggrade/
     service/
     domain/
     repository/
@@ -167,7 +168,7 @@ src/main/java/com/wip/workipedia/
 | `ticket` | 요청 티켓 생성, 라우팅 점수, 자동 배정/공통 접수 큐, TEAM_ADMIN 이관 요청, 팀원 배정, 상태 전이, 공식 답변 |
 | `knowledge` | 처리 완료 티켓의 지식화 후보, 일반화 초안, 팀 관리자 검수 |
 | `point` | 포인트 정책, 포인트 이력 |
-| `badge` | 뱃지 부여 기준, 사용자 뱃지 |
+| `esggrade` | ESG 점수 기준 등급, 사용자 현재 ESG 등급 |
 | `notification` | 답변/채택/티켓 변경 알림 |
 | `admin` | 관리자 대시보드, 관리자 작업 로그 |
 | `esg` | ESG-S/G 지표 조회 |
@@ -322,7 +323,7 @@ src/main/resources/db/migration/
 ### Step 9: 운영 기능
 
 - 관리자 대시보드
-- 포인트/뱃지
+- 포인트/ESG 등급
 - 알림
 - FAQ
 - ESG 지표
@@ -360,7 +361,7 @@ src/test/java/com/wip/workipedia/
 | 담당 | 범위 |
 |---|---|
 | 민정기 | worki, FAQ, notification, docs |
-| 김가영 | admin, point, badge, ESG metrics |
+| 김가영 | admin, point, esggrade, ESG metrics |
 | 김진혁 | ticket, TEAM_ADMIN transfer request, local RAG, chatbot answer flow, docs |
 | 이슬이 | auth, user, security, chatbot sessions/messages |
 | 황희수 | frontend |
