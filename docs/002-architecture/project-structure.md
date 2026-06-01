@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/002-architecture/project-structure.md`
 > 관련 문서: `docs/001-reference/constitution.md`, `docs/001-reference/service-flow.md`, `docs/001-reference/prd.md`, `docs/001-reference/trd.md`
-> 버전: v0.2
-> 최종 수정: 2026-05-31
+> 버전: v0.3
+> 최종 수정: 2026-06-01
 
 ## 1. 추천 방향
 
@@ -40,9 +40,10 @@ Spring Boot API
   +-- esg
   +-- batch
   |
-  +-- RDB: MariaDB/MySQL or PostgreSQL
-  +-- Redis
-  +-- Vector Store
+  +-- RDB: MariaDB
+  +-- Redis (Refresh Token)
+  +-- Elasticsearch (Vector Store)
+  +-- Kafka (이벤트 브로커)
   +-- LLM API
   +-- Embedding API
 ```
