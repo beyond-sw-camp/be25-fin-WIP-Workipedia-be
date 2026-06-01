@@ -30,7 +30,7 @@ public record TicketResponse(
 			ticket.getTicketId(),
 			ticket.getStatus(),
 			ticket.getAssignedDepartmentId(),
-			null,
+			null, // TODO: 부서 엔티티 조회 후 부서명 반환 (Department 도메인 구현 후 연결)
 			ticket.getRoutingConfidenceScore(),
 			ticket.getRoutingDecision(),
 			routingResult.reasons(),
