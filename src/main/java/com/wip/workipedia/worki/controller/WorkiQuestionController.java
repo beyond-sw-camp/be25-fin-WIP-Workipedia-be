@@ -5,6 +5,7 @@ import com.wip.workipedia.worki.dto.QuestionDetailResponse;
 import com.wip.workipedia.worki.dto.QuestionResponse;
 import com.wip.workipedia.worki.dto.QuestionSummaryResponse;
 import com.wip.workipedia.worki.dto.QuestionUpdateRequest;
+import com.wip.workipedia.worki.service.WorkiQuestionLikeService;
 import com.wip.workipedia.worki.service.WorkiQuestionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class WorkiQuestionController {
 
     private final WorkiQuestionService questionService;
+    private final WorkiQuestionLikeService likeService;
 
     // TODO: 이슬이 시큐리티 통합 후 @AuthenticationPrincipal로 교체. 통합 전까지 X-User-Id 헤더로 대체.
     @PostMapping
@@ -55,5 +58,22 @@ public class WorkiQuestionController {
             @Valid @RequestBody QuestionUpdateRequest request) {
         return ResponseEntity.ok(questionService.update(actorUserId, questionId, request));
     }
-    
+
+    // 좋아요 등록
+    @PostMapping("/{questionId}/like")
+    public ResponseEntity<Void> like(
+            @RequestHeader("X-User-Id") Long actorUserId,
+            @PathVariable Long questionId) {
+        likeService.like(actorUserId, questionId);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    // 좋아요 취소
+    @DeleteMapping("/{questionId}/like")
+    public ResponseEntity<Void> unlike(
+            @RequestHeader("X-User-Id") Long actorUserId,
+            @PathVariable Long questionId) {
+        likeService.unlike(actorUserId, questionId);
+        return ResponseEntity.noContent().build();
+    }
 }
