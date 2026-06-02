@@ -1,13 +1,10 @@
 package com.wip.workipedia.worki.controller;
 
-import com.wip.workipedia.worki.dto.AnswerCreateRequest;
-import com.wip.workipedia.worki.dto.AnswerResponse;
 import com.wip.workipedia.worki.dto.QuestionCreateRequest;
 import com.wip.workipedia.worki.dto.QuestionDetailResponse;
 import com.wip.workipedia.worki.dto.QuestionResponse;
 import com.wip.workipedia.worki.dto.QuestionSummaryResponse;
 import com.wip.workipedia.worki.dto.QuestionUpdateRequest;
-import com.wip.workipedia.worki.service.WorkiAnswerService;
 import com.wip.workipedia.worki.service.WorkiQuestionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +27,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class WorkiQuestionController {
 
     private final WorkiQuestionService questionService;
-    private final WorkiAnswerService answerService;
 
     // TODO: 이슬이 시큐리티 통합 후 @AuthenticationPrincipal로 교체. 통합 전까지 X-User-Id 헤더로 대체.
     @PostMapping
@@ -51,6 +47,7 @@ public class WorkiQuestionController {
         return ResponseEntity.ok(questionService.getDetail(questionId));
     }
 
+    // 수정
     @PatchMapping("/{questionId}")
     public ResponseEntity<QuestionResponse> update(
             @RequestHeader("X-User-Id") Long actorUserId,
@@ -58,13 +55,5 @@ public class WorkiQuestionController {
             @Valid @RequestBody QuestionUpdateRequest request) {
         return ResponseEntity.ok(questionService.update(actorUserId, questionId, request));
     }
-
-    @PostMapping("/{questionId}/answers")
-    public ResponseEntity<AnswerResponse> createAnswer(
-            @RequestHeader("X-User-Id") Long actorUserId,
-            @PathVariable Long questionId,
-            @Valid @RequestBody AnswerCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(answerService.createAnswer(actorUserId, questionId, request));
-    }
+    
 }

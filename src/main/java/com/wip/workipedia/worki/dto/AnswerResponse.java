@@ -6,9 +6,10 @@ import java.time.LocalDateTime;
 public record AnswerResponse(
         Long answerId,
         Long questionId,
-        Long userId,
+        Long authorId,
         String content,
         boolean accepted,
+        boolean official,
         LocalDateTime acceptedAt,
         LocalDateTime createdAt
 ) {
@@ -16,9 +17,10 @@ public record AnswerResponse(
         return new AnswerResponse(
                 answer.getAnswerId(),
                 answer.getQuestionId(),
-                answer.getUserId(),
+                answer.getAuthorId(),
                 answer.getContent(),
                 answer.isAccepted(),
+                answer.isOfficial(),
                 answer.getAcceptedAt(),
                 answer.getCreatedAt()
         );

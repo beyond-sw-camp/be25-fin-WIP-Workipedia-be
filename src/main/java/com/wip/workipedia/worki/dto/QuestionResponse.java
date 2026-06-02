@@ -5,7 +5,7 @@ import com.wip.workipedia.worki.domain.WorkiQuestion;
 
 public record QuestionResponse(
         Long questionId,
-        Long userId,
+        Long authorId,
         String title,
         QuestionStatus status,
         // TODO: users.nickname(이슬이) 통합 후 매핑. 현재는 null.
@@ -14,7 +14,7 @@ public record QuestionResponse(
     public static QuestionResponse from(WorkiQuestion question) {
         return new QuestionResponse(
                 question.getQuestionId(),
-                question.getUserId(),
+                question.getAuthorId(),
                 question.getTitle(),
                 question.getStatus(),
                 null

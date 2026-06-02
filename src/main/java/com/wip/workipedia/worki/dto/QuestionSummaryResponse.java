@@ -6,21 +6,19 @@ import java.time.LocalDateTime;
 
 public record QuestionSummaryResponse(
         Long questionId,
-        Long userId,
+        Long authorId,
         String title,
         QuestionStatus status,
         long viewCount,
-        long likeCount,
         LocalDateTime createdAt
 ) {
     public static QuestionSummaryResponse from(WorkiQuestion question) {
         return new QuestionSummaryResponse(
                 question.getQuestionId(),
-                question.getUserId(),
+                question.getAuthorId(),
                 question.getTitle(),
                 question.getStatus(),
                 question.getViewCount(),
-                question.getLikeCount(),
                 question.getCreatedAt()
         );
     }

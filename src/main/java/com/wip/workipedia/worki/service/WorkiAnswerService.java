@@ -36,14 +36,17 @@ public class WorkiAnswerService {
         WorkiAnswer answer = answerRepository.findByAnswerIdAndDeletedAtIsNull(answerId)
                 .orElseThrow(() -> new WorkiNotFoundException("답변을 찾을 수 없습니다. id=" + answerId));
         WorkiQuestion question = getQuestionOrThrow(answer.getQuestionId());
+
         if (!question.isAuthor(actorUserId)) {
             throw new WorkiAccessDeniedException("질문 작성자만 답변을 채택할 수 있습니다.");
         }
+
         if (question.isAnswered()) {
             throw new WorkiPolicyViolationException("이미 채택된 답변이 있습니다.");
         }
+
         answer.accept();
-        question.markAnswered();
+        question.acceptAnswer(answer.getAnswerId());
         return AnswerResponse.from(answer);
     }
 

@@ -51,7 +51,7 @@ class WorkiQuestionServiceTest {
                 AUTHOR_ID, new QuestionCreateRequest("제목", "내용", null));
 
         assertThat(response.status()).isEqualTo(QuestionStatus.WAITING);
-        assertThat(response.userId()).isEqualTo(AUTHOR_ID);
+        assertThat(response.authorId()).isEqualTo(AUTHOR_ID);
     }
 
     @Test

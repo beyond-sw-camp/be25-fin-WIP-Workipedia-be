@@ -24,9 +24,12 @@ public class WorkiQuestion extends BaseTimeEntity {
     @Column(name = "question_id")
     private Long questionId;
 
-    // author는 users 엔티티(이슬이 담당)와 연결하지 않고 식별자만 보관해 디커플링한다.
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    // author는 users 엔티티(이슬이 담당)와 연결하지 않고 식별자만 보관해 디커플링.
+    @Column(name = "author_id", nullable = false)
+    private Long authorId;
+
+    @Column(name = "source_chatbot_message_id")
+    private Long sourceChatbotMessageId;
 
     @Column(name = "title", nullable = false, length = 255)
     private String title;
@@ -35,33 +38,29 @@ public class WorkiQuestion extends BaseTimeEntity {
     private String content;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
+    @Column(name = "status", nullable = false, length = 30)
     private QuestionStatus status;
+
+    @Column(name = "accepted_answer_id")
+    private Long acceptedAnswerId;
 
     @Column(name = "view_count", nullable = false)
     private long viewCount;
 
-    @Column(name = "like_count", nullable = false)
-    private long likeCount;
-
-    @Column(name = "source_chatbot_message_id")
-    private Long sourceChatbotMessageId;
-
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    private WorkiQuestion(Long userId, String title, String content, Long sourceChatbotMessageId) {
-        this.userId = userId;
+    private WorkiQuestion(Long authorId, String title, String content, Long sourceChatbotMessageId) {
+        this.authorId = authorId;
         this.title = title;
         this.content = content;
         this.sourceChatbotMessageId = sourceChatbotMessageId;
         this.status = QuestionStatus.WAITING;
         this.viewCount = 0L;
-        this.likeCount = 0L;
     }
 
-    public static WorkiQuestion create(Long userId, String title, String content, Long sourceChatbotMessageId) {
-        return new WorkiQuestion(userId, title, content, sourceChatbotMessageId);
+    public static WorkiQuestion create(Long authorId, String title, String content, Long sourceChatbotMessageId) {
+        return new WorkiQuestion(authorId, title, content, sourceChatbotMessageId);
     }
 
     public void updateContent(String title, String content) {
@@ -75,6 +74,12 @@ public class WorkiQuestion extends BaseTimeEntity {
         }
     }
 
+    public void acceptAnswer(Long acceptedAnswerId) {
+        this.acceptedAnswerId = acceptedAnswerId;
+        markAnswered();
+    }
+
+    // 상태만 ANSWERED로 바꾸는 유틸리티(관리자 강제 변경/테스트 셋업).
     public void markAnswered() {
         this.status = QuestionStatus.ANSWERED;
     }
@@ -92,6 +97,6 @@ public class WorkiQuestion extends BaseTimeEntity {
     }
 
     public boolean isAuthor(Long userId) {
-        return this.userId.equals(userId);
+        return this.authorId.equals(userId);
     }
 }
