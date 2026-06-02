@@ -32,7 +32,7 @@ class ApiResponseTest {
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 		assertThat(response.getBody()).isNotNull();
 		assertThat(response.getBody().code()).isEqualTo(404);
-		assertThat(response.getBody().status()).isEqualTo("NOT_FOUND");
+		assertThat(response.getBody().status()).isEqualTo("not_found");
 		assertThat(response.getBody().message()).isEqualTo("리소스를 찾을 수 없습니다.");
 		assertThat(response.getBody().data()).isNull();
 	}

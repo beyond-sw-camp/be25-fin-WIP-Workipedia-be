@@ -44,7 +44,7 @@ public record ApiResponse<T>(
 		HttpStatus httpStatus = errorType.getHttpStatus();
 		ApiResponse<Void> body = new ApiResponse<>(
 			httpStatus.value(),
-			httpStatus.name(),
+			errorType.getStatus(),
 			message,
 			null
 		);

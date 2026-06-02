@@ -113,7 +113,7 @@
 - `department_id` BIGINT FK → departments
 - `role` VARCHAR(20) CHECK IN ('USER','TEAM_ADMIN','SYSTEM_ADMIN'), 기본 USER
 - `employee_id` VARCHAR(100) UNIQUE NOT NULL — 사번
-- `email`, `password_hash`, `nickname`, `is_active`, 시간컬럼
+- `email`, `password_hash`, `nickname` VARCHAR(100) NOT NULL 중복 허용, `is_active`, 시간컬럼
 
 #### worki_questions
 - `question_id` PK, `user_id` FK, `title`, `content`
