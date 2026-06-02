@@ -64,8 +64,8 @@ feat/*, docs/*, chore/* → dev → main
 
 | 이름 | 도메인 |
 |---|---|
-| 김진혁 | 티켓, RAG, 문서 |
+| 김진혁 | 티켓, RAG/챗봇 응답, 지식화, CI/CD |
 | 황희수 | 프론트엔드 |
-| 김가영 | Auth, 회원 |
-| 이슬이 | Worki Q&A |
-| 민정기 | Elasticsearch, Admin |
+| 김가영 | 관리자 대시보드, 포인트, ESG |
+| 이슬이 | Auth, 챗봇 세션/메시지 |
+| 민정기 | 워키 게시판, FAQ, 알림, Elasticsearch |

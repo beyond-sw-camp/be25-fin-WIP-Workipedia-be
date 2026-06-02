@@ -25,16 +25,15 @@
 | Elasticsearch | Vector Store 구성, 매뉴얼/워키 chunk 인덱싱, 유사도 검색 adapter 구현 |
 | 문서 | WBS, API 목록, 발표자료/대본 정리 |
 
-## 주차별 작업
+## 마일스톤별 목표
 
-| 기간 | 작업 | 완료 기준 |
+| 마일스톤 | 기간 | 목표 |
 |---|---|---|
-| 2026-05-29 | 문서/API 규칙, 워키/FAQ/알림 범위 확정 | API 목록 초안 작성 |
-| 2026-06-01 ~ 2026-06-05 | 워키 질문/답변/채택 skeleton | 질문/답변/채택 기본 API 동작 |
-| 2026-06-08 ~ 2026-06-12 | 워키 정책, 반응, FAQ, 알림 skeleton, Elasticsearch Docker 구성 및 연결 확인 | 수정/채택/반응 정책과 FAQ 조회 동작, Elasticsearch 컨테이너 연결 |
-| 2026-06-15 ~ 2026-06-19 | 챗봇/요청 티켓/지식화/포인트/ESG 등급 연동, SSE 알림 이벤트, chunk 인덱싱 + 유사도 검색 adapter 구현 | 질문/요청/지식화 통합 흐름 완성, 김진혁 RAG 흐름과 Elasticsearch adapter 연결 |
-| 2026-06-22 ~ 2026-06-26 | 버그픽스, API 문서, 시연 데이터, Elasticsearch 인덱싱 안정화 | 워키/FAQ/알림/Elasticsearch 시연 가능 |
-| 2026-06-29 ~ 2026-07-02 | 발표자료/대본 정리 | 발표 흐름 확정 |
+| M1 | 6/6 ~ 6/14 | 워키 질문/답변/채택 CRUD, FAQ skeleton, 알림 skeleton, Elasticsearch Docker 구성 |
+| M2 | 6/15 ~ 6/21 | 워키 정책 완성, SSE 알림 이벤트 연동, chunk 인덱싱 + 유사도 검색 adapter |
+| M3 | 6/22 ~ 6/24 | 개발 완료, 배포 지원 |
+| M4 | 6/25 ~ 6/29 | 버그 수정, README 작성 |
+| M5 | 6/30 ~ 7/2 | README 최종 정리 |
 
 ## 연동 대상
 
