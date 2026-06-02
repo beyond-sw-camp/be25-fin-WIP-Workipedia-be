@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: jdbc:mariadb://localhost:${MARIADB_PORT:3306}/${MARIADB_DATABASE:workipedia}
+    driver-class-name: org.mariadb.jdbc.Driver
+    username: ${MARIADB_USER:wip}
+    password: ${MARIADB_PASSWORD:}
+
+  data:
+    redis:
+      host: localhost
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+  jpa:
+    database-platform: org.hibernate.dialect.MariaDBDialect
+    hibernate:
+      ddl-auto: ${SPRING_JPA_DDL_AUTO:validate}
+    properties:
+      hibernate:
+        format_sql: true
