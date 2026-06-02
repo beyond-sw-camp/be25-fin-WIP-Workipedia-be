@@ -52,6 +52,17 @@ com.wip.workipedia
 - **AI 라우팅**: `TicketRoutingAiClient` interface만 있고 실제 구현 없음 (FallbackTicketRoutingAiClient만)
 - **RAG**: DB에 `manual_chunks.embedding_json`, `worki_chunks.embedding_json` 컬럼 준비됨
 
+## 개발 중 문서 업데이트 규칙
+
+각 팀원은 본인 담당 도메인 개발 시 아래 문서를 직접 업데이트한다.
+
+| 문서 | 경로 | 업데이트 내용 |
+|---|---|---|
+| PRD 요구사항 명세서 | `docs/reference/prd.md` | 본인 담당 섹션 요구사항 구체화 |
+| API 명세서 | `docs/api/api-contract.md` | 구현한 API endpoint 추가/수정 |
+| Domain Guide | `docs/dev/domain-guides/{domain}.md` | 구현 방식, 경계, 주의사항 업데이트 |
+| DB 마이그레이션 | `src/main/resources/db/migration/` | V1 수정 금지 — 변경 필요 시 V2, V3 신규 파일로 추가 |
+
 ## 브랜치 전략
 
 ```
