@@ -13,9 +13,8 @@ import com.wip.workipedia.worki.domain.WorkiAnswer;
 import com.wip.workipedia.worki.domain.WorkiQuestion;
 import com.wip.workipedia.worki.dto.AnswerCreateRequest;
 import com.wip.workipedia.worki.dto.AnswerResponse;
-import com.wip.workipedia.worki.exception.WorkiAccessDeniedException;
-import com.wip.workipedia.worki.exception.WorkiNotFoundException;
-import com.wip.workipedia.worki.exception.WorkiPolicyViolationException;
+import com.wip.workipedia.common.exception.CustomException;
+import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.worki.repository.WorkiAnswerRepository;
 import com.wip.workipedia.worki.repository.WorkiQuestionRepository;
 import java.util.Optional;
@@ -66,7 +65,8 @@ class WorkiAnswerServiceTest {
 
         assertThatThrownBy(() ->
                 answerService.createAnswer(ANSWERER_ID, QUESTION_ID, new AnswerCreateRequest("답변")))
-                .isInstanceOf(WorkiPolicyViolationException.class);
+                .isInstanceOf(CustomException.class)
+                .extracting("errorType").isEqualTo(ErrorType.WORKI_POLICY_VIOLATION);
         verify(answerRepository, never()).save(any());
     }
 
@@ -78,7 +78,8 @@ class WorkiAnswerServiceTest {
 
         assertThatThrownBy(() ->
                 answerService.createAnswer(ANSWERER_ID, QUESTION_ID, new AnswerCreateRequest("답변")))
-                .isInstanceOf(WorkiNotFoundException.class);
+                .isInstanceOf(CustomException.class)
+                .extracting("errorType").isEqualTo(ErrorType.WORKI_NOT_FOUND);
     }
 
     @Test
@@ -110,7 +111,8 @@ class WorkiAnswerServiceTest {
                 .thenReturn(Optional.of(question));
 
         assertThatThrownBy(() -> answerService.acceptAnswer(99L, 5L))
-                .isInstanceOf(WorkiAccessDeniedException.class);
+                .isInstanceOf(CustomException.class)
+                .extracting("errorType").isEqualTo(ErrorType.WORKI_FORBIDDEN);
     }
 
     @Test
@@ -125,7 +127,8 @@ class WorkiAnswerServiceTest {
                 .thenReturn(Optional.of(question));
 
         assertThatThrownBy(() -> answerService.acceptAnswer(AUTHOR_ID, 5L))
-                .isInstanceOf(WorkiPolicyViolationException.class);
+                .isInstanceOf(CustomException.class)
+                .extracting("errorType").isEqualTo(ErrorType.WORKI_POLICY_VIOLATION);
     }
 
     @Test
@@ -135,6 +138,7 @@ class WorkiAnswerServiceTest {
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> answerService.acceptAnswer(AUTHOR_ID, 5L))
-                .isInstanceOf(WorkiNotFoundException.class);
+                .isInstanceOf(CustomException.class)
+                .extracting("errorType").isEqualTo(ErrorType.WORKI_NOT_FOUND);
     }
 }

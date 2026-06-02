@@ -12,9 +12,8 @@ import com.wip.workipedia.worki.dto.QuestionCreateRequest;
 import com.wip.workipedia.worki.dto.QuestionDetailResponse;
 import com.wip.workipedia.worki.dto.QuestionResponse;
 import com.wip.workipedia.worki.dto.QuestionUpdateRequest;
-import com.wip.workipedia.worki.exception.WorkiAccessDeniedException;
-import com.wip.workipedia.worki.exception.WorkiNotFoundException;
-import com.wip.workipedia.worki.exception.WorkiPolicyViolationException;
+import com.wip.workipedia.common.exception.CustomException;
+import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.worki.repository.WorkiAnswerRepository;
 import com.wip.workipedia.worki.repository.WorkiQuestionRepository;
 import java.util.List;
@@ -76,7 +75,8 @@ class WorkiQuestionServiceTest {
 
         assertThatThrownBy(() ->
                 questionService.update(OTHER_ID, 10L, new QuestionUpdateRequest("새제목", "새내용")))
-                .isInstanceOf(WorkiAccessDeniedException.class);
+                .isInstanceOf(CustomException.class)
+                .extracting("errorType").isEqualTo(ErrorType.WORKI_FORBIDDEN);
     }
 
     @Test
@@ -89,7 +89,8 @@ class WorkiQuestionServiceTest {
 
         assertThatThrownBy(() ->
                 questionService.update(AUTHOR_ID, 10L, new QuestionUpdateRequest("새제목", "새내용")))
-                .isInstanceOf(WorkiPolicyViolationException.class);
+                .isInstanceOf(CustomException.class)
+                .extracting("errorType").isEqualTo(ErrorType.WORKI_POLICY_VIOLATION);
     }
 
     @Test
@@ -100,7 +101,8 @@ class WorkiQuestionServiceTest {
 
         assertThatThrownBy(() ->
                 questionService.update(AUTHOR_ID, 99L, new QuestionUpdateRequest("새제목", "새내용")))
-                .isInstanceOf(WorkiNotFoundException.class);
+                .isInstanceOf(CustomException.class)
+                .extracting("errorType").isEqualTo(ErrorType.WORKI_NOT_FOUND);
     }
 
     @Test

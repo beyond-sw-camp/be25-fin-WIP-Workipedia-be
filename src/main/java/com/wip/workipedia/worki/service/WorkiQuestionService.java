@@ -7,9 +7,8 @@ import com.wip.workipedia.worki.dto.QuestionDetailResponse;
 import com.wip.workipedia.worki.dto.QuestionResponse;
 import com.wip.workipedia.worki.dto.QuestionSummaryResponse;
 import com.wip.workipedia.worki.dto.QuestionUpdateRequest;
-import com.wip.workipedia.worki.exception.WorkiAccessDeniedException;
-import com.wip.workipedia.worki.exception.WorkiNotFoundException;
-import com.wip.workipedia.worki.exception.WorkiPolicyViolationException;
+import com.wip.workipedia.common.exception.CustomException;
+import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.worki.repository.WorkiAnswerRepository;
 import com.wip.workipedia.worki.repository.WorkiQuestionRepository;
 import java.util.List;
@@ -52,10 +51,10 @@ public class WorkiQuestionService {
     public QuestionResponse update(Long actorUserId, Long questionId, QuestionUpdateRequest request) {
         WorkiQuestion question = getQuestionOrThrow(questionId);
         if (!question.isAuthor(actorUserId)) {
-            throw new WorkiAccessDeniedException("질문 작성자만 수정할 수 있습니다.");
+            throw new CustomException(ErrorType.WORKI_FORBIDDEN, "질문 작성자만 수정할 수 있습니다.");
         }
         if (!question.isWaiting()) {
-            throw new WorkiPolicyViolationException("답변 대기(WAITING) 상태에서만 질문을 수정할 수 있습니다.");
+            throw new CustomException(ErrorType.WORKI_POLICY_VIOLATION, "답변 대기(WAITING) 상태에서만 질문을 수정할 수 있습니다.");
         }
         question.updateContent(request.title(), request.content());
         return QuestionResponse.from(question);
@@ -63,6 +62,6 @@ public class WorkiQuestionService {
 
     private WorkiQuestion getQuestionOrThrow(Long questionId) {
         return questionRepository.findByQuestionIdAndDeletedAtIsNull(questionId)
-                .orElseThrow(() -> new WorkiNotFoundException("질문을 찾을 수 없습니다. id=" + questionId));
+                .orElseThrow(() -> new CustomException(ErrorType.WORKI_NOT_FOUND, "질문을 찾을 수 없습니다. id=" + questionId));
     }
 }

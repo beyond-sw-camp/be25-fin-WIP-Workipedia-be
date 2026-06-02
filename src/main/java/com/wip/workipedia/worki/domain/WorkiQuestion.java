@@ -1,5 +1,6 @@
 package com.wip.workipedia.worki.domain;
 
+import com.wip.workipedia.common.domain.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -8,7 +9,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -46,9 +46,6 @@ public class WorkiQuestion extends BaseTimeEntity {
 
     @Column(name = "view_count", nullable = false)
     private long viewCount;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
 
     private WorkiQuestion(Long authorId, String title, String content, Long sourceChatbotMessageId) {
         this.authorId = authorId;

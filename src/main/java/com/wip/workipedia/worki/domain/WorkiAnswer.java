@@ -1,5 +1,6 @@
 package com.wip.workipedia.worki.domain;
 
+import com.wip.workipedia.common.domain.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -43,9 +44,6 @@ public class WorkiAnswer extends BaseTimeEntity {
 
     @Column(name = "accepted_at")
     private LocalDateTime acceptedAt;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
 
     private WorkiAnswer(Long questionId, Long authorId, String content) {
         this.questionId = questionId;

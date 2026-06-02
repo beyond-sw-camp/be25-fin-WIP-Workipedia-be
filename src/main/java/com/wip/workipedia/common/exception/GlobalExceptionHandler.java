@@ -24,7 +24,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler({
 		MethodArgumentNotValidException.class, // 유효성 검사 실패시. 
 		HandlerMethodValidationException.class, // 메서드에 들어갈 파라미터가 잘못된 인수일때,
-		ConstraintViolationException.class, // 
+		ConstraintViolationException.class,
 		MissingRequestHeaderException.class, // 헤더가 없을때 바로 예외 발생.
 		MissingServletRequestParameterException.class, // 필수 파라미터가 없을때
 		MethodArgumentTypeMismatchException.class, // 파라미터 타입이 맞지 않을때
