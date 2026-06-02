@@ -150,12 +150,12 @@ Authorization: Bearer <accessToken>
 |---|---|---|---|
 | POST | `/auth/signup` | 회원가입 | 불필요 |
 | POST | `/auth/login` | 로그인 | 불필요 |
-| POST | `/auth/token/refresh` | Access Token 재발급 | Refresh Cookie 필요 |
-| POST | `/auth/logout` | 로그아웃 | Access Token 또는 Refresh Cookie 필요 |
-| POST | `/auth/password-reset/code` | 비밀번호 재설정 인증코드 발송 | 불필요 |
+| POST | `/auth/token/refresh` | 토큰 재발급 | Refresh Token 필요 |
+| POST | `/auth/logout` | 로그아웃 | Access Token 필요 |
+| POST | `/auth/password-reset/code` | 인증코드 발송 | 불필요 |
 | POST | `/auth/password-reset/code/verify` | 인증코드 확인 | 불필요 |
-| PATCH | `/auth/password-reset` | 비밀번호 재설정 | 불필요 |
-| GET | `/me` | 내 정보 | 필요 |
+| PATCH | `/auth/password-reset` | 비밀번호 재설정 | 본인 인증 필요 |
+| GET | `/me/profile` | 마이페이지 조회 | Access Token 필요 |
 
 ### POST `/auth/signup`
 
