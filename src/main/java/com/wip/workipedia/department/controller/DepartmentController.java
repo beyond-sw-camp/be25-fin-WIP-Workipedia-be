@@ -21,6 +21,7 @@ public class DepartmentController {
 	}
 
 	@GetMapping
+	// 회원가입 화면의 부서 선택창에 표시할 부서 목록을 조회합니다.
 	public ResponseEntity<ApiResponse<List<DepartmentResponse>>> findAll() {
 		List<DepartmentResponse> departmentResponses = departmentService.findAll();
 

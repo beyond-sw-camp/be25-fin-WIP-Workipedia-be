@@ -6,6 +6,8 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
+// 회원가입 이메일 인증코드와 인증 완료 상태를 Redis에 저장하고 조회합니다.
+// 인증코드는 임시 데이터이므로 TTL이 지나면 자동으로 만료됩니다.
 public class EmailVerificationService {
 
 	private static final String SIGNUP_EMAIL_CODE_KEY_PREFIX = "signup:email-code:";

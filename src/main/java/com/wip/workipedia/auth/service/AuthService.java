@@ -17,11 +17,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
 	private static final String[] NICKNAME_PREFIXES = {
-		"차분한", "든든한", "민첩한", "따뜻한", "꼼꼼한"
+		"수비하는", "공격하는", "선방하는", "돌파하는", "태클하는",
+		"압박하는", "드리블하는", "헤더하는", "역습하는", "빌드업하는"
 	};
 
 	private static final String[] NICKNAME_SUFFIXES = {
-		"데이지", "라일락", "민들레", "해바라기", "수국"
+		"손흥민", "이강인", "황희찬", "김민재", "조현우", "황인범",
+		"설영우", "오현규", "배준호", "양현준", "조규성"
 	};
 
 	private final DepartmentRepository departmentRepository;
@@ -80,8 +82,7 @@ public class AuthService {
 	private String generateNickname() {
 		String prefix = NICKNAME_PREFIXES[secureRandom.nextInt(NICKNAME_PREFIXES.length)];
 		String suffix = NICKNAME_SUFFIXES[secureRandom.nextInt(NICKNAME_SUFFIXES.length)];
-		int number = secureRandom.nextInt(10_000);
 
-		return "%s%s%04d".formatted(prefix, suffix, number);
+		return prefix + suffix;
 	}
 }

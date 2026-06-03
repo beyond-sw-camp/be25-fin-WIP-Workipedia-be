@@ -35,4 +35,6 @@ spring:
 
 app:
   mail:
+    # 기본값은 console입니다. 로컬 개발에서는 인증코드를 콘솔 로그로 확인합니다.
+    # 운영 배포 시에는 APP_MAIL_SENDER=smtp로 설정하고 spring.mail.* SMTP 설정을 추가해야 합니다.
     sender: ${APP_MAIL_SENDER:console}
