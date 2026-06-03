@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workipedia 기능 제안서</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #ffffff; color: #1a1a2e; line-height: 1.6; padding: 48px 40px; }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 34px; font-weight: 800; margin-bottom: 6px; }
+  .meta { font-size: 16px; color: #64748b; margin-bottom: 36px; }
+  .meta span { margin-right: 16px; }
+  h2 { font-size: 24px; font-weight: 700; margin: 36px 0 14px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; }
+  h3 { font-size: 15px; font-weight: 700; color: #16a34a; margin: 20px 0 8px; text-transform: uppercase; letter-spacing: .06em; }
+  p { font-size: 17px; color: #475569; margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 16px; margin-bottom: 20px; }
+  th { text-align: left; padding: 10px 14px; background: #f1f5f9; color: #64748b; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
+  td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; color: #1e293b; }
+  tr:last-child td { border-bottom: none; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 13px; font-weight: 600; margin-right: 4px; }
+  .tag-green { background: #22c55e20; color: #16a34a; }
+  .tag-yellow { background: #f59e0b20; color: #b45309; }
+  .tag-blue { background: #3b82f620; color: #1d4ed8; }
+  .tag-red { background: #ef444420; color: #dc2626; }
+  .tag-gray { background: #f1f5f9; color: #475569; }
+  .card { background: #f8f9fa; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  code { background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-family: monospace; font-size: 14px; color: #16a34a; }
+  pre { background: #f8f9fa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; font-family: monospace; font-size: 14px; color: #1e293b; overflow-x: auto; margin-bottom: 16px; line-height: 1.8; }
+  .alert { background: #fff7ed; border-left: 3px solid #f97316; border-radius: 0 8px 8px 0; padding: 14px 18px; font-size: 15px; color: #7c2d12; margin-bottom: 16px; }
+  .note { background: #f0fdf4; border-left: 3px solid #22c55e; border-radius: 0 8px 8px 0; padding: 14px 18px; font-size: 15px; color: #15803d; margin-bottom: 16px; }
+  .divider { height: 1px; background: #e2e8f0; margin: 32px 0; }
+  .section-badge { display: inline-block; background: #f1f5f9; color: #475569; border-radius: 6px; padding: 3px 10px; font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+  .channel-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+  .channel-card { background: #f8f9fa; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; }
+  .channel-card.highlight { border-color: #3b82f6; background: #eff6ff; }
+  .channel-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+  .channel-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .channel-desc { font-size: 12px; color: #64748b; }
+  .doc-divider { display: flex; align-items: center; gap: 16px; margin: 56px 0 48px; }
+  .doc-divider-line { flex: 1; height: 2px; background: #e2e8f0; }
+  .doc-divider-label { font-size: 13px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .08em; white-space: nowrap; }
+  .toc { background: #f8f9fa; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px 28px; margin-bottom: 48px; }
+  .toc-title { font-size: 13px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 16px; }
+  .toc-section { margin-bottom: 12px; }
+  .toc-section-title { font-size: 15px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
+  .toc-links { display: flex; flex-wrap: wrap; gap: 8px; }
+  .toc-links a { font-size: 14px; color: #3b82f6; text-decoration: none; background: #eff6ff; padding: 3px 10px; border-radius: 6px; }
+  .toc-links a:hover { background: #dbeafe; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>📋 Workipedia 기능 제안서</h1>
+  <div class="meta">
+    <span>상태: <strong style="color:#f97316">초안 — 팀 회의 전</strong></span>
+    <span>2026-06-03</span>
+    <span>작성: 김진혁</span>
+  </div>
+
+  <div class="toc">
+    <div class="toc-title">목차</div>
+    <div class="toc-section">
+      <div class="toc-section-title">⚡📱 파트 1 — Flash Chat + 모바일 지원</div>
+      <div class="toc-links">
+        <a href="#background">배경</a>
+        <a href="#flashchat">Flash Chat</a>
+        <a href="#mobile">모바일 지원</a>
+        <a href="#workload">작업 분담</a>
+      </div>
+    </div>
+    <div class="toc-section">
+      <div class="toc-section-title">🤖 파트 2 — AI 파트 의사결정 및 설계</div>
+      <div class="toc-links">
+        <a href="#qlora">QLoRA 실험 결과</a>
+        <a href="#architecture">AI 아키텍처</a>
+        <a href="#prompt">프롬프트 관리</a>
+        <a href="#ttl">데이터 유효기간</a>
+        <a href="#pipeline">파인튜닝 파이프라인</a>
+        <a href="#api">연동 API</a>
+        <a href="#admin-settings">관리자 설정</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 파트 1 ===== -->
+  <h1 style="font-size:28px" id="part1">⚡📱 파트 1 — Flash Chat + 모바일 지원</h1>
+  <div class="divider"></div>
+
+  <div class="section-badge" id="background">배경</div>
+  <h2>배경</h2>
+  <p>볼륨 확대에 대한 고민 중, 기존 2채널에서 3채널 구조로 확장.</p>
+  <div class="channel-row">
+    <div class="channel-card">
+      <div class="channel-label">채널 1</div>
+      <div class="channel-name">🎫 요청 (티켓)</div>
+      <div class="channel-desc">공식 처리, 이력 보존<br><span class="tag tag-green">가장 정확</span></div>
+    </div>
+    <div class="channel-card">
+      <div class="channel-label">채널 2</div>
+      <div class="channel-name">📋 질문 (워키)</div>
+      <div class="channel-desc">커뮤니티 Q&A, 이력 보존<br><span class="tag tag-yellow">중간</span></div>
+    </div>
+    <div class="channel-card highlight">
+      <div class="channel-label">채널 3 — 신규</div>
+      <div class="channel-name">⚡ Flash Chat</div>
+      <div class="channel-desc">즉시 답변, 10분 후 삭제<br><span class="tag tag-blue">가장 빠름</span></div>
+    </div>
+  </div>
+
+  <div class="section-badge" id="flashchat">기능 1</div>
+  <h2>⚡ Flash Chat</h2>
+  <p>전사 단일 채널. 누구나 들어와서 가볍게 묻고 답하는 실시간 공개 채팅방. 10분 후 메시지 자동 삭제.</p>
+
+  <h3>기술 스택</h3>
+  <div class="card">
+    <table>
+      <tr><th>항목</th><th>선택</th><th>이유</th></tr>
+      <tr><td>실시간 통신</td><td><code>Spring WebSocket + STOMP</code></td><td>Spring Boot 내장, 채팅 표준</td></tr>
+      <tr><td>메시지 저장</td><td><code>Redis (TTL 600s)</code></td><td>DB 저장 없음, 10분 후 자동 삭제</td></tr>
+      <tr><td>브로드캐스트</td><td><code>/topic/flash-chat</code></td><td>전체 구독자에게 전송</td></tr>
+    </table>
+  </div>
+
+  <h3>주요 기능</h3>
+  <div class="card">
+    <table>
+      <tr><th>기능</th><th>설명</th></tr>
+      <tr><td>전사 공개 채널</td><td>별도 입장 절차 없음. 로그인만 하면 참여 가능</td></tr>
+      <tr><td>원클릭 답장</td><td>↩ 버튼 클릭 → 입력창 즉시 펼쳐짐</td></tr>
+      <tr><td>👍 반응</td><td>메시지별 좋아요 반응</td></tr>
+      <tr><td>메시지 만료</td><td>Redis TTL 10분, 자동 삭제</td></tr>
+      <tr><td>AI 없음</td><td>노잇 개입 없음. 사람 간 직접 소통</td></tr>
+    </table>
+  </div>
+
+  <h3>WebSocket 엔드포인트</h3>
+  <div class="card">
+    <table>
+      <tr><th>타입</th><th>경로</th><th>설명</th></tr>
+      <tr><td><span class="tag tag-blue">SUB</span></td><td><code>/topic/flash-chat</code></td><td>채널 구독 (메시지 수신)</td></tr>
+      <tr><td><span class="tag tag-green">SEND</span></td><td><code>/app/flash-chat/send</code></td><td>메시지 전송</td></tr>
+      <tr><td><span class="tag tag-green">SEND</span></td><td><code>/app/flash-chat/react</code></td><td>👍 반응</td></tr>
+      <tr><td><span class="tag tag-yellow">GET</span></td><td><code>/flash-chat/messages</code></td><td>진입 시 현재 메시지 목록</td></tr>
+    </table>
+  </div>
+
+  <h3>메시지 구조 (Redis)</h3>
+  <pre>{
+  "id": "uuid",
+  "userId": 123,
+  "nickname": "닉네임",
+  "content": "연차 반차 차이가 뭐예요?",
+  "replyToId": null,
+  "createdAt": "2026-06-03T10:00:00"
+}</pre>
+
+  <h3>유저 설정</h3>
+  <div class="card">
+    <table>
+      <tr><th>설정</th><th>설명</th></tr>
+      <tr><td>알림 on/off</td><td>새 메시지 뱃지 및 푸시 알림 수신 여부 토글</td></tr>
+    </table>
+  </div>
+
+  <h3>SYSTEM_ADMIN — Flash Chat 관리</h3>
+  <div class="card">
+    <table>
+      <tr><th>설정</th><th>설명</th><th>기본값</th></tr>
+      <tr><td>메시지 TTL</td><td>메시지 자동 삭제까지의 시간. Redis TTL로 적용.</td><td>600초 (10분)</td></tr>
+      <tr><td>도배 방지 쿨다운</td><td>같은 유저가 연속 전송 가능한 최소 간격.</td><td>3초</td></tr>
+      <tr><td>메시지 강제 삭제</td><td>관리자가 특정 메시지 즉시 삭제. <code>admin_logs</code>에 기록.</td><td>—</td></tr>
+      <tr><td>금지어 목록</td><td>포함 시 전송 차단되는 단어 목록. 관리자 페이지에서 편집.</td><td>—</td></tr>
+    </table>
+  </div>
+
+  <h3>미결 사항 (회의 시 논의)</h3>
+  <div class="alert">
+    • 메시지 최대 보존 개수 (스크롤 overflow 방지)
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-badge" id="mobile">기능 2</div>
+  <h2>📱 모바일 지원</h2>
+  <p>기존 React 앱에 반응형 + PWA + 사진 첨부 추가. "현장에서 바로 사진 찍어 티켓 요청" 시나리오 지원.</p>
+
+  <h3>구성</h3>
+  <div class="card">
+    <table>
+      <tr><th>항목</th><th>방법</th></tr>
+      <tr><td>반응형 UI</td><td>Tailwind <code>sm:</code> <code>md:</code> 클래스 적용</td></tr>
+      <tr><td>앱 래핑</td><td><code>Capacitor + Vue</code> — 기존 웹앱을 iOS/Android 앱으로 패키징</td></tr>
+      <tr><td>iOS 배포</td><td>TestFlight (데모용)</td></tr>
+      <tr><td>Android 배포</td><td>APK 직접 설치 (데모용)</td></tr>
+      <tr><td>카메라/사진</td><td>Capacitor Camera 플러그인 또는 <code>&lt;input capture&gt;</code></td></tr>
+      <tr><td>파일 저장</td><td>백엔드 multipart API → 로컬 or S3</td></tr>
+    </table>
+  </div>
+
+  <h3>추가 API</h3>
+  <div class="card">
+    <table>
+      <tr><th>Method</th><th>Path</th><th>설명</th></tr>
+      <tr><td><span class="tag tag-green">POST</span></td><td><code>/attachments</code></td><td>이미지 업로드, attachment_id 반환</td></tr>
+      <tr><td><span class="tag tag-yellow">GET</span></td><td><code>/attachments/{id}</code></td><td>이미지 조회</td></tr>
+    </table>
+  </div>
+
+  <h3>미결 사항 (회의 시 논의)</h3>
+  <div class="alert">
+    • 이미지 저장소: 로컬 파일시스템 vs S3 (배포 환경에 따라)<br>
+    • 프론트 담당자(황희수)와 반응형 작업 범위 조율 필요
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-badge" id="workload">작업 분담</div>
+  <h2>작업 분담 제안</h2>
+  <div class="card">
+    <table>
+      <tr><th>기능</th><th>백엔드</th><th>프론트</th><th>예상</th></tr>
+      <tr><td>Flash Chat WebSocket</td><td>김진혁</td><td>황희수</td><td><span class="tag tag-yellow">3~4일</span></td></tr>
+      <tr><td>모바일 반응형 + PWA</td><td>—</td><td>황희수</td><td><span class="tag tag-green">1~2일</span></td></tr>
+      <tr><td>사진 첨부 API</td><td>김진혁</td><td>황희수</td><td><span class="tag tag-green">1일</span></td></tr>
+    </table>
+  </div>
+
+  <!-- ===== 파트 2 ===== -->
+  <div class="doc-divider">
+    <div class="doc-divider-line"></div>
+    <div class="doc-divider-label">파트 2</div>
+    <div class="doc-divider-line"></div>
+  </div>
+
+  <h1 style="font-size:28px" id="part2">🤖 파트 2 — AI 파트 의사결정 및 설계 명세</h1>
+  <div class="divider"></div>
+
+  <div class="section-badge" id="background-ai">도입 배경</div>
+  <h2>AI 도입 배경 — RAG vs QLoRA</h2>
+  <p>단순 RAG 또는 단순 파인튜닝 중 어느 쪽으로 가야 하는지 비교 검토한 결과, 두 접근의 역할을 분리하는 방향으로 결정했다.</p>
+
+  <h3>접근 방식 비교</h3>
+  <div class="card">
+    <table>
+      <tr><th>방식</th><th>강점</th><th>한계</th></tr>
+      <tr>
+        <td><strong>RAG만</strong></td>
+        <td>최신 문서 기반 답변, 출처 명시, hallucination 억제</td>
+        <td>사내 특화 행동 패턴 학습 불가 (거절 방식, 워키 유도, 출처 표시 형식 등)</td>
+      </tr>
+      <tr>
+        <td><strong>QLoRA만</strong></td>
+        <td>행동 패턴 학습, 사내 어투·규칙 내재화</td>
+        <td>지식을 학습시키면 hallucination 발생. 완전 제거에 수천 건 이상 데이터 필요</td>
+      </tr>
+      <tr>
+        <td><strong>RAG + QLoRA ✓</strong></td>
+        <td>지식은 RAG로 정확하게, 행동은 QLoRA로 학습 — 각자의 강점만 활용</td>
+        <td>구조가 다소 복잡하나 역할이 명확히 분리됨</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section-badge" id="conclusion">최종 결정</div>
+  <h2>최종 결정</h2>
+  <div class="note" style="font-size:17px;line-height:1.8">
+    <strong>RAG + QLoRA 혼합 아키텍처로 확정.</strong><br>
+    RAG가 지식 정확성을 담당하고, QLoRA가 사내 특화 행동 패턴을 담당한다.<br>
+    두 기술의 역할을 분리함으로써 hallucination 위험 없이 사내 환경에 최적화된 답변을 제공한다.<br><br>
+    <strong>핵심 원칙:</strong> QLoRA에게 "무엇을 알아야 하는가"를 가르치지 않고, "어떻게 행동해야 하는가"만 가르친다.
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-badge" id="qlora">섹션 1</div>
+  <h2>QLoRA 실험 결과</h2>
+
+  <h3>실험 환경</h3>
+  <div class="card">
+    <table>
+      <tr><th>항목</th><th>내용</th></tr>
+      <tr><td>하드웨어</td><td>MacBook Pro M5 Pro 48GB</td></tr>
+      <tr><td>프레임워크</td><td><code>MLX-LM</code> (Apple Silicon 최적화)</td></tr>
+      <tr><td>베이스 모델</td><td>Llama-3.2-3B-Instruct (4bit 양자화)</td></tr>
+    </table>
+  </div>
+
+  <h3>실험 결과</h3>
+  <div class="card">
+    <table>
+      <tr><th>실험</th><th>조건</th><th>Val Loss</th><th>소요 / 메모리</th></tr>
+      <tr><td>1차</td><td>데이터 15개, iters 100</td><td>3.889 → <strong>0.742</strong></td><td>약 2분 / 2.9GB</td></tr>
+      <tr><td>2차</td><td>데이터 50개, iters 300</td><td>3.889 → <strong>0.360</strong> (iter 200 최저)</td><td>약 5분 / 2.9GB</td></tr>
+    </table>
+  </div>
+  <div class="alert">• iter 200 이후 소폭 상승 → 과적합 시작 구간 확인</div>
+
+  <h3>Before / After 비교</h3>
+  <p style="margin-bottom:8px">테스트 질문: <strong>"육아휴직 얼마나 쓸 수 있어?"</strong> (참고 문서 없음 상황)</p>
+  <div class="card">
+    <table>
+      <tr><th></th><th>기본 모델</th><th>파인튜닝 후</th></tr>
+      <tr><td><strong>첫 문장</strong></td><td><span class="tag tag-red">✗</span> 어색한 거부</td><td><span class="tag tag-green">✓</span> "참고 문서에 육아휴직 관련 내용이 없어 답변드리기 어렵습니다."</td></tr>
+      <tr><td><strong>이후 내용</strong></td><td><span class="tag tag-red">✗</span> 날짜 지어냄 (hallucination)</td><td><span class="tag tag-yellow">△</span> 일부 hallucination 여전히 발생</td></tr>
+      <tr><td><strong>워키 유도</strong></td><td><span class="tag tag-red">✗</span> 없음</td><td><span class="tag tag-yellow">△</span> 시도하나 완전하지 않음</td></tr>
+    </table>
+  </div>
+
+  <h3>실험 결론</h3>
+  <div class="note">
+    소량 데이터로도 <strong>행동 패턴 학습은 가능</strong>함을 확인.<br>
+    QLoRA로 지식까지 가르치려 하면 hallucination 위험이 생김.<br><br>
+    → <strong>지식은 RAG, 행동은 QLoRA</strong>로 역할 분리가 최적
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-badge" id="architecture">섹션 2</div>
+  <h2>최종 AI 아키텍처</h2>
+
+  <pre>사용자 질문
+    ↓
+[QLoRA 파인튜닝된 모델] — 행동 패턴 담당
+    ↓
+RAG로 문서 검색 — 지식 내용 주입
+    ↓
+최종 답변 + 출처 + 날짜 표시</pre>
+
+  <h3>단계별 고도화 플랜</h3>
+  <div class="card">
+    <table>
+      <tr><th>단계</th><th>시점</th><th>내용</th></tr>
+      <tr><td><span class="tag tag-green">Phase 1</span></td><td>납품 초기</td><td>매뉴얼 + 워키 RAG 기반 답변. 행동 패턴은 시스템 프롬프트로 제어. 출처 + 날짜 표시.</td></tr>
+      <tr><td><span class="tag tag-blue">Phase 2</span></td><td>데이터 축적 후</td><td>APPROVED knowledge_candidates 누적 → 임계값 초과 시 QLoRA 자동 파인튜닝. 사내 환경 최적화.</td></tr>
+    </table>
+  </div>
+  <div class="note">쓸수록 해당 기업에 맞게 고도화되는 구조. B2B 솔루션으로서 장기적인 경쟁력이 생긴다.</div>
+
+  <div class="divider"></div>
+
+  <div class="section-badge" id="prompt">섹션 3</div>
+  <h2>프롬프트 관리</h2>
+  <p>챗봇 시스템 프롬프트를 두 영역으로 분리해서 관리한다.</p>
+
+  <h3>영역 구분</h3>
+  <div class="card">
+    <table>
+      <tr><th>영역</th><th>역할</th><th>수정 시 재학습</th><th>편집 권한</th></tr>
+      <tr><td><code>base_system</code></td><td>QLoRA 학습 기준 프롬프트. 핵심 행동 규칙 정의.</td><td><span class="tag tag-red">필요 (자동 트리거)</span></td><td>SYSTEM_ADMIN</td></tr>
+      <tr><td><code>admin_context</code></td><td>회사/부서 맞춤 설정. 부서별 역할, 특화 지침.</td><td><span class="tag tag-green">불필요 (즉시 반영)</span></td><td>SYSTEM_ADMIN</td></tr>
+    </table>
+  </div>
+
+  <div class="alert">
+    <strong>⚠️ base_system 저장 시:</strong> "AI 재학습이 자동으로 시작됩니다. 완료까지 약 10분 소요됩니다."
+  </div>
+
+  <h3>런타임 적용 구조</h3>
+  <pre>final_system_prompt = base_system + "\n\n" + admin_context</pre>
+
+  <div class="divider"></div>
+
+  <div class="section-badge" id="ttl">섹션 4</div>
+  <h2>파인튜닝 데이터 유효기간 관리</h2>
+
+  <h3>학습 데이터 유효기간 설정</h3>
+  <div class="card">
+    <table>
+      <tr><th>설정값</th><th>동작</th></tr>
+      <tr><td>3개월</td><td>3개월 이내 APPROVED 데이터만 학습에 사용</td></tr>
+      <tr><td>6개월 <span class="tag tag-blue">기본값</span></td><td>6개월 이내 APPROVED 데이터만 학습에 사용</td></tr>
+      <tr><td>12개월</td><td>12개월 이내 APPROVED 데이터만 학습에 사용</td></tr>
+      <tr><td>무제한</td><td>기간 제한 없이 전체 사용</td></tr>
+    </table>
+  </div>
+
+  <h3>출처 날짜 표시 (챗봇 응답)</h3>
+  <div class="card">
+    <table>
+      <tr><th>경과 기간</th><th>표시</th></tr>
+      <tr><td>3개월 이하</td><td><span class="tag tag-green">표시 없음</span></td></tr>
+      <tr><td>3개월 ~ 6개월</td><td><span class="tag tag-yellow">N개월 된 내용입니다</span></td></tr>
+      <tr><td>6개월 초과</td><td><span class="tag tag-red">⚠️ 오래된 내용일 수 있습니다. 확인 후 참고하세요.</span></td></tr>
+    </table>
+  </div>
+  <pre>[1] 출처: 인사규정.pdf (최신)
+[2] 출처: 워키 답변 (8개월 전) ⚠️ 오래된 내용일 수 있습니다.</pre>
+
+  <div class="divider"></div>
+
+  <div class="section-badge" id="pipeline">섹션 5</div>
+  <h2>파인튜닝 자동화 파이프라인</h2>
+
+  <h3>학습 데이터 소스</h3>
+  <div class="card">
+    <table>
+      <tr><th>소스</th><th>조건</th></tr>
+      <tr><td><code>worki_answers</code></td><td><code>official = true</code></td></tr>
+      <tr><td><code>knowledge_candidates</code></td><td><code>status = APPROVED</code> + 유효기간 이내</td></tr>
+    </table>
+  </div>
+  <div class="note">유효한 학습 데이터가 임계값(기본: <strong>100건</strong>) 초과 시 자동 실행. 임계값도 관리자 페이지에서 설정 가능.</div>
+
+  <h3>전체 흐름</h3>
+  <pre>TEAM_ADMIN 공식 답변 작성 (official = true)
+            ↓
+knowledge_candidates 등록 → APPROVED 상태
+            ↓
+유효 데이터 임계값 초과
+            ↓
+JSONL 자동 변환
+            ↓
+mlx_lm.lora 백그라운드 실행
+            ↓
+완료 → 어댑터 자동 교체 → 챗봇 즉시 반영</pre>
+
+  <div class="divider"></div>
+
+  <div class="section-badge" id="api">섹션 6</div>
+  <h2>Spring Boot ↔ Python AI 서버 연동 API</h2>
+  <div class="card">
+    <table>
+      <tr><th>Method</th><th>Path</th><th>설명</th></tr>
+      <tr><td><span class="tag tag-green">POST</span></td><td><code>/fine-tune/trigger</code></td><td>파인튜닝 실행 요청</td></tr>
+      <tr><td><span class="tag tag-blue">GET</span></td><td><code>/fine-tune/status</code></td><td>학습 진행 상태 조회</td></tr>
+      <tr><td><span class="tag tag-blue">GET</span></td><td><code>/model/current</code></td><td>현재 모델 버전 및 어댑터 정보</td></tr>
+      <tr><td><span class="tag tag-green">POST</span></td><td><code>/prompt/update</code></td><td>base_system 변경 시 재학습 트리거</td></tr>
+    </table>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-badge" id="admin-settings">섹션 7</div>
+  <h2>관리자 페이지 설정 항목 요약</h2>
+  <div class="card">
+    <table>
+      <tr><th>항목</th><th>권한</th><th>재학습 여부</th></tr>
+      <tr><td>base_system 편집</td><td><span class="tag tag-red">SYSTEM_ADMIN</span></td><td><span class="tag tag-red">필요 (자동 트리거)</span></td></tr>
+      <tr><td>admin_context 편집</td><td><span class="tag tag-red">SYSTEM_ADMIN</span></td><td><span class="tag tag-green">불필요 (즉시 반영)</span></td></tr>
+      <tr><td>학습 데이터 유효기간 설정</td><td><span class="tag tag-red">SYSTEM_ADMIN</span></td><td><span class="tag tag-yellow">다음 파인튜닝부터 적용</span></td></tr>
+      <tr><td>파인튜닝 임계값 설정</td><td><span class="tag tag-red">SYSTEM_ADMIN</span></td><td><span class="tag tag-green">불필요</span></td></tr>
+      <tr><td>파인튜닝 현황 조회</td><td><span class="tag tag-red">SYSTEM_ADMIN</span></td><td><span class="tag tag-gray">—</span></td></tr>
+      <tr><td>오래된 지식 현황 조회</td><td><span class="tag tag-yellow">TEAM_ADMIN 이상</span></td><td><span class="tag tag-gray">—</span></td></tr>
+    </table>
+  </div>
+
+</div>
+</body>
+</html>
