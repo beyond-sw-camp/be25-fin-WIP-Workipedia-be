@@ -32,3 +32,7 @@ spring:
     metrics:
       tags:
         application: Workipedia
+
+app:
+  mail:
+    sender: ${APP_MAIL_SENDER:console}

@@ -27,20 +27,27 @@ public class AuthService {
 	private final DepartmentRepository departmentRepository;
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
+	private final EmailVerificationService emailVerificationService;
 	private final SecureRandom secureRandom = new SecureRandom();
 
 	public AuthService(
 		DepartmentRepository departmentRepository,
 		UserRepository userRepository,
-		PasswordEncoder passwordEncoder
+		PasswordEncoder passwordEncoder,
+		EmailVerificationService emailVerificationService
 	) {
 		this.departmentRepository = departmentRepository;
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
+		this.emailVerificationService = emailVerificationService;
 	}
 
 	@Transactional
 	public SignupResponse signup(SignupRequest signupRequest) {
+		if (!emailVerificationService.isSignupEmailVerified(signupRequest.email())) {
+			throw new CustomException(ErrorType.BAD_REQUEST, "이메일 인증이 필요합니다.");
+		}
+
 		Department department = departmentRepository.findById(signupRequest.departmentId())
 			.orElseThrow(() -> new CustomException(ErrorType.NOT_FOUND, "부서를 찾을 수 없습니다."));
 

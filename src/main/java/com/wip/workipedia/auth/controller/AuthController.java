@@ -1,8 +1,11 @@
 package com.wip.workipedia.auth.controller;
 
+import com.wip.workipedia.auth.dto.EmailCodeSendRequest;
+import com.wip.workipedia.auth.dto.EmailCodeVerifyRequest;
 import com.wip.workipedia.auth.dto.SignupRequest;
 import com.wip.workipedia.auth.dto.SignupResponse;
 import com.wip.workipedia.auth.service.AuthService;
+import com.wip.workipedia.auth.service.SignupEmailCodeService;
 import com.wip.workipedia.common.response.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -16,9 +19,32 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 	private final AuthService authService;
+	private final SignupEmailCodeService signupEmailCodeService;
 
-	public AuthController(AuthService authService) {
+	public AuthController(
+		AuthService authService,
+		SignupEmailCodeService signupEmailCodeService
+	) {
 		this.authService = authService;
+		this.signupEmailCodeService = signupEmailCodeService;
+	}
+
+	@PostMapping("/signup/code")
+	public ResponseEntity<ApiResponse<Void>> sendSignupCode(
+		@Valid @RequestBody EmailCodeSendRequest emailCodeSendRequest
+	) {
+		signupEmailCodeService.sendSignupCode(emailCodeSendRequest);
+
+		return ApiResponse.success(HttpStatus.OK, "인증코드 발송 완료");
+	}
+
+	@PostMapping("/signup/code/verify")
+	public ResponseEntity<ApiResponse<Void>> verifySignupCode(
+		@Valid @RequestBody EmailCodeVerifyRequest emailCodeVerifyRequest
+	) {
+		signupEmailCodeService.verifySignupCode(emailCodeVerifyRequest);
+
+		return ApiResponse.success(HttpStatus.OK, "인증코드 확인 완료");
 	}
 
 	@PostMapping("/signup")

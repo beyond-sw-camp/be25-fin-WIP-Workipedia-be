@@ -40,6 +40,9 @@ public class SecurityConfig {
 				.accessDeniedHandler(accessDeniedHandler)
 			)
 			.authorizeHttpRequests(auth -> auth
+				.requestMatchers(HttpMethod.GET, "/api/v1/departments").permitAll()
+				.requestMatchers(HttpMethod.POST, "/api/v1/auth/signup/code").permitAll()
+				.requestMatchers(HttpMethod.POST, "/api/v1/auth/signup/code/verify").permitAll()
 				.requestMatchers(HttpMethod.POST, "/api/v1/auth/signup").permitAll()
 				.requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
 				.requestMatchers(HttpMethod.POST, "/api/v1/auth/password-reset/code").permitAll()
