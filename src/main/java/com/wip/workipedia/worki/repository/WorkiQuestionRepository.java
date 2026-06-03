@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface WorkiQuestionRepository extends JpaRepository<WorkiQuestion, Long> {
@@ -31,4 +32,13 @@ public interface WorkiQuestionRepository extends JpaRepository<WorkiQuestion, Lo
             LIMIT 10
             """, nativeQuery = true)
     List<PopularWorkiProjection> findTop10PopularByLike();
+
+    @Modifying // 트랜젝션을 체크 하더라. 
+    @Query("""
+            UPDATE WorkiQuestion q
+               SET q.viewCount = q.viewCount + 1
+             WHERE q.questionId = :questionId
+               AND q.deletedAt IS NULL
+            """)
+    int increaseViewCount(Long questionId); // 조회수 업데이트 하기 위한 쿼리 등록
 }

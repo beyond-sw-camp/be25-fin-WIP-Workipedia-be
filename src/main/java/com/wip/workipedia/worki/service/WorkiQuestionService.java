@@ -38,16 +38,22 @@ public class WorkiQuestionService {
                 .map(QuestionSummaryResponse::from);
     }
 
-    @Transactional
+    // ToDo: 여기부분 부하 줄수 있음. 새로고침 계속 하면 update 해야하니 이부분 수정 방법 찾아야함.
+   @Transactional // 왜 위에 readOnly = true 가 있는데 여기에 추가한 이유: 사실 더티 체킹을 어떻게 하냐에 따른 방법인데, 트랜젝션이 있으면, 동시성에 문제가 생겨버림. 2명이 동시에 조회수 10짜리 읽으면 12가 되어야 하는데 11이 됨.
     public QuestionDetailResponse getDetail(Long questionId) {
+        // WorkiQuestion question = getQuestionOrThrow(questionId);
+        // question.increaseViewCount(); // 여기 서비스에서 바꾸면 캡슐화 깨짐. 따로 메서드 빼서 바꾸는게 좋음.
+
+        // 그냥 JPA 쿼리 사용해서 단순 뷰 업데이트 올림. 
+        questionRepository.increaseViewCount(questionId);
         WorkiQuestion question = getQuestionOrThrow(questionId);
-        question.increaseViewCount();
+        
         List<WorkiAnswer> answers =
                 answerRepository.findByQuestionIdAndDeletedAtIsNullOrderByCreatedAtAsc(questionId);
         return QuestionDetailResponse.of(question, answers);
     }
 
-    @Transactional
+    @Transactional //여기의 경우는 더티체킹이 필요함
     public QuestionResponse update(Long actorUserId, Long questionId, QuestionUpdateRequest request) {
         WorkiQuestion question = getQuestionOrThrow(questionId);
         if (!question.isAuthor(actorUserId)) {

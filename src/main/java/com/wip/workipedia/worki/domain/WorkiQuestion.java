@@ -81,9 +81,10 @@ public class WorkiQuestion extends BaseTimeEntity {
         this.status = QuestionStatus.ANSWERED;
     }
 
-    public void increaseViewCount() {
-        this.viewCount++;
-    }
+    // 더티 체킹 안하니까 필요 없.
+    // public void increaseViewCount() {
+    //     this.viewCount++;
+    // }
 
     public boolean isWaiting() {
         return this.status == QuestionStatus.WAITING;
