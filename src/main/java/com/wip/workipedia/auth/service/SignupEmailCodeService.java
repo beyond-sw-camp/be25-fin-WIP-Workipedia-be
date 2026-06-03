@@ -34,7 +34,7 @@ public class SignupEmailCodeService {
 		String email = emailCodeSendRequest.email();
 
 		if (userRepository.existsByEmail(email)) {
-			throw new CustomException(ErrorType.CONFLICT, "이미 사용 중인 이메일입니다.");
+			throw new CustomException(ErrorType.AUTH_DUPLICATE_EMAIL);
 		}
 
 		String code = generateCode();
@@ -47,7 +47,7 @@ public class SignupEmailCodeService {
 			emailCodeVerifyRequest.email(),
 			emailCodeVerifyRequest.code()
 		)) {
-			throw new CustomException(ErrorType.BAD_REQUEST, "인증코드가 일치하지 않습니다.");
+			throw new CustomException(ErrorType.AUTH_EMAIL_CODE_MISMATCH);
 		}
 
 		emailVerificationService.markSignupEmailVerified(emailCodeVerifyRequest.email());

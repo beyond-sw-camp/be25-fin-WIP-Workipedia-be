@@ -15,6 +15,14 @@ public enum ErrorType {
 	CONFLICT("conflict", "요청이 현재 상태와 충돌합니다.", HttpStatus.CONFLICT),
 	INTERNAL_ERROR("internal_error", "서버 내부 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
 
+	// auth
+	AUTH_EMAIL_VERIFICATION_REQUIRED("auth-001", "이메일 인증이 필요합니다.", HttpStatus.BAD_REQUEST),
+	AUTH_EMAIL_CODE_MISMATCH("auth-002", "인증코드가 일치하지 않습니다.", HttpStatus.BAD_REQUEST),
+	AUTH_DUPLICATE_EMAIL("auth-003", "이미 사용 중인 이메일입니다.", HttpStatus.CONFLICT),
+	AUTH_DUPLICATE_EMPLOYEE_ID("auth-004", "이미 사용 중인 사번입니다.", HttpStatus.CONFLICT),
+	AUTH_DEPARTMENT_NOT_FOUND("auth-005", "부서를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+	AUTH_EMAIL_SEND_FAILED("auth-006", "인증코드 이메일 발송에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+
 	// ticket
 	TICKET_NOT_FOUND("ticket-001", "티켓을 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
 

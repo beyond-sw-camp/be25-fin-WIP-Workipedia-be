@@ -17,13 +17,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
 	private static final String[] NICKNAME_PREFIXES = {
-		"수비하는", "공격하는", "선방하는", "돌파하는", "태클하는",
-		"압박하는", "드리블하는", "헤더하는", "역습하는", "빌드업하는"
+		"연결하는", "성장하는", "학습하는", "공유하는", "기여하는",
+		"도전하는", "지원하는", "발견하는", "개선하는", "소통하는"
 	};
 
 	private static final String[] NICKNAME_SUFFIXES = {
-		"손흥민", "이강인", "황희찬", "김민재", "조현우", "황인범",
-		"설영우", "오현규", "배준호", "양현준", "조규성"
+		"전략가", "멘토", "조력자", "개척자",
+		"아키텍트", "빌더", "혁신가", "리더"
 	};
 
 	private final DepartmentRepository departmentRepository;
@@ -47,18 +47,18 @@ public class AuthService {
 	@Transactional
 	public SignupResponse signup(SignupRequest signupRequest) {
 		if (!emailVerificationService.isSignupEmailVerified(signupRequest.email())) {
-			throw new CustomException(ErrorType.BAD_REQUEST, "이메일 인증이 필요합니다.");
+			throw new CustomException(ErrorType.AUTH_EMAIL_VERIFICATION_REQUIRED);
 		}
 
 		Department department = departmentRepository.findById(signupRequest.departmentId())
-			.orElseThrow(() -> new CustomException(ErrorType.NOT_FOUND, "부서를 찾을 수 없습니다."));
+			.orElseThrow(() -> new CustomException(ErrorType.AUTH_DEPARTMENT_NOT_FOUND));
 
 		if (userRepository.existsByEmployeeId(signupRequest.employeeId())) {
-			throw new CustomException(ErrorType.CONFLICT, "이미 사용 중인 사번입니다.");
+			throw new CustomException(ErrorType.AUTH_DUPLICATE_EMPLOYEE_ID);
 		}
 
 		if (userRepository.existsByEmail(signupRequest.email())) {
-			throw new CustomException(ErrorType.CONFLICT, "이미 사용 중인 이메일입니다.");
+			throw new CustomException(ErrorType.AUTH_DUPLICATE_EMAIL);
 		}
 
 		String encodedPassword = passwordEncoder.encode(signupRequest.password());
