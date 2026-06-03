@@ -43,6 +43,58 @@
 - refresh token을 프론트에서 어디에 저장할지 확정 필요
 - 팀 티켓 API는 role뿐 아니라 department 확인 필요
 
+## 이메일 인증코드 정책
+
+회원가입과 비밀번호 재설정은 모두 사내 이메일 기반 인증코드를 사용한다.
+외부 API는 목적별로 분리하되, 내부 인증코드 생성/저장/검증 로직은 공통화할 수 있다.
+
+### 저장소
+
+- 인증코드는 Redis에 저장한다.
+- 인증코드는 숫자 6자리로 생성한다.
+- 인증코드는 임시 데이터이므로 TTL을 반드시 둔다.
+- 인증 성공 후에는 인증 완료 상태도 Redis에 일정 시간 저장한다.
+- 로컬 개발 환경에서는 인증코드를 콘솔 로그로 출력한다.
+- 운영 환경에서는 SMTP 설정을 통해 실제 이메일을 발송한다.
+- 이메일 발송 방식은 `app.mail.sender` 설정으로 선택한다. 기본값은 `console`이고, 운영에서는 `smtp`를 사용한다.
+
+예시:
+
+```text
+signup:email-code:user@company.com = 123456
+signup:email-verified:user@company.com = true
+password-reset:email-code:user@company.com = 123456
+password-reset:email-verified:user@company.com = true
+```
+
+### 회원가입 인증 흐름
+
+1. `POST /auth/signup/code`
+   - 이메일을 받아 인증코드를 생성한다.
+   - 생성한 인증코드를 Redis에 저장한다.
+   - 인증코드를 이메일로 발송한다.
+2. `POST /auth/signup/code/verify`
+   - 이메일과 인증코드를 받는다.
+   - 사용자가 입력한 인증번호가 Redis에 저장된 인증번호와 일치하는지 확인한다.
+   - 일치하면 회원가입 인증 완료 상태를 Redis에 저장한다.
+3. `POST /auth/signup`
+   - 회원가입 전에 해당 이메일의 인증 완료 상태를 확인한다.
+   - 인증 완료 상태가 없으면 회원가입을 거부한다.
+
+### 비밀번호 재설정 인증 흐름
+
+1. `POST /auth/password-reset/code`
+   - 이메일을 받아 인증코드를 생성한다.
+   - 생성한 인증코드를 Redis에 저장한다.
+   - 인증코드를 이메일로 발송한다.
+2. `POST /auth/password-reset/code/verify`
+   - 이메일과 인증코드를 받는다.
+   - 사용자가 입력한 인증번호가 Redis에 저장된 인증번호와 일치하는지 확인한다.
+   - 일치하면 비밀번호 재설정 인증 완료 상태를 Redis에 저장한다.
+3. `PATCH /auth/password-reset`
+   - 비밀번호 변경 전에 해당 이메일의 인증 완료 상태를 확인한다.
+   - 인증 완료 상태가 없으면 비밀번호 재설정을 거부한다.
+
 ## 완료 기준
 
 - 로그인 성공 시 access token과 사용자 기본 정보가 반환된다.

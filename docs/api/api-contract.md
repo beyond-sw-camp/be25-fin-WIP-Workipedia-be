@@ -148,16 +148,100 @@ Authorization: Bearer <accessToken>
 
 | Method | Path | 설명 | 인증 |
 |---|---|---|---|
+| GET | `/departments` | 회원가입 부서 목록 조회 | 불필요 |
+| POST | `/auth/signup/code` | 회원가입 인증코드 발송 | 불필요 |
+| POST | `/auth/signup/code/verify` | 회원가입 인증코드 확인 | 불필요 |
 | POST | `/auth/signup` | 회원가입 | 불필요 |
 | POST | `/auth/login` | 로그인 | 불필요 |
 | POST | `/auth/token/refresh` | 토큰 재발급 | Refresh Token 필요 |
 | POST | `/auth/logout` | 로그아웃 | Access Token 필요 |
-| POST | `/auth/password-reset/code` | 인증코드 발송 | 불필요 |
-| POST | `/auth/password-reset/code/verify` | 인증코드 확인 | 불필요 |
+| POST | `/auth/password-reset/code` | 비밀번호 재설정 인증코드 발송 | 불필요 |
+| POST | `/auth/password-reset/code/verify` | 비밀번호 재설정 인증코드 확인 | 불필요 |
 | PATCH | `/auth/password-reset` | 비밀번호 재설정 | 본인 인증 필요 |
 | GET | `/me/profile` | 마이페이지 조회 | Access Token 필요 |
 
+### GET `/departments`
+
+- 회원가입 화면에서 부서명 선택창에 표시할 부서 목록을 조회한다.
+- 부서 목록 개수는 DB에 등록된 부서 데이터를 기준으로 한다.
+
+Request: 없음
+
+Response:
+
+```json
+{
+  "code": 200,
+  "status": "OK",
+  "message": "부서 목록 조회 성공",
+  "data": [
+    {
+      "departmentId": 1,
+      "departmentName": "인사팀"
+    },
+    {
+      "departmentId": 2,
+      "departmentName": "총무팀"
+    },
+    {
+      "departmentId": 3,
+      "departmentName": "IT지원팀"
+    }
+  ]
+}
+```
+
+### POST `/auth/signup/code`
+
+- 인증코드는 숫자 6자리로 생성한다.
+
+Request:
+
+```json
+{
+  "email": "user@company.com"
+}
+```
+
+Response:
+
+```json
+{
+  "code": 200,
+  "status": "OK",
+  "message": "인증코드 발송 완료",
+  "data": null
+}
+```
+
+### POST `/auth/signup/code/verify`
+
+- 인증코드는 숫자 6자리로 입력한다.
+
+Request:
+
+```json
+{
+  "email": "user@company.com",
+  "code": "123456"
+}
+```
+
+Response:
+
+```json
+{
+  "code": 200,
+  "status": "OK",
+  "message": "인증코드 확인 완료",
+  "data": null
+}
+```
+
 ### POST `/auth/signup`
+
+- 회원가입은 이메일 인증코드 확인이 완료된 이메일에 대해서만 가능하다.
+- `passwordConfirm`은 프론트에서 `password`와의 일치 여부를 검증하며 Request Body에는 포함하지 않는다.
 
 Request:
 
