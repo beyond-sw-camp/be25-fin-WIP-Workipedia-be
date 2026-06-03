@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -26,7 +27,7 @@ public class User {
 	@JoinColumn(name = "department_id", nullable = false)
 	private Department department;
 
-	@Column(name = "employee_id", nullable = false, length = 50)
+	@Column(name = "employee_id", nullable = false, length = 100)
 	private String employeeId;
 
 	@Column(nullable = false, length = 255)
@@ -35,7 +36,7 @@ public class User {
 	@Column(nullable = false, length = 255)
 	private String password;
 
-	@Column(nullable = false, length = 100)
+	@Column(nullable = false, length = 20)
 	private String nickname;
 
 	@Enumerated(EnumType.STRING)
@@ -43,8 +44,11 @@ public class User {
 	private UserRole role;
 
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false, length = 30)
+	@Column(nullable = false, length = 20)
 	private UserStatus status;
+
+	@Column(name = "last_login_at")
+	private LocalDateTime lastLoginAt;
 
 	protected User() {
 	}
@@ -115,5 +119,9 @@ public class User {
 
 	public UserStatus getStatus() {
 		return status;
+	}
+
+	public LocalDateTime getLastLoginAt() {
+		return lastLoginAt;
 	}
 }
