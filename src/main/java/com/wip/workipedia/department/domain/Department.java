@@ -16,14 +16,8 @@ public class Department {
 	@Column(name = "department_id")
 	private Long departmentId;
 
-	@Column(nullable = false, length = 100)
-	private String name;
-
-	@Column(nullable = false, length = 50)
-	private String code;
-
-	@Column(length = 255)
-	private String description;
+	@Column(name = "department_name", nullable = false, length = 100)
+	private String departmentName;
 
 	protected Department() {
 	}
@@ -32,15 +26,7 @@ public class Department {
 		return departmentId;
 	}
 
-	public String getName() {
-		return name;
-	}
-
-	public String getCode() {
-		return code;
-	}
-
-	public String getDescription() {
-		return description;
+	public String getDepartmentName() {
+		return departmentName;
 	}
 }

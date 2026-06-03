@@ -9,7 +9,7 @@ public record DepartmentResponse(
 	public static DepartmentResponse from(Department department) {
 		return new DepartmentResponse(
 			department.getDepartmentId(),
-			department.getName()
+			department.getDepartmentName()
 		);
 	}
 }
