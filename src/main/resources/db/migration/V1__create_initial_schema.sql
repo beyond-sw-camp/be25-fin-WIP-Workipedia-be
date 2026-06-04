@@ -189,7 +189,7 @@ CREATE TABLE tickets (
     content TEXT NOT NULL,
     status VARCHAR(30) NOT NULL DEFAULT 'RECEIVED',
     assigned_department_id BIGINT NULL,
-    completed_by BIGINT NULL,
+    assignee_id BIGINT NULL,
     routing_confidence_score DECIMAL(5,2) NULL,
     routing_decision VARCHAR(50) NULL,
     completed_at DATETIME NULL,
@@ -212,11 +212,11 @@ CREATE TABLE tickets (
     CONSTRAINT fk_tickets_assigned_department
         FOREIGN KEY (assigned_department_id)
         REFERENCES departments (department_id),
-    CONSTRAINT fk_tickets_completed_by
-        FOREIGN KEY (completed_by)
+    CONSTRAINT fk_tickets_assignee
+        FOREIGN KEY (assignee_id)
         REFERENCES users (user_id),
     CONSTRAINT ck_tickets_status
-        CHECK (status IN ('RECEIVED', 'COMMON_QUEUE', 'ASSIGNED', 'COMPLETED', 'REJECTED', 'DELETED')),
+        CHECK (status IN ('RECEIVED', 'COMMON_QUEUE', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'REJECTED', 'DELETED')),
     CONSTRAINT ck_tickets_routing_decision
         CHECK (routing_decision IS NULL OR routing_decision IN ('AUTO_ASSIGNED', 'ADMIN_REVIEW', 'COMMON_QUEUE', 'NEED_MORE_INFO'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -256,9 +256,9 @@ CREATE TABLE ticket_status_logs (
         FOREIGN KEY (changed_by)
         REFERENCES users (user_id),
     CONSTRAINT ck_ticket_status_logs_previous_status
-        CHECK (previous_status IS NULL OR previous_status IN ('RECEIVED', 'COMMON_QUEUE', 'ASSIGNED', 'COMPLETED', 'REJECTED', 'DELETED')),
+        CHECK (previous_status IS NULL OR previous_status IN ('RECEIVED', 'COMMON_QUEUE', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'REJECTED', 'DELETED')),
     CONSTRAINT ck_ticket_status_logs_new_status
-        CHECK (new_status IN ('RECEIVED', 'COMMON_QUEUE', 'ASSIGNED', 'COMPLETED', 'REJECTED', 'DELETED'))
+        CHECK (new_status IN ('RECEIVED', 'COMMON_QUEUE', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'REJECTED', 'DELETED'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE ticket_transfer_requests (
@@ -490,11 +490,12 @@ CREATE TABLE admin_logs (
     CONSTRAINT ck_admin_logs_action_type
         CHECK (action_type IN (
             'USER_DEACTIVATE',
+            'WORKI_READ',
             'WORKI_UPDATE',
             'WORKI_DELETE',
-            'MANUAL_CREATE',
             'MANUAL_UPDATE',
             'MANUAL_DELETE',
+            'TICKET_ASSIGN',
             'TICKET_TRANSFER_REQUEST',
             'TICKET_ROUTE_OVERRIDE',
             'COMMON_QUEUE_ASSIGN',
@@ -638,7 +639,7 @@ CREATE INDEX idx_tickets_requester_id ON tickets (requester_id);
 CREATE INDEX idx_tickets_status ON tickets (status);
 CREATE INDEX idx_tickets_category_id ON tickets (category_id);
 CREATE INDEX idx_tickets_assigned_department_id ON tickets (assigned_department_id);
-CREATE INDEX idx_tickets_completed_by ON tickets (completed_by);
+CREATE INDEX idx_tickets_assignee_id ON tickets (assignee_id);
 CREATE INDEX idx_ticket_answers_ticket_id ON ticket_answers (ticket_id);
 CREATE INDEX idx_ticket_status_logs_ticket_id ON ticket_status_logs (ticket_id);
 CREATE INDEX idx_ticket_transfer_requests_ticket_id ON ticket_transfer_requests (ticket_id);
