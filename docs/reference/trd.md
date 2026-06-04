@@ -5,7 +5,7 @@
 > 정본 위치: `docs/001-reference/trd.md`
 > 관련 문서: `docs/001-reference/constitution.md`, `docs/001-reference/service-flow.md`, `docs/001-reference/prd.md`
 > 버전: v0.3
-> 최종 수정: 2026-06-01
+> 최종 수정: 2026-06-04
 
 ---
 
@@ -44,16 +44,17 @@
 ### 2.2 기술 스택 (제안)
 | 계층 | 후보 |
 |---|---|
-| Frontend | React + TypeScript, TanStack Query, TailwindCSS |
+| Frontend | React/Vue + TypeScript, TanStack Query, TailwindCSS |
 | Backend | Spring Boot 3.x (Java 21) |
 | ORM | JPA(Hibernate) |
 | RDB | MariaDB/MySQL 계열 |
 | Vector Store | Elasticsearch (kNN 검색, 민정기 담당) — ADR 009 참조 |
 | 인증 | JWT (Access + Refresh), 비밀번호 BCrypt |
-| 세션 저장 | Redis (Refresh Token 저장) — ADR 003 참조 |
+| 세션/임시 메시지 저장 | Redis (Refresh Token, Flash Chat TTL 메시지 저장) — ADR 003 참조 |
 | LLM | 로컬 LLM 또는 검색 결과 기반 template 답변, 외부 LLM은 후순위 |
 | Embedding | 로컬 임베딩 모델 우선 |
 | 메시지 브로커 | Kafka (이벤트 기반 알림 등) |
+| 실시간 통신 | Spring WebSocket + STOMP (Flash Chat), SSE/폴링 fallback (알림) |
 | 배치 | Spring Scheduler/Quartz 우선 |
 | 인프라 | Docker, Kubernetes(선택), CI/CD: GitHub Actions |
 | 모니터링 | Prometheus + Grafana, 로그: ELK / Loki |
@@ -76,23 +77,43 @@
    - LLM이 답변 불가 또는 사용자 불만족 피드백 → 워키 질문 등록 흐름으로 분기
    - 실제 처리나 공식 확인이 필요한 경우 → 요청 티켓 생성 흐름으로 분기, 챗봇 입력 내용을 요청 초안으로 전달
 
+### 2.4 Flash Chat 흐름
+
+1. 사용자가 Flash Chat 화면에 진입하면 현재 활성 메시지 목록을 조회한다.
+2. 클라이언트는 STOMP topic `/topic/flash-chat`을 구독한다.
+3. 메시지는 `/app/flash-chat/send`, 반응은 `/app/flash-chat/react`로 전송한다.
+4. 서버는 메시지를 Redis에 TTL 600초로 저장하고 구독자에게 브로드캐스트한다.
+5. SYSTEM_ADMIN의 강제 삭제, 금지어, 쿨다운 정책은 관리자 설정과 `admin_logs`에 연결한다.
+
+Flash Chat 메시지는 전사 공개 임시 채팅이며, 영구 DB 저장 대상이 아니다.
+
 ---
 
 ## 3. 데이터 모델
 
-### 3.1 주요 테이블
+### 3.1 현재 DB 기준
+
+DB 스키마 정본은 `src/main/resources/db/migration`의 Flyway migration이며, 본 문서는 **현재 repository에 존재하는 migration 전체를 적용한 스키마**를 기준으로 한다.
+
+아직 migration이 없는 기능은 `3.4 추가 예정 테이블/컬럼`에 별도로 둔다.
+
+### 3.2 현재 migration 기준 주요 테이블
 
 | 테이블 | 용도 |
 |---|---|
 | `users` | 사용자 계정 (사번, 부서, role) |
 | `departments` | 부서 마스터 |
+| `categories` | 티켓 분류 카테고리 |
+| `department_category_mappings` | 부서-카테고리 매핑 |
 | `worki_questions` | 워키 질문 |
 | `worki_answers` | 워키 답변 |
-| `reaction` | 좋아요/싫어요 |
+| `reactions` | 좋아요/싫어요 |
 | `manuals` | 사내 매뉴얼/규정 |
 | `chatbot_sessions` | 챗봇 대화 세션 |
 | `chatbot_messages` | 챗봇 메시지(질문/답변 단위) |
 | `tickets` | 부서 배정 티켓 |
+| `ticket_answers` | 티켓 공식 답변 |
+| `ticket_status_logs` | 티켓 상태 변경 이력 |
 | `ticket_transfer_requests` | 티켓 이관 요청 및 처리 이력 |
 | `ticket_assignments` | 티켓 담당자 배정 이력 |
 | `ticket_routing_logs` | 자동 배정 점수와 근거 |
@@ -107,24 +128,35 @@
 | `manual_citations` | RAG/답변에서 참조한 매뉴얼 조각 인용 이력 |
 | `admin_logs` | 관리자 작업 로그 |
 
-### 3.2 핵심 컬럼 메모
+### 3.3 현재 migration 기준 핵심 컬럼 메모
 
 #### users
 - `user_id` BIGINT PK (AUTO_INCREMENT)
 - `department_id` BIGINT FK → departments
-- `role` VARCHAR(20) CHECK IN ('USER','TEAM_ADMIN','SYSTEM_ADMIN'), 기본 USER
+- `role` VARCHAR(30) CHECK IN ('USER','TEAM_ADMIN','SYSTEM_ADMIN'), 기본 USER
 - `employee_id` VARCHAR(100) UNIQUE NOT NULL — 사번
-- `email`, `password_hash`, `nickname` VARCHAR(100) NOT NULL 중복 허용, `is_active`, 시간컬럼
+- `email` VARCHAR(255) UNIQUE NOT NULL
+- `password` VARCHAR(255) NOT NULL
+- `nickname` VARCHAR(100) NOT NULL, 중복 허용
+- `status` VARCHAR(20) CHECK IN ('ACTIVE','INACTIVE'), 기본 ACTIVE
+- `last_login_at`, 시간컬럼, soft delete 컬럼
 
 #### worki_questions
-- `question_id` PK, `user_id` FK, `title`, `content`
+- `question_id` PK, `author_id` FK, `source_chatbot_message_id` FK NULL, `title`, `content`
 - `status` (WAITING / IN_PROGRESS / ANSWERED / TICKETED 등)
-- `view_count`, `like_count`, `created_at` 등
+- `accepted_answer_id` FK NULL, `view_count`, `modified_source`, 시간컬럼, soft delete 컬럼
 
 #### worki_answers
 - `answer_id` PK, `question_id` FK, `author_id` FK
 - `ticket_id` FK NULL (티켓 공식 답변에서 생성된 경우)
-- `content`, `official` BOOLEAN, `accepted` BOOLEAN, `accepted_at`
+- `content`, `official` BOOLEAN, `accepted` BOOLEAN, `accepted_at`, `modified_source`, 시간컬럼, soft delete 컬럼
+
+#### reactions
+- `reaction_id` PK, `user_id` FK
+- `target_type` (WORKI_QUESTION / WORKI_ANSWER)
+- `target_id`, `reaction_type` (LIKE / DISLIKE)
+- 사용자와 대상 조합은 unique
+- `modified_source`, 시간컬럼, soft delete 컬럼
 
 #### tickets
 - `ticket_id` PK
@@ -138,14 +170,27 @@
 - `routing_confidence_score` DECIMAL(5,2)
 - `routing_decision` (AUTO_ASSIGNED / ADMIN_REVIEW / COMMON_QUEUE / NEED_MORE_INFO)
 - `status` (RECEIVED / COMMON_QUEUE / ASSIGNED / IN_PROGRESS / COMPLETED / REJECTED / DELETED)
-- `completed_at`, 시간컬럼
+- `completed_at`, 시간컬럼, soft delete 컬럼
+
+#### ticket_answers
+- `ticket_answer_id` PK
+- `ticket_id` FK → tickets
+- `author_id` FK → users
+- `content`, 시간컬럼, soft delete 컬럼
+
+#### ticket_status_logs
+- `status_log_id` PK
+- `ticket_id` FK → tickets
+- `changed_by` FK → users NULL 허용
+- `previous_status`, `new_status`, `reason`
+- 시간컬럼, soft delete 컬럼
 
 #### ticket_assignments
 - `assignment_id` PK
 - `ticket_id` FK → tickets
 - `assignee_id` FK → users
 - `assigned_by` FK → users (TEAM_ADMIN 또는 SYSTEM_ADMIN)
-- `assigned_at`, `memo`
+- `memo`, 시간컬럼, soft delete 컬럼
 
 #### ticket_routing_logs
 - `routing_log_id` PK
@@ -155,7 +200,7 @@
 - `reasons_json` JSON
 - `routed_by` FK → users NULL 허용
 - `decision` (AUTO_ASSIGNED / ADMIN_REVIEW / COMMON_QUEUE / NEED_MORE_INFO)
-- `created_at`
+- 시간컬럼, soft delete 컬럼
 
 #### knowledge_candidates
 - `candidate_id` PK
@@ -164,7 +209,9 @@
 - `created_by` FK → users (담당자)
 - `reviewed_by` FK → users NULL 허용 (TEAM_ADMIN)
 - `status` (DRAFT / REVIEW_REQUESTED / APPROVED / REJECTED / PUBLISHED)
-- `published_worki_question_id` 또는 `manual_id` NULL 허용
+- `review_comment`, `reviewed_at`, `published_at`
+- `published_worki_question_id` FK NULL 허용
+- 시간컬럼, soft delete 컬럼
 
 #### ticket_transfer_requests
 - `transfer_request_id` PK
@@ -184,21 +231,37 @@
 - `references_json` JSON (참조한 매뉴얼/워키 chunk 목록)
 - `source_worki_question_id` FK NULL (워키 질문으로 전환된 경우)
 - `source_ticket_id` FK NULL (요청 티켓으로 전환된 경우)
-- `created_at`, `updated_at`, `deleted_at`
+- 시간컬럼, soft delete 컬럼
 
 #### worki_chunks / manual_chunks
-- `chunk_id` PK
-- `question_id` / `answer_id` / `manual_id` FK
-- `target_type` CHECK IN ('QUESTION','ANSWER') (worki_chunks의 경우)
-- `content_text` TEXT
-- `embedding` VECTOR(차원수) — Vector Store에서 관리
+- `worki_chunk_id` / `manual_chunk_id` PK
+- `source_type`, `source_id`, `question_id`, `answer_id` (worki_chunks)
+- `manual_id`, `chunk_index` (manual_chunks)
+- `content` TEXT
+- `embedding_json` JSON NULL
 
 #### admin_logs
-- `admin_log_id` PK, `user_id` (관리자) FK
+- `admin_log_id` PK, `actor_id` (관리자) FK
 - `action_type` CHECK IN ('USER_DEACTIVATE','WORKI_READ','WORKI_UPDATE','WORKI_DELETE','MANUAL_UPDATE','MANUAL_DELETE','TICKET_ASSIGN','TICKET_TRANSFER_REQUEST','TICKET_ROUTE_OVERRIDE','COMMON_QUEUE_ASSIGN','KNOWLEDGE_REVIEW','KNOWLEDGE_PUBLISH', ...)
-- `action_detail` TEXT, `created_at`
+- `target_type`, `target_id`, `description`, `metadata_json`, 시간컬럼, soft delete 컬럼
 
-> 상세 컬럼·제약은 별도 `테이블_명세서`를 정본으로 한다.
+#### departments
+- 현재 migration 기준 컬럼명은 `department_name`
+- V5에서 `code`, `description` 컬럼은 제거됨
+
+### 3.4 추가 예정 테이블/컬럼
+
+아래 항목은 PRD/TRD 기능 설계에는 포함되지만, 현재 migration에는 아직 없다. 구현 시 신규 migration으로 추가한다.
+
+| 항목 | 용도 | 예상 migration |
+|---|---|---|
+| `tickets.priority` | 티켓 중요도(LOW/MEDIUM/HIGH/CRITICAL) | 신규 migration |
+| `attachments` | 티켓/요청 사진 첨부 메타데이터 | 신규 migration |
+| `flash_chat_settings` | Flash Chat TTL, 쿨다운, 금지어 등 운영 설정 | 신규 migration |
+| `ai_prompt_settings` | 챗봇 base_system/admin_context, 학습 설정 | 신규 migration |
+| `knowledge_candidates.manual_id` | 지식화 결과를 매뉴얼로 발행하는 확장 | 신규 migration |
+
+> 상세 컬럼·제약의 최종 정본은 Flyway migration이다.
 
 ---
 
@@ -229,6 +292,9 @@
 | POST | `/worki/{target}/{id}/reactions` | 좋아요/싫어요 |
 | GET  | `/tickets` | 티켓 목록 (본인/부서) |
 | POST | `/tickets` | 요청 티켓 생성 |
+| POST | `/attachments` | 이미지 첨부 업로드 |
+| GET | `/attachments/{id}` | 첨부 이미지 조회 |
+| GET | `/flash-chat/messages` | 활성 Flash Chat 메시지 조회 |
 | PATCH | `/tickets/{id}/status` | 상태 변경 |
 | PATCH | `/tickets/{id}/assignee` | 팀원 담당자 배정 |
 | POST | `/tickets/{id}/transfer-requests` | TEAM_ADMIN 티켓 이관 요청 |
@@ -239,6 +305,14 @@
 | GET  | `/esg/metrics/me` | 내 ESG 지표 조회 |
 | GET  | `/admin/dashboard` | 관리자 대시보드 데이터 |
 | DELETE | `/admin/worki/{id}` | 워키 삭제(관리자 전용) |
+
+WebSocket/STOMP:
+
+| Type | Path | 설명 |
+|---|---|---|
+| Subscribe | `/topic/flash-chat` | Flash Chat 메시지/반응 수신 |
+| Send | `/app/flash-chat/send` | Flash Chat 메시지 전송 |
+| Send | `/app/flash-chat/react` | Flash Chat 반응 전송 |
 
 ---
 
@@ -251,8 +325,10 @@
 | 권한 검사 | 모든 변경 API에서 USER/TEAM_ADMIN/SYSTEM_ADMIN/부서원 권한 명시 검증 |
 | 개인정보 마스킹 | KNOIT_007 — 챗봇 입력에서 주민번호/연락처/계좌 등 패턴 마스킹 |
 | 개인정보 답변 거부 | KNOIT_008 — LLM 응답 후처리에 개인정보 유출 검사 |
+| Flash Chat 임시성 | 메시지는 Redis TTL로 삭제하며 영구 DB에 저장하지 않음 |
+| 파일 첨부 | 이미지 MIME/크기 제한, 저장 경로 직접 노출 금지 |
 | 관리자 추적 | 모든 TEAM_ADMIN/SYSTEM_ADMIN 작업은 `admin_logs`에 기록 |
-| 퇴사자 차단 | `users.is_active = false` 사용자는 로그인 거부 |
+| 퇴사자 차단 | `users.status = INACTIVE` 사용자는 로그인 거부 |
 | 데이터 보존 | 워키 게시글은 USER가 직접 삭제 불가, soft delete 사용 |
 
 ---
@@ -265,6 +341,8 @@
 | 워키 목록 조회 (p95) | 500ms 이내 |
 | 가용성 | 평일 09:00~19:00 사내 SLA 99.5% |
 | 임베딩 배치 | 일 1회, 1만 chunk 기준 30분 이내 |
+| Flash Chat TTL | 기본 600초 |
+| Flash Chat 전송 쿨다운 | 기본 3초 |
 | 동시 사용자 | 사내 동시 접속 500명 기준 |
 | 로깅 | 모든 챗봇 질의/응답, 관리자 작업, 인증 이벤트 기록 |
 
@@ -312,3 +390,5 @@
 3. 티켓 자동 배정 알고리즘 — 키워드, 문서 유사도, 카테고리 매핑, 과거 티켓, LLM 분류 점수 가중치
 4. 워키 답변 우선순위 (정책 미확정 — PRD §7 참조)
 5. 챗봇 응답 캐싱 정책 (질문 유사도 기반 캐시 hit 조건)
+6. 이미지 저장소 선택 — 로컬 파일시스템 vs S3
+7. Flash Chat 메시지 최대 보존 개수
