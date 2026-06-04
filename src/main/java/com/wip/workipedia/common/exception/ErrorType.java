@@ -24,7 +24,12 @@ public enum ErrorType {
 	AUTH_EMAIL_SEND_FAILED("auth-006", "인증코드 이메일 발송에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
 
 	// ticket
-	TICKET_NOT_FOUND("ticket-001", "티켓을 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+	TICKET_NOT_FOUND("ticket-001", "티켓을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+
+	// worki
+	WORKI_NOT_FOUND("worki-001", "워키 리소스를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+	WORKI_FORBIDDEN("worki-002", "해당 작업에 대한 권한이 없습니다.", HttpStatus.FORBIDDEN),
+	WORKI_POLICY_VIOLATION("worki-003", "현재 상태에서 허용되지 않는 작업입니다.", HttpStatus.CONFLICT);
 
 	private final String status;
 	private final String message;

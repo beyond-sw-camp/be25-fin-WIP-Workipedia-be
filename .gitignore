@@ -231,3 +231,4 @@ build/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/java,windows,macos,visualstudiocode,intellij,vuejs
+.env
