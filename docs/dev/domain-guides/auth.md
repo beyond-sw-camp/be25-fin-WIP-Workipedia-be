@@ -120,16 +120,16 @@ password-reset:email-verified:user@company.com = true
 
 ### 회원가입 인증 흐름
 
-1. `POST /auth/signup/code`
+1. `POST /api/v1/auth/signup/code`
    - 이메일을 받아 인증코드를 생성한다.
    - 생성한 인증코드를 Redis에 저장한다.
    - 로컬 환경에서는 인증코드를 콘솔 로그에 출력한다.
    - 운영 환경에서는 인증코드를 이메일로 발송한다.
-2. `POST /auth/signup/code/verify`
+2. `POST /api/v1/auth/signup/code/verify`
    - 이메일과 인증코드를 받는다.
    - 사용자가 입력한 인증번호가 Redis에 저장된 인증번호와 일치하는지 확인한다.
    - 일치하면 회원가입 인증 완료 상태를 Redis에 저장한다.
-3. `POST /auth/signup`
+3. `POST /api/v1/auth/signup`
    - 회원가입 전에 해당 이메일의 인증 완료 상태를 확인한다.
    - 인증 완료 상태가 없으면 회원가입을 거부한다.
 
@@ -176,15 +176,15 @@ spring:
 
 ### 비밀번호 재설정 인증 흐름
 
-1. `POST /auth/password-reset/code`
+1. `POST /api/v1/auth/password-reset/code`
    - 이메일을 받아 인증코드를 생성한다.
    - 생성한 인증코드를 Redis에 저장한다.
    - 인증코드를 이메일로 발송한다.
-2. `POST /auth/password-reset/code/verify`
+2. `POST /api/v1/auth/password-reset/code/verify`
    - 이메일과 인증코드를 받는다.
    - 사용자가 입력한 인증번호가 Redis에 저장된 인증번호와 일치하는지 확인한다.
    - 일치하면 비밀번호 재설정 인증 완료 상태를 Redis에 저장한다.
-3. `PATCH /auth/password-reset`
+3. `PATCH /api/v1/auth/password-reset`
    - 비밀번호 변경 전에 해당 이메일의 인증 완료 상태를 확인한다.
    - 인증 완료 상태가 없으면 비밀번호 재설정을 거부한다.
 
