@@ -31,19 +31,23 @@ spring:
       '[org.springframework.data.redis]': info
       '[io.lettuce.core]': info
 
-  management:
-    endpoints:
-      web:
-        exposure:
-          include: health,info,metrics
+management:
+  health:
+    mail:
+      enabled: false
 
-    endpoint:
-      health:
-        show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
 
-    metrics:
-      tags:
-        application: Workipedia
+  endpoint:
+    health:
+      show-details: always
+
+  metrics:
+    tags:
+      application: Workipedia
 
 app:
   mail:
