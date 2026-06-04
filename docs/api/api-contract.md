@@ -44,60 +44,43 @@ Authorization: Bearer <accessToken>
 
 ### 2.3 공통 응답
 
-모든 API 응답 Body는 공통 응답 객체로 감싼다.
-개별 API 명세의 `Response` 예시가 도메인 필드만 보여주는 경우에도 실제 응답에서는 아래 공통 응답의 `data` 안에 들어간다.
+성공 응답은 `ResponseEntity<T>`로 직접 반환한다.
+응답 Body를 `code`, `status`, `message`, `data` 형태의 공통 객체로 감싸지 않는다.
 
-| 필드 | 타입 | 설명 |
-|---|---|---|
-| `code` | Int | HTTP 상태 코드. 예: `200`, `201`, `400`, `401`, `500` |
-| `status` | String | 성공 시 HTTP 상태 이름, 실패 시 비즈니스 에러 코드. 예: `OK`, `CREATED`, `bad_request`, `ticket-001` |
-| `message` | String | 응답 메시지 |
-| `data` | Object / Array / null | 실제 응답 데이터. 단건은 객체, 목록은 배열 또는 페이지 객체, 응답 데이터가 없으면 `null` |
-
-성공 응답:
+응답 데이터가 있는 경우:
 
 ```json
 {
-  "code": 200,
-  "status": "OK",
-  "message": "조회 성공",
-  "data": {}
+  "id": 1,
+  "name": "예시"
 }
 ```
 
-생성 성공 응답:
+목록 응답:
 
 ```json
-{
-  "code": 201,
-  "status": "CREATED",
-  "message": "생성 완료",
-  "data": {
-    "id": 1
+[
+  {
+    "id": 1,
+    "name": "예시"
   }
-}
+]
 ```
 
-실패:
+응답 데이터가 없는 경우:
 
-```json
-{
-  "code": 404,
-  "status": "ticket-001",
-  "message": "티켓을 찾을 수 없습니다.",
-  "data": null
-}
+```http
+200 OK
 ```
 
 구현 기준:
 
-- Spring Controller는 `ApiResponse<T>` 형태로 응답한다.
-- `data`는 배열로 고정하지 않고 제네릭으로 둔다.
-- 목록 조회에서 페이징이 필요하면 `data.content`, `data.pageInfo` 구조를 사용한다.
-- 에러 응답의 `data`는 기본적으로 `null`로 둔다.
-- HTTP status code와 Body의 `code` 값은 같은 값을 사용한다.
-- 성공 응답의 `status`는 `HttpStatus.name()` 값을 사용한다. 예: `OK`, `CREATED`
-- 실패 응답의 `status`는 `ErrorType.status`에 정의한 비즈니스 에러 코드를 사용한다.
+- Spring Controller는 `ResponseEntity<T>`를 직접 반환한다.
+- 생성 성공은 `ResponseEntity.status(HttpStatus.CREATED).body(response)`를 사용한다.
+- 일반 조회/수정 성공은 `ResponseEntity.ok(response)`를 사용한다.
+- 응답 데이터가 없는 성공 응답은 `ResponseEntity.ok().build()` 또는 `ResponseEntity.noContent().build()`를 사용한다.
+- 목록 조회는 배열 또는 페이지 객체를 직접 반환한다.
+- 에러 응답은 공통 예외 처리 구조를 따른다.
 - 공통 에러 코드는 `bad_request`, `unauthorized`, `forbidden`, `not_found`, `conflict`, `internal_error`를 사용한다.
 - 도메인 에러 코드는 `{domain}-{number}` 형식을 사용한다. 예: `auth-001`, `ticket-001`, `worki-001`
 
@@ -170,25 +153,20 @@ Request: 없음
 Response:
 
 ```json
-{
-  "code": 200,
-  "status": "OK",
-  "message": "부서 목록 조회 성공",
-  "data": [
-    {
-      "departmentId": 1,
-      "departmentName": "인사팀"
-    },
-    {
-      "departmentId": 2,
-      "departmentName": "총무팀"
-    },
-    {
-      "departmentId": 3,
-      "departmentName": "IT지원팀"
-    }
-  ]
-}
+[
+  {
+    "departmentId": 1,
+    "departmentName": "인사팀"
+  },
+  {
+    "departmentId": 2,
+    "departmentName": "총무팀"
+  },
+  {
+    "departmentId": 3,
+    "departmentName": "IT지원팀"
+  }
+]
 ```
 
 ### POST `/auth/signup/code`
@@ -205,13 +183,8 @@ Request:
 
 Response:
 
-```json
-{
-  "code": 200,
-  "status": "OK",
-  "message": "인증코드 발송 완료",
-  "data": null
-}
+```http
+200 OK
 ```
 
 ### POST `/auth/signup/code/verify`
@@ -229,13 +202,8 @@ Request:
 
 Response:
 
-```json
-{
-  "code": 200,
-  "status": "OK",
-  "message": "인증코드 확인 완료",
-  "data": null
-}
+```http
+200 OK
 ```
 
 ### POST `/auth/signup`
@@ -258,15 +226,10 @@ Response:
 
 ```json
 {
-  "code": 201,
-  "status": "CREATED",
-  "message": "회원가입 완료",
-  "data": {
-    "userId": 123,
-    "role": "USER",
-    "nickname": "눈물흘리는데이지",
-    "status": "ACTIVE"
-  }
+  "userId": 123,
+  "role": "USER",
+  "nickname": "눈물흘리는데이지",
+  "status": "ACTIVE"
 }
 ```
 
@@ -285,17 +248,12 @@ Response:
 
 ```json
 {
-  "code": 200,
-  "status": "OK",
-  "message": "로그인 성공",
-  "data": {
-    "accessToken": "jwt-access-token",
-    "userId": 123,
-    "departmentId": 1,
-    "role": "USER",
-    "nickname": "눈물흘리는데이지",
-    "status": "ACTIVE"
-  }
+  "accessToken": "jwt-access-token",
+  "userId": 123,
+  "departmentId": 1,
+  "role": "USER",
+  "nickname": "눈물흘리는데이지",
+  "status": "ACTIVE"
 }
 ```
 
@@ -304,6 +262,10 @@ Response Header:
 ```http
 Set-Cookie: refreshToken=jwt-refresh-token; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth
 ```
+
+- Refresh Token 쿠키는 Access Token 재발급 API 호출을 위한 값이다.
+- 일반 인증 API는 Refresh Token이 아니라 `Authorization` 헤더의 Access Token으로 인증한다.
+- 예를 들어 `/api/v1/me`로 시작하는 마이페이지 조회 API도 Access Token으로 인증한다.
 
 ## 5. Chatbot API
 
