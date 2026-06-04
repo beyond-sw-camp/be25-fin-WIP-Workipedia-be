@@ -5,6 +5,8 @@ import com.wip.workipedia.admin.dto.AdminLogResponse;
 import com.wip.workipedia.admin.dto.AdminTicketQueueResponse;
 import com.wip.workipedia.admin.dto.KnowledgeReviewTicketResponse;
 import com.wip.workipedia.admin.service.AdminDashboardService;
+import com.wip.workipedia.esg.dto.AdminEsgResponse;
+import com.wip.workipedia.esg.service.EsgService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminController {
 
 	private final AdminDashboardService adminDashboardService;
+	private final EsgService esgService;
 
 	// SYSTEM_ADMIN 전체 운영 현황 API
 	@GetMapping("/dashboard")
@@ -47,5 +50,10 @@ public class AdminController {
 	@GetMapping("/logs")
 	public ResponseEntity<List<AdminLogResponse>> getAdminLogs() {
 		return ResponseEntity.ok(adminDashboardService.getAdminLogs());
+	}
+
+	@GetMapping("/esg")
+	public ResponseEntity<AdminEsgResponse> getAdminEsg() {
+		return ResponseEntity.ok(esgService.getAdminEsg());
 	}
 }
