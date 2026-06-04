@@ -9,10 +9,10 @@ import java.security.SecureRandom;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-@Service
-@RequiredArgsConstructor
 // 회원가입 인증코드 생성, 발송 요청, Redis 검증 흐름을 담당합니다.
 // 실제 발송 방식은 EmailSender 구현체가 담당하므로 로컬/운영 환경별로 교체할 수 있습니다.
+@Service
+@RequiredArgsConstructor
 public class SignupEmailCodeService {
 
 	private static final int EMAIL_CODE_BOUND = 1_000_000;
