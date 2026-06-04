@@ -1,11 +1,12 @@
 package com.wip.workipedia.point.service;
 
+import com.wip.workipedia.common.response.PageResponse;
 import com.wip.workipedia.point.dto.MyPointResponse;
 import com.wip.workipedia.point.dto.PointHistoryResponse;
 import com.wip.workipedia.point.repository.PointHistoryRepository;
 import com.wip.workipedia.point.repository.UserPointRepository;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,9 +26,11 @@ public class PointService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<PointHistoryResponse> getMyPointHistory() {
-		return pointHistoryRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(SKELETON_USER_ID).stream()
-			.map(PointHistoryResponse::from)
-			.toList();
+	public PageResponse<PointHistoryResponse> getMyPointHistory(Pageable pageable) {
+		return PageResponse.from(
+			pointHistoryRepository
+				.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(SKELETON_USER_ID, pageable)
+				.map(PointHistoryResponse::from)
+		);
 	}
 }
