@@ -7,6 +7,7 @@ import com.wip.workipedia.auth.dto.SignupResponse;
 import com.wip.workipedia.auth.service.AuthService;
 import com.wip.workipedia.auth.service.SignupEmailCodeService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,17 +17,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/auth")
+@RequiredArgsConstructor
 public class AuthController {
 	private final AuthService authService;
 	private final SignupEmailCodeService signupEmailCodeService;
-
-	public AuthController(
-		AuthService authService,
-		SignupEmailCodeService signupEmailCodeService
-	) {
-		this.authService = authService;
-		this.signupEmailCodeService = signupEmailCodeService;
-	}
 
 	@PostMapping("/signup/code")
 	// 회원가입용 인증코드 발송 API입니다.

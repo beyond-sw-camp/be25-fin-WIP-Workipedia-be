@@ -9,11 +9,13 @@ import com.wip.workipedia.department.repository.DepartmentRepository;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.repository.UserRepository;
 import java.security.SecureRandom;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class AuthService {
 
 	private static final String[] NICKNAME_PREFIXES = {
@@ -31,18 +33,6 @@ public class AuthService {
 	private final PasswordEncoder passwordEncoder;
 	private final EmailVerificationService emailVerificationService;
 	private final SecureRandom secureRandom = new SecureRandom();
-
-	public AuthService(
-		DepartmentRepository departmentRepository,
-		UserRepository userRepository,
-		PasswordEncoder passwordEncoder,
-		EmailVerificationService emailVerificationService
-	) {
-		this.departmentRepository = departmentRepository;
-		this.userRepository = userRepository;
-		this.passwordEncoder = passwordEncoder;
-		this.emailVerificationService = emailVerificationService;
-	}
 
 	@Transactional
 	public SignupResponse signup(SignupRequest signupRequest) {
