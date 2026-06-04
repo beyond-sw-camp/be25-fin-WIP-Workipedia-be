@@ -344,9 +344,11 @@ Response:
 | GET | `/tickets/{ticketId}` | 티켓 상세 | 필요 |
 | PATCH | `/tickets/{ticketId}/status` | 티켓 상태 변경 | 필요 |
 | POST | `/tickets/{ticketId}/transfer-requests` | TEAM_ADMIN 티켓 이관 요청 | TEAM_ADMIN |
+| PATCH | `/tickets/{ticketId}/refuse` | 티켓 반려 | TEAM_ADMIN |
 | POST | `/tickets/{ticketId}/answers` | 담당 부서 공식 답변 및 처리 완료 | 필요 |
 | PATCH | `/admin/team/knowledge-review-tickets/{ticketId}/review` | 처리 완료 티켓 지식화 여부 선택 | TEAM_ADMIN |
-| PATCH | `/tickets/{ticketId}/refuse` | 티켓 반려 | TEAM_ADMIN |
+| POST | `/tickets/{ticketId}/knowledge-candidates` | 처리 완료 티켓 지식화 후보 등록 | 필요 |
+| PATCH | `/knowledge-candidates/{candidateId}/review` | 지식화 후보 승인/반려 | TEAM_ADMIN |
 
 ### POST `/tickets`
 
@@ -535,6 +537,10 @@ Response:
 |---|---|---|---|
 | GET | `/points/me` | 내 포인트 | 필요 |
 | GET | `/points/me/history` | 내 포인트 이력 | 필요 |
+| GET | `/points/histories` | 포인트 변동 이력 전체 | 필요 |
+| GET | `/points/histories/earn` | 적립 내역 | 필요 |
+| GET | `/points/histories/spend` | 소모 내역 | 필요 |
+| GET | `/points/ranking` | 포인트 랭킹 | 필요 |
 
 ## 11. ESG Metrics API
 
@@ -570,7 +576,10 @@ Response:
 |---|---|---|---|
 | GET | `/admin/team/tickets` | 자기 팀 티켓 큐 | TEAM_ADMIN |
 | GET | `/admin/team/knowledge-review-tickets` | 자기 팀 처리 완료 티켓의 지식화 검토 목록 | TEAM_ADMIN |
+| GET | `/admin/team/knowledge-candidates` | 자기 팀 지식화 후보 목록 | TEAM_ADMIN |
 | GET | `/admin/dashboard` | 운영 대시보드 | SYSTEM_ADMIN |
+| GET | `/admin/dashboard/summary` | 운영 대시보드 요약 | SYSTEM_ADMIN |
+| GET | `/admin/dashboard/ticket-statistics` | 티켓 통계 | SYSTEM_ADMIN |
 | GET | `/admin/common-queue/tickets` | 공통 접수 큐 | SYSTEM_ADMIN |
 | PATCH | `/admin/common-queue/tickets/{ticketId}/department` | 공통 접수 큐 티켓 부서 배정 | SYSTEM_ADMIN |
 | GET | `/admin/users` | 사용자 목록 | SYSTEM_ADMIN |
