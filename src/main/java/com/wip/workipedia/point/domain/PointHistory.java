@@ -7,34 +7,41 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "point_history")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PointHistory {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "point_history_id")
-	private Long id;
+	private Long pointHistoryId;
 
-	@Column(name = "user_id", nullable = false)
+	@Column(nullable = false)
 	private Long userId;
 
-	@Column(name = "point_amount", nullable = false)
+	@Column(nullable = false)
 	private int pointAmount;
 
-	@Column(name = "reason_type", nullable = false, length = 50)
+	@Column(nullable = false, length = 50)
 	private String reasonType;
 
-	@Column(name = "related_type", length = 50)
+	@Column(length = 50)
 	private String relatedType;
 
-	@Column(name = "related_id")
 	private Long relatedId;
 
-	@Column(name = "created_at", nullable = false)
+	@Column(nullable = false)
 	private LocalDateTime createdAt;
 
-	protected PointHistory() {
-	}
+	private LocalDateTime updatedAt;
+
+	private LocalDateTime deletedAt;
+
+	@Column(nullable = false, length = 1, columnDefinition = "CHAR(1) DEFAULT 'N'")
+	private String isDeleted = "N";
 }

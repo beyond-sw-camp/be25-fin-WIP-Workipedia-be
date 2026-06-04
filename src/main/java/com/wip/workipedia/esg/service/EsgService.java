@@ -1,8 +1,8 @@
 package com.wip.workipedia.esg.service;
 
+import com.wip.workipedia.admin.dto.AdminEsgResponse;
+import com.wip.workipedia.admin.dto.EsgGradeDistributionResponse;
 import com.wip.workipedia.esg.domain.EsgGrade;
-import com.wip.workipedia.esg.dto.AdminEsgResponse;
-import com.wip.workipedia.esg.dto.EsgGradeDistributionResponse;
 import com.wip.workipedia.esg.dto.EsgResponse;
 import com.wip.workipedia.esg.repository.EsgGradeRepository;
 import com.wip.workipedia.point.domain.UserPoint;

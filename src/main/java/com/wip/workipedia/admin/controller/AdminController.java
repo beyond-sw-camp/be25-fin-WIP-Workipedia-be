@@ -1,11 +1,11 @@
 package com.wip.workipedia.admin.controller;
 
 import com.wip.workipedia.admin.dto.AdminDashboardResponse;
+import com.wip.workipedia.admin.dto.AdminEsgResponse;
 import com.wip.workipedia.admin.dto.AdminLogResponse;
 import com.wip.workipedia.admin.dto.AdminTicketQueueResponse;
 import com.wip.workipedia.admin.dto.KnowledgeReviewTicketResponse;
 import com.wip.workipedia.admin.service.AdminDashboardService;
-import com.wip.workipedia.esg.dto.AdminEsgResponse;
 import com.wip.workipedia.esg.service.EsgService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

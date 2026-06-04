@@ -1,4 +1,4 @@
-package com.wip.workipedia.esg.dto;
+package com.wip.workipedia.admin.dto;
 
 import java.util.List;
 

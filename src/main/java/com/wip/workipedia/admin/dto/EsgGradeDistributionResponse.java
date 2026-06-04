@@ -1,4 +1,4 @@
-package com.wip.workipedia.esg.dto;
+package com.wip.workipedia.admin.dto;
 
 public record EsgGradeDistributionResponse(
 	Integer gradeId,

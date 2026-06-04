@@ -1,13 +1,24 @@
 package com.wip.workipedia.point.dto;
 
+import com.wip.workipedia.point.domain.PointHistory;
 import java.time.LocalDateTime;
 
 public record PointHistoryResponse(
 	long pointHistoryId,
 	int pointAmount,
 	String reasonType,
-	String relatedType, // 포인트 이력 내용 ex) 게시글 작성 
-	Long relatedId, // fk 아님 질문이면 question_id, 티켓이면  ticket_id
+	String relatedType,
+	Long relatedId,
 	LocalDateTime createdAt
 ) {
+	public static PointHistoryResponse from(PointHistory pointHistory) {
+		return new PointHistoryResponse(
+			pointHistory.getPointHistoryId(),
+			pointHistory.getPointAmount(),
+			pointHistory.getReasonType(),
+			pointHistory.getRelatedType(),
+			pointHistory.getRelatedId(),
+			pointHistory.getCreatedAt()
+		);
+	}
 }
