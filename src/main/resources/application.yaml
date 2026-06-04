@@ -8,18 +8,6 @@ spring:
   config:
     import: optional:file:.env[.properties]
 
-  mail:
-    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
-    port: ${SPRING_MAIL_PORT:587}
-    username: ${SPRING_MAIL_USERNAME:}
-    password: ${SPRING_MAIL_PASSWORD:}
-    properties:
-      mail:
-        smtp:
-          auth: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH:true}
-          starttls:
-            enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:true}
-
   flyway:
     enabled: true
 
@@ -46,7 +34,8 @@ spring:
         application: Workipedia
 
 app:
-  mail:
-    # 기본 발송 방식은 Gmail SMTP입니다.
-    # 로컬 테스트 시 .env에 Gmail 계정과 앱 비밀번호를 설정해야 실제 인증코드가 발송됩니다.
-    sender: ${APP_MAIL_SENDER:smtp}
+  jwt:
+    # JWT 서명 키는 환경별 민감값이므로 .env 또는 배포 환경변수로 주입합니다.
+    secret: ${JWT_SECRET:local-development-jwt-secret-key-change-before-release}
+    access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:15m}
+    refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:14d}

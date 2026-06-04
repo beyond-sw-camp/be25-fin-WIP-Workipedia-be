@@ -18,3 +18,21 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+  mail:
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:true}
+
+app:
+  mail:
+    # 로컬 테스트에서는 Gmail SMTP로 인증코드를 발송합니다.
+    # 실제 Gmail 계정과 앱 비밀번호는 .env에 설정합니다.
+    sender: ${APP_MAIL_SENDER:smtp}

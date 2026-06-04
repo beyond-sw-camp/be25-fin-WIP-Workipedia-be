@@ -1,4 +1,4 @@
-package com.wip.workipedia.global.security;
+package com.wip.workipedia.config;
 
 import com.wip.workipedia.auth.handler.AccessDeniedHandlerImpl;
 import com.wip.workipedia.auth.handler.AuthenticationEntryPointImpl;
