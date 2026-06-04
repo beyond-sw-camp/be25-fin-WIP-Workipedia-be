@@ -21,7 +21,11 @@ public enum ErrorType {
 	// worki
 	WORKI_NOT_FOUND("worki-001", "워키 리소스를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 	WORKI_FORBIDDEN("worki-002", "해당 작업에 대한 권한이 없습니다.", HttpStatus.FORBIDDEN),
-	WORKI_POLICY_VIOLATION("worki-003", "현재 상태에서 허용되지 않는 작업입니다.", HttpStatus.CONFLICT);
+	WORKI_POLICY_VIOLATION("worki-003", "현재 상태에서 허용되지 않는 작업입니다.", HttpStatus.CONFLICT),
+
+	// notification
+	NOTIFICATION_NOT_FOUND("notification-001", "알림을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+	NOTIFICATION_FORBIDDEN("notification-002", "본인 알림이 아닙니다.", HttpStatus.FORBIDDEN);
 
 	private final String status;
 	private final String message;

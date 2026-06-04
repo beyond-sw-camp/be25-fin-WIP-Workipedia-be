@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 // URL은 그대로 유지하되 답변 관련 작업을 한 클래스로 모음(생성, 채택, 추후 GET/PATCH 등).
 @RestController
-@RequestMapping("/worki")
+@RequestMapping("/api/v1/worki")
 @RequiredArgsConstructor
 public class WorkiAnswerController {
 
