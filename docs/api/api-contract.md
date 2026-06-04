@@ -17,11 +17,11 @@
 
 ### 2.1 Base URL
 
-| 환경 | Base URL                       |
-|---|--------------------------------|
-| local | `http://localhost:8080/api/v1` |
-| dev/staging | 미정                             |
-| production | 미정                             |
+| 환경        | Base URL                       |
+| ----------- | ------------------------------ |
+| local       | `http://localhost:8080/api/v1` |
+| dev/staging | 미정                           |
+| production  | 미정                           |
 
 ### 2.2 인증
 
@@ -44,60 +44,43 @@ Authorization: Bearer <accessToken>
 
 ### 2.3 공통 응답
 
-모든 API 응답 Body는 공통 응답 객체로 감싼다.
-개별 API 명세의 `Response` 예시가 도메인 필드만 보여주는 경우에도 실제 응답에서는 아래 공통 응답의 `data` 안에 들어간다.
+성공 응답은 `ResponseEntity<T>`로 직접 반환한다.
+응답 Body를 `code`, `status`, `message`, `data` 형태의 공통 객체로 감싸지 않는다.
 
-| 필드 | 타입 | 설명 |
-|---|---|---|
-| `code` | Int | HTTP 상태 코드. 예: `200`, `201`, `400`, `401`, `500` |
-| `status` | String | 성공 시 HTTP 상태 이름, 실패 시 비즈니스 에러 코드. 예: `OK`, `CREATED`, `bad_request`, `ticket-001` |
-| `message` | String | 응답 메시지 |
-| `data` | Object / Array / null | 실제 응답 데이터. 단건은 객체, 목록은 배열 또는 페이지 객체, 응답 데이터가 없으면 `null` |
-
-성공 응답:
+응답 데이터가 있는 경우:
 
 ```json
 {
-  "code": 200,
-  "status": "OK",
-  "message": "조회 성공",
-  "data": {}
+  "id": 1,
+  "name": "예시"
 }
 ```
 
-생성 성공 응답:
+목록 응답:
 
 ```json
-{
-  "code": 201,
-  "status": "CREATED",
-  "message": "생성 완료",
-  "data": {
-    "id": 1
+[
+  {
+    "id": 1,
+    "name": "예시"
   }
-}
+]
 ```
 
-실패:
+응답 데이터가 없는 경우:
 
-```json
-{
-  "code": 404,
-  "status": "ticket-001",
-  "message": "티켓을 찾을 수 없습니다.",
-  "data": null
-}
+```http
+200 OK
 ```
 
 구현 기준:
 
-- Spring Controller는 `ApiResponse<T>` 형태로 응답한다.
-- `data`는 배열로 고정하지 않고 제네릭으로 둔다.
-- 목록 조회에서 페이징이 필요하면 `data.content`, `data.pageInfo` 구조를 사용한다.
-- 에러 응답의 `data`는 기본적으로 `null`로 둔다.
-- HTTP status code와 Body의 `code` 값은 같은 값을 사용한다.
-- 성공 응답의 `status`는 `HttpStatus.name()` 값을 사용한다. 예: `OK`, `CREATED`
-- 실패 응답의 `status`는 `ErrorType.status`에 정의한 비즈니스 에러 코드를 사용한다.
+- Spring Controller는 `ResponseEntity<T>`를 직접 반환한다.
+- 생성 성공은 `ResponseEntity.status(HttpStatus.CREATED).body(response)`를 사용한다.
+- 일반 조회/수정 성공은 `ResponseEntity.ok(response)`를 사용한다.
+- 응답 데이터가 없는 성공 응답은 `ResponseEntity.ok().build()` 또는 `ResponseEntity.noContent().build()`를 사용한다.
+- 목록 조회는 배열 또는 페이지 객체를 직접 반환한다.
+- 에러 응답은 공통 예외 처리 구조를 따른다.
 - 공통 에러 코드는 `bad_request`, `unauthorized`, `forbidden`, `not_found`, `conflict`, `internal_error`를 사용한다.
 - 도메인 에러 코드는 `{domain}-{number}` 형식을 사용한다. 예: `auth-001`, `ticket-001`, `worki-001`
 
@@ -109,9 +92,7 @@ Authorization: Bearer <accessToken>
   "status": "OK",
   "message": "성공",
   "data": {
-    "content": [
-      {}
-    ],
+    "content": [{}],
     "pageInfo": {
       "page": 1,
       "size": 10,
@@ -126,38 +107,107 @@ Authorization: Bearer <accessToken>
 
 ## 3. 담당자별 API 범위
 
-| 영역 | 백엔드 담당 | 프론트 담당 |
-|---|---|---|
-| Auth | 이슬이 | 황희수 |
-| 챗봇 세션/메시지 | 이슬이 | 황희수 |
-| 챗봇 답변/RAG/전환 | 김진혁 | 황희수 |
-| 워키 게시판 | 민정기 | 황희수 |
-| FAQ | 민정기 | 황희수 |
-| 알림 | 민정기 | 황희수 |
-| 티켓 | 김진혁 | 황희수 |
-| 티켓 지식화 | 김진혁, 김가영 | 황희수 |
-| 관리자 대시보드 | 김가영 | 황희수 |
-| 관리자 매뉴얼/부서/사용자 | 김가영 | 황희수 |
-| 포인트 | 김가영 | 황희수 |
-| ESG 등급 | 김가영 | 황희수 |
-| ESG 지표 | 김가영 | 황희수 |
+| 영역                      | 백엔드 담당    | 프론트 담당 |
+| ------------------------- | -------------- | ----------- |
+| Auth                      | 이슬이         | 황희수      |
+| 챗봇 세션/메시지          | 이슬이         | 민정기      |
+| 챗봇 답변/RAG/전환        | 김진혁         | 민정기      |
+| 워키 게시판               | 민정기         | 황희수      |
+| FAQ                       | 민정기         | 황희수      |
+| 알림                      | 이슬이         | 황희수      |
+| 티켓                      | 김진혁         | 황희수      |
+| 티켓 지식화               | 김진혁, 김가영 | 황희수      |
+| 관리자 대시보드           | 김가영         | 황희수      |
+| 관리자 매뉴얼/부서/사용자 | 김가영         | 황희수      |
+| 포인트                    | 김가영         | 황희수      |
+| ESG 등급                  | 김가영         | 황희수      |
+| ESG 지표                  | 김가영         | 황희수      |
 
-## 4. Auth API
+## 23
 
 담당: 이슬이
 
-| Method | Path | 설명 | 인증 |
-|---|---|---|---|
-| POST | `/auth/signup` | 회원가입 | 불필요 |
-| POST | `/auth/login` | 로그인 | 불필요 |
-| POST | `/auth/token/refresh` | Access Token 재발급 | Refresh Cookie 필요 |
-| POST | `/auth/logout` | 로그아웃 | Access Token 또는 Refresh Cookie 필요 |
-| POST | `/auth/password-reset/code` | 비밀번호 재설정 인증코드 발송 | 불필요 |
-| POST | `/auth/password-reset/code/verify` | 인증코드 확인 | 불필요 |
-| PATCH | `/auth/password-reset` | 비밀번호 재설정 | 불필요 |
-| GET | `/me` | 내 정보 | 필요 |
+| Method | Path                               | 설명                          | 인증               |
+| ------ | ---------------------------------- | ----------------------------- | ------------------ |
+| GET    | `/departments`                     | 회원가입 부서 목록 조회       | 불필요             |
+| POST   | `/auth/signup/code`                | 회원가입 인증코드 발송        | 불필요             |
+| POST   | `/auth/signup/code/verify`         | 회원가입 인증코드 확인        | 불필요             |
+| POST   | `/auth/signup`                     | 회원가입                      | 불필요             |
+| POST   | `/auth/login`                      | 로그인                        | 불필요             |
+| POST   | `/auth/token/refresh`              | 토큰 재발급                   | Refresh Token 필요 |
+| POST   | `/auth/logout`                     | 로그아웃                      | Access Token 필요  |
+| POST   | `/auth/password-reset/code`        | 비밀번호 재설정 인증코드 발송 | 불필요             |
+| POST   | `/auth/password-reset/code/verify` | 비밀번호 재설정 인증코드 확인 | 불필요             |
+| PATCH  | `/auth/password-reset`             | 비밀번호 재설정               | 본인 인증 필요     |
+| GET    | `/me/profile`                      | 마이페이지 조회               | Access Token 필요  |
+
+### GET `/departments`
+
+- 회원가입 화면에서 부서명 선택창에 표시할 부서 목록을 조회한다.
+- 부서 목록 개수는 DB에 등록된 부서 데이터를 기준으로 한다.
+
+Request: 없음
+
+Response:
+
+```json
+[
+  {
+    "departmentId": 1,
+    "departmentName": "인사팀"
+  },
+  {
+    "departmentId": 2,
+    "departmentName": "총무팀"
+  },
+  {
+    "departmentId": 3,
+    "departmentName": "IT지원팀"
+  }
+]
+```
+
+### POST `/auth/signup/code`
+
+- 인증코드는 숫자 6자리로 생성한다.
+
+Request:
+
+```json
+{
+  "email": "user@company.com"
+}
+```
+
+Response:
+
+```http
+200 OK
+```
+
+### POST `/auth/signup/code/verify`
+
+- 인증코드는 숫자 6자리로 입력한다.
+
+Request:
+
+```json
+{
+  "email": "user@company.com",
+  "code": "123456"
+}
+```
+
+Response:
+
+```http
+200 OK
+```
 
 ### POST `/auth/signup`
+
+- 회원가입은 이메일 인증코드 확인이 완료된 이메일에 대해서만 가능하다.
+- `passwordConfirm`은 프론트에서 `password`와의 일치 여부를 검증하며 Request Body에는 포함하지 않는다.
 
 Request:
 
@@ -174,15 +224,10 @@ Response:
 
 ```json
 {
-  "code": 201,
-  "status": "CREATED",
-  "message": "회원가입 완료",
-  "data": {
-    "userId": 123,
-    "role": "USER",
-    "nickname": "눈물흘리는데이지",
-    "status": "ACTIVE"
-  }
+  "userId": 123,
+  "role": "USER",
+  "nickname": "눈물흘리는데이지",
+  "status": "ACTIVE"
 }
 ```
 
@@ -201,17 +246,12 @@ Response:
 
 ```json
 {
-  "code": 200,
-  "status": "OK",
-  "message": "로그인 성공",
-  "data": {
-    "accessToken": "jwt-access-token",
-    "userId": 123,
-    "departmentId": 1,
-    "role": "USER",
-    "nickname": "눈물흘리는데이지",
-    "status": "ACTIVE"
-  }
+  "accessToken": "jwt-access-token",
+  "userId": 123,
+  "departmentId": 1,
+  "role": "USER",
+  "nickname": "눈물흘리는데이지",
+  "status": "ACTIVE"
 }
 ```
 
@@ -221,17 +261,32 @@ Response Header:
 Set-Cookie: refreshToken=jwt-refresh-token; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth
 ```
 
+- Refresh Token 쿠키는 Access Token 재발급 API 호출을 위한 값이다.
+- 일반 인증 API는 Refresh Token이 아니라 `Authorization` 헤더의 Access Token으로 인증한다.
+- 예를 들어 `/api/v1/me`로 시작하는 마이페이지 조회 API도 Access Token으로 인증한다.
+
 ## 5. Chatbot API
 
 담당: 이슬이, 김진혁
 
-| Method | Path | 설명 | 인증 |
-|---|---|---|---|
-| POST | `/chatbot/sessions` | 챗봇 세션 생성 | 필요 |
-| GET | `/chatbot/sessions` | 내 세션 목록 | 필요 |
-| GET | `/chatbot/sessions/{sessionId}/messages` | 세션 메시지 조회 | 필요 |
-| POST | `/chatbot/sessions/{sessionId}/messages` | 질문 전송 및 답변 생성 | 필요 |
-| GET | `/chatbot/sessions/{sessionId}/messages/{messageId}/worki-support` | 워키 질문 등록 지원 (챗봇 메시지 기반 초안 반환) | 필요 |
+| Method | Path                                                               | 설명                                             | 인증 |
+| ------ | ------------------------------------------------------------------ | ------------------------------------------------ | ---- |
+| POST   | `/chatbot/sessions`                                                | 챗봇 세션 생성                                   | 필요 |
+| GET    | `/chatbot/sessions`                                                | 내 세션 목록                                     | 필요 |
+| GET    | `/chatbot/sessions/{sessionId}/messages`                           | 세션 메시지 조회                                 | 필요 |
+| POST   | `/chatbot/sessions/{sessionId}/messages`                           | 질문 전송 및 답변 생성                           | 필요 |
+| GET    | `/chatbot/sessions/{sessionId}/messages/{messageId}/worki-support` | 워키 질문 등록 지원 (챗봇 메시지 기반 초안 반환) | 필요 |
+
+### AI 운영 API
+
+담당: 김진혁
+
+| Method | Path                    | 설명                                         | 인증         |
+| ------ | ----------------------- | -------------------------------------------- | ------------ |
+| POST   | `/ai/fine-tune/trigger` | APPROVED 지식 데이터 기반 파인튜닝 실행 요청 | SYSTEM_ADMIN |
+| GET    | `/ai/fine-tune/status`  | 파인튜닝 진행 상태 조회                      | SYSTEM_ADMIN |
+| GET    | `/ai/model/current`     | 현재 모델 버전 및 어댑터 정보 조회           | SYSTEM_ADMIN |
+| POST   | `/ai/prompt/update`     | base_system/admin_context 갱신               | SYSTEM_ADMIN |
 
 ### POST `/chatbot/sessions/{sessionId}/messages`
 
@@ -297,18 +352,18 @@ Response:
 
 ## 6. Worki API
 
-담당: 민정기
+담당: 이슬이
 
-| Method | Path | 설명 | 인증 |
-|---|---|---|---|
-| GET | `/worki/questions` | 질문 목록 | 필요 |
-| POST | `/worki/questions` | 질문 등록 | 필요 |
-| GET | `/worki/questions/{questionId}` | 질문 상세 | 필요 |
-| PATCH | `/worki/questions/{questionId}` | 질문 수정 | 필요 |
-| POST | `/worki/questions/{questionId}/answers` | 답변 등록 | 필요 |
-| POST | `/worki/questions/{questionId}/ticket-answers` | 티켓 공식 답변 워키 등록 | 필요 |
-| PATCH | `/worki/answers/{answerId}/adopt` | 답변 채택 | 필요 |
-| PUT | `/worki/questions/{questionId}/reaction` | 좋아요/싫어요 | 필요 |
+| Method | Path                                           | 설명                     | 인증 |
+| ------ | ---------------------------------------------- | ------------------------ | ---- |
+| GET    | `/worki/questions`                             | 질문 목록                | 필요 |
+| POST   | `/worki/questions`                             | 질문 등록                | 필요 |
+| GET    | `/worki/questions/{questionId}`                | 질문 상세                | 필요 |
+| PATCH  | `/worki/questions/{questionId}`                | 질문 수정                | 필요 |
+| POST   | `/worki/questions/{questionId}/answers`        | 답변 등록                | 필요 |
+| POST   | `/worki/questions/{questionId}/ticket-answers` | 티켓 공식 답변 워키 등록 | 필요 |
+| PATCH  | `/worki/answers/{answerId}/adopt`              | 답변 채택                | 필요 |
+| PUT    | `/worki/questions/{questionId}/reaction`       | 좋아요/싫어요            | 필요 |
 
 ### POST `/worki/questions`
 
@@ -337,18 +392,18 @@ Response:
 
 담당: 김진혁
 
-| Method | Path | 설명 | 인증 |
-|---|---|---|---|
-| POST | `/tickets` | 티켓 생성 | 필요 |
-| GET | `/tickets` | 티켓 목록 | 필요 |
-| GET | `/tickets/{ticketId}` | 티켓 상세 | 필요 |
-| PATCH | `/tickets/{ticketId}/status` | 티켓 상태 변경 | 필요 |
-| POST | `/tickets/{ticketId}/transfer-requests` | TEAM_ADMIN 티켓 이관 요청 | TEAM_ADMIN |
-| PATCH | `/tickets/{ticketId}/refuse` | 티켓 반려 | TEAM_ADMIN |
-| POST | `/tickets/{ticketId}/answers` | 담당 부서 공식 답변 및 처리 완료 | 필요 |
-| PATCH | `/admin/team/knowledge-review-tickets/{ticketId}/review` | 처리 완료 티켓 지식화 여부 선택 | TEAM_ADMIN |
-| POST | `/tickets/{ticketId}/knowledge-candidates` | 처리 완료 티켓 지식화 후보 등록 | 필요 |
-| PATCH | `/knowledge-candidates/{candidateId}/review` | 지식화 후보 승인/반려 | TEAM_ADMIN |
+| Method | Path                                         | 설명                            | 인증       |
+| ------ | -------------------------------------------- | ------------------------------- | ---------- |
+| POST   | `/tickets`                                   | 티켓 생성                       | 필요       |
+| GET    | `/tickets`                                   | 티켓 목록                       | 필요       |
+| GET    | `/tickets/{ticketId}`                        | 티켓 상세                       | 필요       |
+| PATCH  | `/tickets/{ticketId}/status`                 | 티켓 상태 변경                  | 필요       |
+| PATCH  | `/tickets/{ticketId}/assignee`               | 팀원 담당자 배정                | TEAM_ADMIN |
+| POST   | `/tickets/{ticketId}/transfer-requests`      | TEAM_ADMIN 티켓 이관 요청       | TEAM_ADMIN |
+| PATCH  | `/tickets/{ticketId}/refuse`                 | 티켓 반려                       | TEAM_ADMIN |
+| POST   | `/tickets/{ticketId}/answers`                | 담당 부서 공식 답변             | 필요       |
+| POST   | `/tickets/{ticketId}/knowledge-candidates`   | 처리 완료 티켓 지식화 후보 등록 | 필요       |
+| PATCH  | `/knowledge-candidates/{candidateId}/review` | 지식화 후보 승인/반려           | TEAM_ADMIN |
 
 ### POST `/tickets`
 
@@ -360,8 +415,10 @@ Request:
   "sourceChatbotMessageId": 102,
   "type": "REQUEST",
   "categoryId": 3,
+  "priority": "MEDIUM",
   "title": "VPN 접속 오류 처리 요청",
-  "content": "VPN 접속 오류 처리를 요청합니다."
+  "content": "VPN 접속 오류 처리를 요청합니다.",
+  "attachmentIds": [1, 2]
 }
 ```
 
@@ -375,6 +432,13 @@ Response:
   "assignedDepartmentName": "IT지원팀",
   "routingConfidenceScore": 87.5,
   "routingDecision": "AUTO_ASSIGNED",
+  "recommendedAssignees": [
+    {
+      "userId": 12,
+      "nickname": "노잇4821",
+      "completedTicketCountLast30Days": 14
+    }
+  ],
   "routingReasons": [
     "키워드: VPN, 접속 오류",
     "카테고리: 시스템 접근",
@@ -408,13 +472,14 @@ Response:
 }
 ```
 
-### POST `/tickets/{ticketId}/answers`
+### PATCH `/tickets/{ticketId}/assignee`
 
 Request:
 
 ```json
 {
-  "content": "VPN 계정 상태를 확인했고 보안 프로그램 재실행 후 정상 접속 가능합니다."
+  "assigneeId": 12,
+  "memo": "VPN 계정 확인 후 처리 부탁드립니다."
 }
 ```
 
@@ -423,16 +488,11 @@ Response:
 ```json
 {
   "ticketId": 1,
-  "ticketAnswerId": 1,
-  "status": "COMPLETED",
-  "completedById": 12,
-  "completedByNickname": "노잇4821",
-  "knowledgeCandidateId": 1,
-  "knowledgeCandidateStatus": "REVIEW_REQUESTED"
+  "status": "IN_PROGRESS",
+  "assigneeId": 12,
+  "assigneeNickname": "노잇4821"
 }
 ```
-
-최초 공식 답변을 등록한 사용자가 티켓 처리자로 기록된다. 공식 답변 등록 시 티켓은 `COMPLETED`가 되고 지식화 검수 후보가 자동 생성된다.
 
 ### POST `/tickets/{ticketId}/transfer-requests`
 
@@ -484,7 +544,28 @@ Response:
 }
 ```
 
-### PATCH `/admin/team/knowledge-review-tickets/{ticketId}/review`
+### POST `/tickets/{ticketId}/knowledge-candidates`
+
+Request:
+
+```json
+{
+  "draftTitle": "VPN 접속 오류 처리 절차",
+  "draftContent": "VPN 접속 오류가 발생하면 계정 상태와 보안 프로그램 실행 여부를 먼저 확인한 뒤 IT지원팀에 요청합니다."
+}
+```
+
+Response:
+
+```json
+{
+  "candidateId": 1,
+  "ticketId": 1,
+  "status": "REVIEW_REQUESTED"
+}
+```
+
+### PATCH `/knowledge-candidates/{candidateId}/review`
 
 Request:
 
@@ -499,9 +580,39 @@ Response:
 
 ```json
 {
-  "ticketId": 1,
-  "knowledgeReviewStatus": "PUBLISHED",
+  "candidateId": 1,
+  "status": "PUBLISHED",
   "publishedWorkiQuestionId": 30
+}
+```
+
+### Attachment API
+
+담당: 김진혁
+
+| Method | Path                          | 설명                               | 인증 |
+| ------ | ----------------------------- | ---------------------------------- | ---- |
+| POST   | `/attachments`                | 이미지 업로드, `attachmentId` 반환 | 필요 |
+| GET    | `/attachments/{attachmentId}` | 이미지 조회                        | 필요 |
+
+### POST `/attachments`
+
+Request: `multipart/form-data`
+
+| Field        | Type   | 설명                                                                |
+| ------------ | ------ | ------------------------------------------------------------------- |
+| `file`       | file   | 이미지 파일                                                         |
+| `targetType` | string | `TICKET` 등 첨부 대상                                               |
+| `targetId`   | number | 이미 생성된 대상에 연결할 때 사용. 티켓 생성 전 업로드 시 null 가능 |
+
+Response:
+
+```json
+{
+  "attachmentId": 1,
+  "contentType": "image/png",
+  "fileSize": 123456,
+  "url": "/attachments/1"
 }
 ```
 
@@ -509,45 +620,100 @@ Response:
 
 담당: 민정기
 
-| Method | Path | 설명 | 인증 |
-|---|---|---|---|
-| GET | `/faq/worki/popular` | 인기 워키 | 필요 |
-| GET | `/faq/manuals/popular` | 인기 매뉴얼 | 필요 |
-| GET | `/faq/manuals/recent` | 최근 등록 매뉴얼 | 필요 |
+| Method | Path                   | 설명             | 인증 |
+| ------ | ---------------------- | ---------------- | ---- |
+| GET    | `/faq/worki/popular`   | 인기 워키        | 필요 |
+| GET    | `/faq/manuals/popular` | 인기 매뉴얼      | 필요 |
+| GET    | `/faq/manuals/recent`  | 최근 등록 매뉴얼 | 필요 |
 
 ## 9. Notification API
 
 담당: 민정기
 
-| Method | Path | 설명 | 인증 |
-|---|---|---|---|
-| GET | `/notifications` | 알림 목록 | 필요 |
-| GET | `/notifications/unread-count` | 미읽은 알림 갯수 | 필요 |
-| PATCH | `/notifications/{notificationId}/read` | 개별 읽음 | 필요 |
-| PATCH | `/notifications/read-all` | 모두 읽음 | 필요 |
-| DELETE | `/notifications/{notificationId}` | 알림 삭제 | 필요 |
+| Method | Path                                   | 설명             | 인증 |
+| ------ | -------------------------------------- | ---------------- | ---- |
+| GET    | `/notifications`                       | 알림 목록        | 필요 |
+| GET    | `/notifications/unread-count`          | 미읽은 알림 갯수 | 필요 |
+| PATCH  | `/notifications/{notificationId}/read` | 개별 읽음        | 필요 |
+| PATCH  | `/notifications/read-all`              | 모두 읽음        | 필요 |
+| DELETE | `/notifications/{notificationId}`      | 알림 삭제        | 필요 |
 
 > Phase 2: `GET /notifications/stream` (SSE 실시간 알림) — MVP는 DB 저장 + 조회 API 기반으로 시작 (ADR 007)
+
+## 9-1. Flash Chat API
+
+담당: 김진혁, 민정기, 김가영
+
+| Type            | Path                    | 설명                  | 인증 |
+| --------------- | ----------------------- | --------------------- | ---- |
+| REST GET        | `/flash-chat/messages`  | 현재 활성 메시지 목록 | 필요 |
+| STOMP Subscribe | `/topic/flash-chat`     | 메시지/반응 수신      | 필요 |
+| STOMP Send      | `/app/flash-chat/send`  | 메시지 전송           | 필요 |
+| STOMP Send      | `/app/flash-chat/react` | 좋아요 반응           | 필요 |
+
+### GET `/flash-chat/messages`
+
+Response:
+
+```json
+{
+  "messages": [
+    {
+      "id": "018f6c9d-7b4f-7a9a-9c15-1b0f4b5ad111",
+      "userId": 123,
+      "nickname": "노잇4821",
+      "content": "연차 반차 차이가 뭐예요?",
+      "replyToId": null,
+      "likeCount": 2,
+      "createdAt": "2026-06-03T10:00:00",
+      "expiresAt": "2026-06-03T10:10:00"
+    }
+  ]
+}
+```
+
+### `/app/flash-chat/send`
+
+Payload:
+
+```json
+{
+  "content": "연차 반차 차이가 뭐예요?",
+  "replyToId": null
+}
+```
+
+### `/app/flash-chat/react`
+
+Payload:
+
+```json
+{
+  "messageId": "018f6c9d-7b4f-7a9a-9c15-1b0f4b5ad111",
+  "reactionType": "LIKE"
+}
+```
 
 ## 10. Point API
 
 담당: 김가영
 
-| Method | Path | 설명 | 인증 |
-|---|---|---|---|
-| GET | `/points/me` | 내 포인트 | 필요 |
-| GET | `/points/me/history` | 내 포인트 이력 | 필요 |
+| Method | Path                      | 설명                  | 인증 |
+| ------ | ------------------------- | --------------------- | ---- |
+| GET    | `/points/me`              | 내 포인트             | 필요 |
+| GET    | `/points/histories`       | 포인트 변동 이력 전체 | 필요 |
+| GET    | `/points/histories/earn`  | 적립 내역             | 필요 |
+| GET    | `/points/histories/spend` | 소모 내역             | 필요 |
+| GET    | `/points/ranking`         | 포인트 랭킹           | 필요 |
 
 ## 11. ESG Metrics API
 
 담당: 김가영
 
-| Method | Path | 설명 | 인증 |
-|---|---|---|---|
-| GET | `/esg/me` | 내 ESG/기여 지표 | 필요 |
-| GET | `/esg/leaderboard` | ESG 리더보드 조회 | 필요 |
-
-### GET `/esg/me`
+| Method | Path                 | 설명                 | 인증                     |
+| ------ | -------------------- | -------------------- | ------------------------ |
+| GET    | `/esg/metrics/me`    | 내 ESG/기여 지표     | 필요                     |
+| GET    | `/admin/esg/metrics` | 관리자 ESG 운영 지표 | TEAM_ADMIN, SYSTEM_ADMIN |
 
 Response:
 
@@ -559,67 +725,7 @@ Response:
   "esgScore": 320,
   "gradeName": "SILVER",
   "sourceBackedAnswerRate": 0.85,
-  "ticketCompletionRate": 0.72,
-  "knowledgeConversionRate": 0.35,
-  "autoAssignmentSuccessRate": 0.82,
-  "esgRank": 3
-}
-```
-
-### GET `/esg/leaderboard`
-
-상위 랭커 영역과 로그인 사용자의 내 순위 영역을 함께 반환한다. `rank`는 리더보드 순위이고, `gradeName`은 ESG 점수에 따른 등급명이다.
-
-Response:
-
-```json
-{
-  "topRankers": [
-    {
-      "rank": 1,
-      "userId": 12,
-      "nickname": "춤추는민들레",
-      "departmentName": "인사팀",
-      "esgScore": 1850,
-      "gradeName": "LV 3",
-      "gradeImageUrl": "https://cdn.example.com/esg/lv3.png",
-      "answerCount": 15,
-      "acceptedAnswerCount": 5
-    },
-    {
-      "rank": 2,
-      "userId": 8,
-      "nickname": "웃는해바라기",
-      "departmentName": "IT지원팀",
-      "esgScore": 1620,
-      "gradeName": "LV 3",
-      "gradeImageUrl": "https://cdn.example.com/esg/lv3.png",
-      "answerCount": 13,
-      "acceptedAnswerCount": 4
-    },
-    {
-      "rank": 3,
-      "userId": 21,
-      "nickname": "날아가는나비",
-      "departmentName": "재무팀",
-      "esgScore": 1480,
-      "gradeName": "LV 2",
-      "gradeImageUrl": "https://cdn.example.com/esg/lv2.png",
-      "answerCount": 11,
-      "acceptedAnswerCount": 3
-    }
-  ],
-  "myRank": {
-    "rank": 5,
-    "userId": 3,
-    "nickname": "반짝이는 별",
-    "departmentName": "개발팀",
-    "esgScore": 1250,
-    "gradeName": "LV 2",
-    "gradeImageUrl": "https://cdn.example.com/esg/lv2.png",
-    "answerCount": 15,
-    "acceptedAnswerCount": 5
-  }
+  "ticketCompletionRate": 0.72
 }
 ```
 
@@ -627,39 +733,44 @@ Response:
 
 담당: 김가영
 
-| Method | Path | 설명 | 인증 |
-|---|---|---|---|
-| GET | `/admin/team/tickets` | 자기 팀 티켓 큐 | TEAM_ADMIN |
-| GET | `/admin/team/knowledge-review-tickets` | 자기 팀 처리 완료 티켓의 지식화 검토 목록 | TEAM_ADMIN |
-| GET | `/admin/team/knowledge-candidates` | 자기 팀 지식화 후보 목록 | TEAM_ADMIN |
-| GET | `/admin/dashboard` | 운영 대시보드 | SYSTEM_ADMIN |
-| GET | `/admin/dashboard/summary` | 운영 대시보드 요약 | SYSTEM_ADMIN |
-| GET | `/admin/dashboard/ticket-statistics` | 티켓 통계 | SYSTEM_ADMIN |
-| GET | `/admin/common-queue/tickets` | 공통 접수 큐 | SYSTEM_ADMIN |
-| PATCH | `/admin/common-queue/tickets/{ticketId}/department` | 공통 접수 큐 티켓 부서 배정 | SYSTEM_ADMIN |
-| GET | `/admin/users` | 사용자 목록 | SYSTEM_ADMIN |
-| PATCH | `/admin/users/{userId}/status` | 사용자 상태 변경 (활성/비활성) | SYSTEM_ADMIN |
-| DELETE | `/admin/worki/questions/{questionId}` | 워키 질문 soft delete | TEAM_ADMIN, SYSTEM_ADMIN |
-| GET | `/admin/manuals` | 매뉴얼 목록 | SYSTEM_ADMIN |
-| POST | `/admin/manuals` | 매뉴얼 추가 | SYSTEM_ADMIN |
-| PUT | `/admin/manuals/{manualId}` | 매뉴얼 수정 | SYSTEM_ADMIN |
-| DELETE | `/admin/manuals/{manualId}` | 매뉴얼 삭제 | SYSTEM_ADMIN |
-| GET | `/admin/departments` | 부서 목록 | SYSTEM_ADMIN |
-| POST | `/admin/departments` | 부서 추가 | SYSTEM_ADMIN |
-| DELETE | `/admin/departments/{departmentId}` | 부서 삭제 | SYSTEM_ADMIN |
-| GET | `/admin/points` | 포인트 현황 조회 | SYSTEM_ADMIN |
-| PATCH | `/admin/points/{employeeId}/deduct` | 포인트 차감 | SYSTEM_ADMIN |
-| GET | `/admin/logs` | 관리자 작업 로그 | SYSTEM_ADMIN |
-
+| Method | Path                                                | 설명                              | 인증                     |
+| ------ | --------------------------------------------------- | --------------------------------- | ------------------------ |
+| GET    | `/admin/team/tickets`                               | 자기 팀 티켓 큐                   | TEAM_ADMIN               |
+| GET    | `/admin/team/knowledge-candidates`                  | 자기 팀 지식화 후보 목록          | TEAM_ADMIN               |
+| GET    | `/admin/dashboard/summary`                          | 운영 대시보드 요약                | SYSTEM_ADMIN             |
+| GET    | `/admin/dashboard/ticket-statistics`                | 티켓 통계                         | SYSTEM_ADMIN             |
+| GET    | `/admin/common-queue/tickets`                       | 공통 접수 큐                      | SYSTEM_ADMIN             |
+| PATCH  | `/admin/common-queue/tickets/{ticketId}/department` | 공통 접수 큐 티켓 부서 배정       | SYSTEM_ADMIN             |
+| GET    | `/admin/users`                                      | 사용자 목록                       | SYSTEM_ADMIN             |
+| PATCH  | `/admin/users/{userId}/status`                      | 사용자 상태 변경 (활성/비활성)    | SYSTEM_ADMIN             |
+| DELETE | `/admin/worki/questions/{questionId}`               | 워키 질문 soft delete             | TEAM_ADMIN, SYSTEM_ADMIN |
+| GET    | `/admin/manuals`                                    | 매뉴얼 목록                       | SYSTEM_ADMIN             |
+| POST   | `/admin/manuals`                                    | 매뉴얼 추가                       | SYSTEM_ADMIN             |
+| PUT    | `/admin/manuals/{manualId}`                         | 매뉴얼 수정                       | SYSTEM_ADMIN             |
+| DELETE | `/admin/manuals/{manualId}`                         | 매뉴얼 삭제                       | SYSTEM_ADMIN             |
+| GET    | `/admin/departments`                                | 부서 목록                         | SYSTEM_ADMIN             |
+| POST   | `/admin/departments`                                | 부서 추가                         | SYSTEM_ADMIN             |
+| DELETE | `/admin/departments/{departmentId}`                 | 부서 삭제                         | SYSTEM_ADMIN             |
+| GET    | `/admin/points`                                     | 포인트 현황 조회                  | SYSTEM_ADMIN             |
+| PATCH  | `/admin/points/{employeeId}/deduct`                 | 포인트 차감                       | SYSTEM_ADMIN             |
+| GET    | `/admin/logs`                                       | 관리자 작업 로그                  | SYSTEM_ADMIN             |
+| GET    | `/admin/esg/metrics`                                | ESG 지표                          | SYSTEM_ADMIN             |
+| GET    | `/admin/flash-chat/settings`                        | Flash Chat 운영 설정 조회         | SYSTEM_ADMIN             |
+| PATCH  | `/admin/flash-chat/settings`                        | Flash Chat TTL/쿨다운/금지어 설정 | SYSTEM_ADMIN             |
+| DELETE | `/admin/flash-chat/messages/{messageId}`            | Flash Chat 메시지 강제 삭제       | SYSTEM_ADMIN             |
+| GET    | `/admin/ai/settings`                                | AI 프롬프트/학습 설정 조회        | SYSTEM_ADMIN             |
+| PATCH  | `/admin/ai/settings`                                | AI 프롬프트/학습 설정 수정        | SYSTEM_ADMIN             |
 
 ## 13. 미정 항목
 
-| 항목 | 상태 | 결정 필요자 |
-|---|---|---|
-| Refresh Token 저장소 | Redis 확정 | 이슬이 |
-| SYSTEM_ADMIN 담당 조직 | 기본: 경영지원팀, 회사별 조정 가능 | 김가영, 팀 전체 |
-| 티켓 자동 배정 점수 가중치 | 초안 확정 필요 | 김진혁 |
-| 로컬 임베딩 모델 | 미정 | 김진혁, 팀 전체 |
-| Elasticsearch 인덱스 차원수/similarity | 미정 (임베딩 모델 확정 후 결정) | 민정기, 김진혁 |
-| 알림 구현 방식 | SSE 우선, 폴링 fallback | 민정기, 황희수 |
-| 챗봇 세션 구조 | 세션 기반 확정, 이슬이와 최종 합의 필요 | 이슬이, 김진혁 |
+| 항목                                   | 상태                                    | 결정 필요자     |
+| -------------------------------------- | --------------------------------------- | --------------- |
+| Refresh Token 저장소                   | Redis 확정                              | 이슬이          |
+| SYSTEM_ADMIN 담당 조직                 | 기본: 경영지원팀, 회사별 조정 가능      | 김가영, 팀 전체 |
+| 티켓 자동 배정 점수 가중치             | 초안 확정 필요                          | 김진혁          |
+| 로컬 임베딩 모델                       | 미정                                    | 김진혁, 팀 전체 |
+| Elasticsearch 인덱스 차원수/similarity | 미정 (임베딩 모델 확정 후 결정)         | 민정기, 김진혁  |
+| 알림 구현 방식                         | SSE 우선, 폴링 fallback                 | 이슬이, 황희수 |
+| 챗봇 세션 구조                         | 세션 기반 확정, 이슬이와 최종 합의 필요 | 이슬이, 김진혁  |
+| Flash Chat 최대 활성 메시지 수         | 미정                                    | 김진혁, 김가영  |
+| 이미지 저장소                          | 로컬 파일시스템 또는 S3                 | 김진혁, 팀 전체 |

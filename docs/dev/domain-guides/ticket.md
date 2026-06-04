@@ -2,22 +2,22 @@
 
 > 문서 유형: Development Guide
 > 상태: Draft
-> 정본 위치: `docs/010-development/domain-guides/ticket.md`
-> 관련 문서: `docs/003-adr/004-ticket-routing-strategy.md`, `docs/003-adr/005-role-permission-strategy.md`, `docs/001-reference/service-flow.md`, `docs/004-api/api-contract.md`
+> 정본 위치: `docs/dev/domain-guides/ticket.md`
+> 관련 문서: `docs/adr/004-ticket-routing-strategy.md`, `docs/adr/005-role-permission-strategy.md`, `docs/reference/service-flow.md`, `docs/api/api-contract.md`
 > 버전: v0.1
-> 최종 수정: 2026-05-31
+> 최종 수정: 2026-06-04
 
 ## 개발 목표
 
-요청을 티켓으로 발행하고, 자동 배정 또는 공통 접수 큐를 거쳐 담당 부서 큐에 연결한다.
+요청을 티켓으로 발행하고, 자동 배정 또는 공통 접수 큐를 거쳐 담당 부서와 팀원에게 연결한다.
 
 ## 먼저 볼 문서
 
-- `docs/003-adr/004-ticket-routing-strategy.md`
-- `docs/003-adr/005-role-permission-strategy.md`
-- `docs/001-reference/service-flow.md`
-- `docs/004-api/api-contract.md`
-- `docs/005-database/db-migration-guide.md`
+- `docs/adr/004-ticket-routing-strategy.md`
+- `docs/adr/005-role-permission-strategy.md`
+- `docs/reference/service-flow.md`
+- `docs/api/api-contract.md`
+- `docs/dev/db-migration-guide.md`
 
 ## MVP 구현 범위
 
@@ -25,23 +25,28 @@
 - 라우팅 점수 저장
 - 담당 부서 자동 배정
 - 낮은 점수일 때 공통 접수 큐 이동
+- `TEAM_ADMIN`의 팀원 배정
 - `TEAM_ADMIN`의 이관 요청 시 공통 접수 큐 이동
-- 부서원이 공식 답변 등록 시 처리자 자동 기록
-- 공식 답변 등록 시 티켓 처리 완료
-- 처리 완료 티켓의 지식화 후보 자동 생성
+- 티켓 상태 변경
 - 본인 티켓 조회
 - 팀 티켓 큐 조회
 - 공통 접수 큐 조회
+- 티켓 중요도(priority) 저장
+- 부서별 최근 30일 처리 건수 기준 담당자 추천 TOP 3
+- 사진 첨부 업로드/조회
 
 ## API/DB 영향
 
 - `tickets`
 - `ticket_status`
+- `priority`
 - `assigned_department_id`
-- `completed_by`
+- `assignee_id`
 - `routing_confidence_score`
 - `transfer_reason`
+- `attachments`
 - ticket create/list/detail/update APIs
+- attachment upload/read APIs
 
 ## 권한/보안 체크
 
@@ -54,11 +59,15 @@
 
 - 사용자가 요청 티켓을 생성할 수 있다.
 - 라우팅 점수에 따라 담당 부서 또는 공통 접수 큐로 이동한다.
-- 같은 부서 사용자가 공식 답변을 등록하면 처리자로 자동 기록된다.
-- 공식 답변 등록 후 티켓이 처리 완료 상태가 되고 지식화 후보가 생성된다.
+- 팀 관리자가 팀원에게 티켓을 배정할 수 있다.
+- 담당 팀원이 처리 완료 상태로 변경할 수 있다.
+- 티켓 생성 시 중요도와 첨부 파일이 저장된다.
+- TEAM_ADMIN 화면에서 담당자 추천 후보를 확인할 수 있다.
 
 ## 논의 필요 사항
 
 - `RECEIVED` 상태를 DB에 실제로 남길지
 - 라우팅 점수 초기 기준
+- 담당자 변경 허용 여부
 - 반려/취소 상태를 MVP에 넣을지 여부
+- 이미지 저장소를 로컬 파일시스템으로 시작할지 S3로 갈지
