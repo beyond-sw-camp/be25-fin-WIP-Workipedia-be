@@ -1,5 +1,6 @@
 package com.wip.workipedia.esg.controller;
 
+import com.wip.workipedia.esg.dto.EsgLeaderboardPageResponse;
 import com.wip.workipedia.esg.dto.EsgResponse;
 import com.wip.workipedia.esg.service.EsgService;
 import lombok.RequiredArgsConstructor;
@@ -18,5 +19,10 @@ public class EsgController {
 	@GetMapping("/me")
 	public ResponseEntity<EsgResponse> getMyEsg() {
 		return ResponseEntity.ok(esgService.getMyEsg());
+	}
+
+	@GetMapping("/leaderboard")
+	public ResponseEntity<EsgLeaderboardPageResponse> getLeaderBoardEsg() {
+		return ResponseEntity.ok(esgService.getLeaderBoardEsg());
 	}
 }

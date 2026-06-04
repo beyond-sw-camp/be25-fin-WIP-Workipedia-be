@@ -537,10 +537,6 @@ Response:
 |---|---|---|---|
 | GET | `/points/me` | 내 포인트 | 필요 |
 | GET | `/points/me/history` | 내 포인트 이력 | 필요 |
-| GET | `/points/histories` | 포인트 변동 이력 전체 | 필요 |
-| GET | `/points/histories/earn` | 적립 내역 | 필요 |
-| GET | `/points/histories/spend` | 소모 내역 | 필요 |
-| GET | `/points/ranking` | 포인트 랭킹 | 필요 |
 
 ## 11. ESG Metrics API
 
@@ -548,8 +544,10 @@ Response:
 
 | Method | Path | 설명 | 인증 |
 |---|---|---|---|
-| GET | `/esg/metrics/me` | 내 ESG/기여 지표 | 필요 |
-| GET | `/admin/esg/metrics` | 관리자 ESG 운영 지표 | TEAM_ADMIN, SYSTEM_ADMIN |
+| GET | `/esg/me` | 내 ESG/기여 지표 | 필요 |
+| GET | `/esg/leaderboard` | ESG 리더보드 조회 | 필요 |
+
+### GET `/esg/me`
 
 Response:
 
@@ -565,6 +563,63 @@ Response:
   "knowledgeConversionRate": 0.35,
   "autoAssignmentSuccessRate": 0.82,
   "esgRank": 3
+}
+```
+
+### GET `/esg/leaderboard`
+
+상위 랭커 영역과 로그인 사용자의 내 순위 영역을 함께 반환한다. `rank`는 리더보드 순위이고, `gradeName`은 ESG 점수에 따른 등급명이다.
+
+Response:
+
+```json
+{
+  "topRankers": [
+    {
+      "rank": 1,
+      "userId": 12,
+      "nickname": "춤추는민들레",
+      "departmentName": "인사팀",
+      "esgScore": 1850,
+      "gradeName": "LV 3",
+      "gradeImageUrl": "https://cdn.example.com/esg/lv3.png",
+      "answerCount": 15,
+      "acceptedAnswerCount": 5
+    },
+    {
+      "rank": 2,
+      "userId": 8,
+      "nickname": "웃는해바라기",
+      "departmentName": "IT지원팀",
+      "esgScore": 1620,
+      "gradeName": "LV 3",
+      "gradeImageUrl": "https://cdn.example.com/esg/lv3.png",
+      "answerCount": 13,
+      "acceptedAnswerCount": 4
+    },
+    {
+      "rank": 3,
+      "userId": 21,
+      "nickname": "날아가는나비",
+      "departmentName": "재무팀",
+      "esgScore": 1480,
+      "gradeName": "LV 2",
+      "gradeImageUrl": "https://cdn.example.com/esg/lv2.png",
+      "answerCount": 11,
+      "acceptedAnswerCount": 3
+    }
+  ],
+  "myRank": {
+    "rank": 5,
+    "userId": 3,
+    "nickname": "반짝이는 별",
+    "departmentName": "개발팀",
+    "esgScore": 1250,
+    "gradeName": "LV 2",
+    "gradeImageUrl": "https://cdn.example.com/esg/lv2.png",
+    "answerCount": 15,
+    "acceptedAnswerCount": 5
+  }
 }
 ```
 
@@ -595,7 +650,7 @@ Response:
 | GET | `/admin/points` | 포인트 현황 조회 | SYSTEM_ADMIN |
 | PATCH | `/admin/points/{employeeId}/deduct` | 포인트 차감 | SYSTEM_ADMIN |
 | GET | `/admin/logs` | 관리자 작업 로그 | SYSTEM_ADMIN |
-| GET | `/admin/esg/metrics` | ESG 지표 | SYSTEM_ADMIN |
+
 
 ## 13. 미정 항목
 
