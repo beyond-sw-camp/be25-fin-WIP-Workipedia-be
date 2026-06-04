@@ -1,0 +1,4 @@
+ALTER TABLE users
+    MODIFY employee_id VARCHAR(100) NOT NULL,
+    MODIFY status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    ADD COLUMN last_login_at DATETIME NULL AFTER status;
