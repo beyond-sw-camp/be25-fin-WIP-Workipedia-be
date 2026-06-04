@@ -125,7 +125,7 @@ Authorization: Bearer <accessToken>
 | ESG 등급 | 김가영 | 황희수 |
 | ESG 지표 | 김가영 | 황희수 |
 
-##  23
+## 4. Auth API
 
 담당: 이슬이
 
@@ -266,6 +266,32 @@ Set-Cookie: refreshToken=jwt-refresh-token; HttpOnly; Secure; SameSite=Lax; Path
 - Refresh Token 쿠키는 Access Token 재발급 API 호출을 위한 값이다.
 - 일반 인증 API는 Refresh Token이 아니라 `Authorization` 헤더의 Access Token으로 인증한다.
 - 예를 들어 `/api/v1/me`로 시작하는 마이페이지 조회 API도 Access Token으로 인증한다.
+
+### POST `/auth/token/refresh`
+
+- 로그인 시 발급된 Refresh Token 쿠키를 검증한 뒤 새 Access Token과 새 Refresh Token을 함께 발급한다.
+- 새 Refresh Token은 Redis에 저장하고, 기존 Refresh Token은 폐기한다.
+- Access Token이 만료된 경우 호출하며, `Authorization` 헤더는 사용하지 않는다.
+
+Request Header:
+
+```http
+Cookie: refreshToken=jwt-refresh-token
+```
+
+Response:
+
+```json
+{
+  "accessToken": "jwt-new-access-token"
+}
+```
+
+Response Header:
+
+```http
+Set-Cookie: refreshToken=jwt-new-refresh-token; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth
+```
 
 ## 5. Chatbot API
 
