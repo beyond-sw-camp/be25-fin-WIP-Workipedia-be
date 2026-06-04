@@ -360,11 +360,11 @@ src/test/java/com/wip/workipedia/
 
 | 담당 | 범위 |
 |---|---|
-| 민정기 | worki, FAQ, notification, docs |
+| 민정기 | worki, FAQ, Elasticsearch, chatbot/mobile/CDN frontend after BE, docs |
 | 김가영 | admin, point, esggrade, ESG metrics |
 | 김진혁 | ticket, TEAM_ADMIN transfer request, local RAG, chatbot answer flow, docs |
-| 이슬이 | auth, user, security, chatbot sessions/messages |
-| 황희수 | frontend |
+| 이슬이 | auth, user, security, chatbot sessions/messages, notification |
+| 황희수 | frontend core flow |
 
 단, 챗봇은 이슬이와 김진혁의 경계를 초반에 맞춘다. 이슬이는 세션/메시지 저장, 김진혁은 local RAG/출처/전환 정책을 담당한다.
 

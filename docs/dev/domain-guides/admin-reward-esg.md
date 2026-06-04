@@ -2,10 +2,10 @@
 
 > 문서 유형: Development Guide
 > 상태: Draft
-> 정본 위치: `docs/010-development/domain-guides/admin-reward-esg.md`
-> 관련 문서: `docs/003-adr/005-role-permission-strategy.md`, `docs/003-adr/006-knowledge-conversion-strategy.md`, `docs/001-reference/project-proposal.md`, `docs/004-api/api-contract.md`
+> 정본 위치: `docs/dev/domain-guides/admin-reward-esg.md`
+> 관련 문서: `docs/adr/005-role-permission-strategy.md`, `docs/adr/006-knowledge-conversion-strategy.md`, `docs/reference/prd.md`, `docs/api/api-contract.md`
 > 버전: v0.1
-> 최종 수정: 2026-05-31
+> 최종 수정: 2026-06-04
 
 ## 개발 목표
 
@@ -13,10 +13,10 @@
 
 ## 먼저 볼 문서
 
-- `docs/003-adr/005-role-permission-strategy.md`
-- `docs/003-adr/006-knowledge-conversion-strategy.md`
-- `docs/001-reference/project-proposal.md`
-- `docs/004-api/api-contract.md`
+- `docs/adr/005-role-permission-strategy.md`
+- `docs/adr/006-knowledge-conversion-strategy.md`
+- `docs/reference/prd.md`
+- `docs/api/api-contract.md`
 
 ## MVP 구현 범위
 
@@ -28,6 +28,8 @@
 - 포인트 적립
 - ESG 점수 기준 등급 산정
 - 관리자 작업 로그 기준 반영
+- Flash Chat 운영 설정: TTL, 쿨다운, 금지어, 강제 삭제
+- AI 운영 설정: base_system/admin_context, 학습 데이터 유효기간, 파인튜닝 임계값, 상태 조회
 
 ## API/DB 영향
 
@@ -36,8 +38,12 @@
 - `points_daily_limit`
 - `esg_grade`
 - `admin_logs`
+- `flash_chat_settings`
+- `ai_prompt_settings`
 - dashboard summary APIs
 - ESG grade/score APIs
+- Flash Chat admin APIs
+- AI settings/status APIs
 
 ## 권한/보안 체크
 
@@ -45,6 +51,8 @@
 - `SYSTEM_ADMIN`은 공통 접수 큐와 전체 운영 지표를 본다.
 - `TEAM_ADMIN`은 자기 팀 지표와 지식화 승인 범위를 본다.
 - 민감한 티켓 본문을 전체 대시보드에 직접 노출하지 않는다.
+- Flash Chat 강제 삭제와 AI 설정 변경은 `admin_logs`에 기록한다.
+- `base_system` 변경 시 재학습 영향 안내가 필요하다.
 
 ## 완료 기준
 
@@ -52,6 +60,8 @@
 - 포인트가 이벤트에 따라 적립된다.
 - ESG 점수 기준 등급이 점수 구간에 따라 산정된다.
 - 지식화 전환 건수와 예상 절감 시간이 계산된다.
+- Flash Chat 운영 설정이 조회/수정된다.
+- AI 프롬프트/학습 설정이 조회/수정된다.
 
 ## 논의 필요 사항
 
@@ -59,3 +69,5 @@
 - ESG 등급 기준
 - ESG 절감 시간 산식
 - 관리자 로그 기록 대상 액션
+- Flash Chat 메시지 최대 보존 개수
+- QLoRA 파인튜닝 임계값 기본값

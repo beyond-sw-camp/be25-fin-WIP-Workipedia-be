@@ -13,10 +13,10 @@
 
 ## 먼저 볼 문서
 
-- `docs/003-adr/003-auth-strategy.md`
-- `docs/003-adr/005-role-permission-strategy.md`
-- `docs/004-api/api-contract.md`
-- `docs/001-reference/prd.md`
+- `docs/adr/003-auth-strategy.md`
+- `docs/adr/005-role-permission-strategy.md`
+- `docs/api/api-contract.md`
+- `docs/reference/prd.md`
 
 ## MVP 구현 범위
 
