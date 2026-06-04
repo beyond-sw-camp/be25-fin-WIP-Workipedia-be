@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 
 // 전역 @EnableJpaAuditing(Step1, 타 담당)에 의존하지 않도록 lifecycle 콜백으로 시간 컬럼을 채운다.
-// 각자 DB 테이블에 넣을때 사용할 DTO
+// 모든 도메인 엔티티가 상속하는 JPA 베이스 클래스(@MappedSuperclass). 시간/소프트삭제/수정주체 컬럼을 공통으로 제공한다.
 @Getter
 @MappedSuperclass
 public abstract class BaseTimeEntity {

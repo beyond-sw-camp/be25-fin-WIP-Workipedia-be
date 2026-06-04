@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/worki/questions")
+@RequestMapping("/api/v1/worki/questions")
 @RequiredArgsConstructor
 public class WorkiQuestionController {
 
@@ -69,6 +69,7 @@ public class WorkiQuestionController {
     }
 
     // 좋아요 취소
+    // 근데 이게 맞나? 논의 필요.
     @DeleteMapping("/{questionId}/like")
     public ResponseEntity<Void> unlike(
             @RequestHeader("X-User-Id") Long actorUserId,

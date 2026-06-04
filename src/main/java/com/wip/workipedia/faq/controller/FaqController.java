@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 // TODO: 이슬이 시큐리티 통합 후 인증 가드 추가 (현재는 공개).
 @RestController
-@RequestMapping("/faq")
+@RequestMapping("/api/v1/faq")
 @RequiredArgsConstructor
 public class FaqController {
 
