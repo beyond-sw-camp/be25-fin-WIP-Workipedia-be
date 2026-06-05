@@ -11,31 +11,28 @@ spring:
   flyway:
     enabled: true
 
-  logging:
-    level:
-      '[org.springframework.web]': info
-      '[org.springframework.security]': info
-      '[org.mariadb.jdbc.client.impl]': info
-      '[org.springframework.data.redis]': info
-      '[io.lettuce.core]': info
+logging:
+  level:
+    '[org.springframework.web]': info
+    '[org.springframework.security]': info
+    '[org.mariadb.jdbc.client.impl]': info
+    '[org.springframework.data.redis]': info
+    '[io.lettuce.core]': info
 
-  management:
-    endpoints:
-      web:
-        exposure:
-          include: health,info,metrics
+management:
+  health:
+    mail:
+      enabled: false
 
-    endpoint:
-      health:
-        show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
 
-    metrics:
-      tags:
-        application: Workipedia
+  endpoint:
+    health:
+      show-details: always
 
-app:
-  jwt:
-    # JWT 서명 키는 환경별 민감값이므로 .env 또는 배포 환경변수로 주입합니다.
-    secret: ${JWT_SECRET:local-development-jwt-secret-key-change-before-release}
-    access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:15m}
-    refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:14d}
+  metrics:
+    tags:
+      application: Workipedia

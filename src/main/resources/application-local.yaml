@@ -32,6 +32,11 @@ spring:
             enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:true}
 
 app:
+  jwt:
+    secret: ${JWT_SECRET}
+    access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:15m}
+    refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:14d}
+
   mail:
     # 로컬 테스트에서는 Gmail SMTP로 인증코드를 발송합니다.
     # 실제 Gmail 계정과 앱 비밀번호는 .env에 설정합니다.
