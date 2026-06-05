@@ -46,6 +46,8 @@ public class SecurityConfig {
 				.requestMatchers(HttpMethod.POST, "/api/v1/auth/password-reset/code").permitAll()
 				.requestMatchers(HttpMethod.POST, "/api/v1/auth/password-reset/code/verify").permitAll()
 				.requestMatchers(HttpMethod.PATCH, "/api/v1/auth/password-reset").permitAll()
+				.requestMatchers("/api/v1/admin/team/**").hasAnyRole("TEAM_ADMIN", "SYSTEM_ADMIN")
+				.requestMatchers("/api/v1/admin/**").hasRole("SYSTEM_ADMIN")
 				.anyRequest().authenticated()
 			)
 			.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
