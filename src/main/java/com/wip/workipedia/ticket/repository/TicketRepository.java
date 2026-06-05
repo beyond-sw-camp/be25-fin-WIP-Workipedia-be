@@ -7,9 +7,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TicketRepository extends JpaRepository<Ticket, Long> {
-	Page<Ticket> findByStatus(TicketStatus status, Pageable pageable);
+	
+	Page<Ticket> findByStatusAndDeletedAtIsNull(TicketStatus status, Pageable pageable);
 
-	Page<Ticket> findByAssignedDepartmentId(Long assignedDepartmentId, Pageable pageable);
+	Page<Ticket> findByAssignedDepartmentIdAndDeletedAtIsNull(Long assignedDepartmentId, Pageable pageable);
 
-	Page<Ticket> findByStatusAndAssignedDepartmentId(TicketStatus status, Long assignedDepartmentId, Pageable pageable);
+	Page<Ticket> findByStatusAndAssignedDepartmentIdAndDeletedAtIsNull(TicketStatus status, Long assignedDepartmentId, Pageable pageable);
+
+	Page<Ticket> findByDeletedAtIsNull(Pageable pageable);
 }
