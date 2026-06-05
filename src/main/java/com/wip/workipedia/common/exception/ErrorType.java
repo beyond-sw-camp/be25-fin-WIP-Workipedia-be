@@ -22,6 +22,10 @@ public enum ErrorType {
 	AUTH_DUPLICATE_EMPLOYEE_ID("auth-004", "이미 사용 중인 사번입니다.", HttpStatus.CONFLICT),
 	AUTH_DEPARTMENT_NOT_FOUND("auth-005", "부서를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 	AUTH_EMAIL_SEND_FAILED("auth-006", "인증코드 이메일 발송에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+	AUTH_INVALID_CREDENTIALS("auth-007", "사번 또는 비밀번호가 일치하지 않습니다.", HttpStatus.UNAUTHORIZED),
+	AUTH_INACTIVE_USER("auth-008", "비활성화된 사용자입니다.", HttpStatus.FORBIDDEN),
+	AUTH_REFRESH_TOKEN_REQUIRED("auth-009", "Refresh Token이 필요합니다.", HttpStatus.UNAUTHORIZED),
+	AUTH_REFRESH_TOKEN_INVALID("auth-010", "유효하지 않은 Refresh Token입니다.", HttpStatus.UNAUTHORIZED),
 
 	// ticket
 	TICKET_NOT_FOUND("ticket-001", "티켓을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
