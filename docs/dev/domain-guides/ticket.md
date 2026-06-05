@@ -29,6 +29,7 @@
 - `TEAM_ADMIN`의 이관 요청 시 공통 접수 큐 이동
 - 티켓 상태 변경
 - 본인 티켓 조회
+- 상태별/부서별 티켓 목록 조회
 - 팀 티켓 큐 조회
 - 공통 접수 큐 조회
 - 티켓 중요도(priority) 저장
@@ -46,6 +47,7 @@
 - `transfer_reason`
 - `attachments`
 - ticket create/list/detail/update APIs
+- `GET /tickets?status={status}&departmentId={departmentId}`
 - attachment upload/read APIs
 
 ## 권한/보안 체크
@@ -61,6 +63,7 @@
 - 라우팅 점수에 따라 담당 부서 또는 공통 접수 큐로 이동한다.
 - 팀 관리자가 팀원에게 티켓을 배정할 수 있다.
 - 담당 팀원이 처리 완료 상태로 변경할 수 있다.
+- `status`, `departmentId` 조건으로 티켓 목록을 조회할 수 있다.
 - 티켓 생성 시 중요도와 첨부 파일이 저장된다.
 - TEAM_ADMIN 화면에서 담당자 추천 후보를 확인할 수 있다.
 

@@ -421,7 +421,7 @@ Response:
 | Method | Path                                         | 설명                            | 인증       |
 | ------ | -------------------------------------------- | ------------------------------- | ---------- |
 | POST   | `/tickets`                                   | 티켓 생성                       | 필요       |
-| GET    | `/tickets`                                   | 티켓 목록                       | 필요       |
+| GET    | `/tickets`                                   | 티켓 목록, 상태/부서 필터 조회  | 필요       |
 | GET    | `/tickets/{ticketId}`                        | 티켓 상세                       | 필요       |
 | PATCH  | `/tickets/{ticketId}/status`                 | 티켓 상태 변경                  | 필요       |
 | PATCH  | `/tickets/{ticketId}/assignee`               | 팀원 담당자 배정                | TEAM_ADMIN |
@@ -448,12 +448,15 @@ Request:
 }
 ```
 
+- `priority` 허용값은 `MEDIUM`, `HIGH`이다. 생략하면 `MEDIUM`으로 저장한다.
+
 Response:
 
 ```json
 {
   "ticketId": 1,
   "status": "ASSIGNED",
+  "priority": "MEDIUM",
   "assignedDepartmentId": 5,
   "assignedDepartmentName": "IT지원팀",
   "routingConfidenceScore": 87.5,
@@ -479,6 +482,7 @@ Response:
 {
   "ticketId": 2,
   "status": "COMMON_QUEUE",
+  "priority": "MEDIUM",
   "assignedDepartmentId": null,
   "assignedDepartmentName": null,
   "routingConfidenceScore": 63.0,
@@ -498,6 +502,66 @@ Response:
 }
 ```
 
+### GET `/tickets`
+
+티켓 목록을 조회한다. 프론트엔드는 같은 엔드포인트에서 상태별, 부서별 필터를 조합해 사용한다.
+
+Query Parameters:
+
+| 이름           | 타입   | 필수 | 설명                                                         |
+| -------------- | ------ | ---- | ------------------------------------------------------------ |
+| `status`       | string | 아니오 | 티켓 상태. 예: `COMMON_QUEUE`, `ASSIGNED`, `IN_PROGRESS`     |
+| `departmentId` | number | 아니오 | 담당 부서 ID. `assignedDepartmentId` 기준으로 조회한다.      |
+| `page`         | number | 아니오 | 페이지 번호. 기본값은 `1`이다.                               |
+| `size`         | number | 아니오 | 페이지 크기. 기본값은 `10`이다.                              |
+
+Request 예시:
+
+```http
+GET /api/v1/tickets?status=COMMON_QUEUE&departmentId=1&page=1&size=10
+```
+
+Response:
+
+```json
+{
+  "content": [
+    {
+      "ticketId": 5,
+      "status": "COMMON_QUEUE",
+      "priority": "MEDIUM",
+      "assignedDepartmentId": null,
+      "assignedDepartmentName": null,
+      "routingConfidenceScore": null,
+      "routingDecision": "COMMON_QUEUE",
+      "routingReasons": [],
+      "candidateDepartments": [],
+      "questionId": null,
+      "sourceChatbotMessageId": null,
+      "categoryId": null,
+      "title": "테스트 티켓 제목",
+      "content": "테스트 티켓 내용",
+      "assigneeId": null,
+      "createdAt": "2026-06-04T17:01:49",
+      "updatedAt": "2026-06-04T17:01:49"
+    }
+  ],
+  "pageInfo": {
+    "page": 1,
+    "size": 10,
+    "totalElements": 1,
+    "totalPages": 1,
+    "hasNext": false,
+    "hasPrevious": false
+  }
+}
+```
+
+비고:
+
+- `departmentId`는 조회 필터이며, 부서 배정/재배정 동작을 의미하지 않는다.
+- 공통 접수 큐의 부서 재배정은 `PATCH /admin/common-queue/tickets/{ticketId}/department`를 사용한다.
+
 ### PATCH `/tickets/{ticketId}/assignee`
 
 Request:
@@ -515,6 +579,7 @@ Response:
 {
   "ticketId": 1,
   "status": "IN_PROGRESS",
+  "priority": "MEDIUM",
   "assigneeId": 12,
   "assigneeNickname": "노잇4821"
 }
@@ -728,9 +793,7 @@ Payload:
 | ------ | ------------------------- | --------------------- | ---- |
 | GET    | `/points/me`              | 내 포인트             | 필요 |
 | GET    | `/points/histories`       | 포인트 변동 이력 전체 | 필요 |
-| GET    | `/points/histories/earn`  | 적립 내역             | 필요 |
-| GET    | `/points/histories/spend` | 소모 내역             | 필요 |
-| GET    | `/points/ranking`         | 포인트 랭킹           | 필요 |
+
 
 ## 11. ESG Metrics API
 
@@ -759,33 +822,52 @@ Response:
 
 담당: 김가영
 
-| Method | Path                                                | 설명                              | 인증                     |
-| ------ | --------------------------------------------------- | --------------------------------- | ------------------------ |
-| GET    | `/admin/team/tickets`                               | 자기 팀 티켓 큐                   | TEAM_ADMIN               |
-| GET    | `/admin/team/knowledge-candidates`                  | 자기 팀 지식화 후보 목록          | TEAM_ADMIN               |
-| GET    | `/admin/dashboard/summary`                          | 운영 대시보드 요약                | SYSTEM_ADMIN             |
-| GET    | `/admin/dashboard/ticket-statistics`                | 티켓 통계                         | SYSTEM_ADMIN             |
-| GET    | `/admin/common-queue/tickets`                       | 공통 접수 큐                      | SYSTEM_ADMIN             |
-| PATCH  | `/admin/common-queue/tickets/{ticketId}/department` | 공통 접수 큐 티켓 부서 배정       | SYSTEM_ADMIN             |
-| GET    | `/admin/users`                                      | 사용자 목록                       | SYSTEM_ADMIN             |
-| PATCH  | `/admin/users/{userId}/status`                      | 사용자 상태 변경 (활성/비활성)    | SYSTEM_ADMIN             |
-| DELETE | `/admin/worki/questions/{questionId}`               | 워키 질문 soft delete             | TEAM_ADMIN, SYSTEM_ADMIN |
-| GET    | `/admin/manuals`                                    | 매뉴얼 목록                       | SYSTEM_ADMIN             |
-| POST   | `/admin/manuals`                                    | 매뉴얼 추가                       | SYSTEM_ADMIN             |
-| PUT    | `/admin/manuals/{manualId}`                         | 매뉴얼 수정                       | SYSTEM_ADMIN             |
-| DELETE | `/admin/manuals/{manualId}`                         | 매뉴얼 삭제                       | SYSTEM_ADMIN             |
-| GET    | `/admin/departments`                                | 부서 목록                         | SYSTEM_ADMIN             |
-| POST   | `/admin/departments`                                | 부서 추가                         | SYSTEM_ADMIN             |
-| DELETE | `/admin/departments/{departmentId}`                 | 부서 삭제                         | SYSTEM_ADMIN             |
-| GET    | `/admin/points`                                     | 포인트 현황 조회                  | SYSTEM_ADMIN             |
-| PATCH  | `/admin/points/{employeeId}/deduct`                 | 포인트 차감                       | SYSTEM_ADMIN             |
-| GET    | `/admin/logs`                                       | 관리자 작업 로그                  | SYSTEM_ADMIN             |
-| GET    | `/admin/esg/metrics`                                | ESG 지표                          | SYSTEM_ADMIN             |
-| GET    | `/admin/flash-chat/settings`                        | Flash Chat 운영 설정 조회         | SYSTEM_ADMIN             |
-| PATCH  | `/admin/flash-chat/settings`                        | Flash Chat TTL/쿨다운/금지어 설정 | SYSTEM_ADMIN             |
-| DELETE | `/admin/flash-chat/messages/{messageId}`            | Flash Chat 메시지 강제 삭제       | SYSTEM_ADMIN             |
-| GET    | `/admin/ai/settings`                                | AI 프롬프트/학습 설정 조회        | SYSTEM_ADMIN             |
-| PATCH  | `/admin/ai/settings`                                | AI 프롬프트/학습 설정 수정        | SYSTEM_ADMIN             |
+팀 관리자 대시보드 
+| Method | Path                                                     | 설명                        | 인증         |
+| ------ | -------------------------------------------------------- | ------------------------- | ---------- |
+| GET    | `/admin/team/dashboard/knowledge-trend`                  | 월별 지식화 승인 건수 추이 조회        | TEAM_ADMIN |
+| GET    | `/admin/team/dashboard/chatbot-ticket-trend`             | 월별 AI 챗봇 배정 티켓 건수 추이 조회   | TEAM_ADMIN |
+| GET    | `/admin/team/knowledge-candidates`                       | 처리 완료 티켓 기반 지식화 후보 목록 조회  | TEAM_ADMIN |
+| PATCH  | `/admin/team/knowledge-candidates/{candidateId}`         | 지식화 후보 질문/답변 수정           | TEAM_ADMIN |
+| POST   | `/admin/team/knowledge-candidates/{candidateId}/approve` | 지식화 후보 승인 및 워키 게시판 등록     | TEAM_ADMIN |
+| DELETE | `/admin/team/knowledge-candidates/{candidateId}`         | 지식화 후보 반려 및 삭제            | TEAM_ADMIN |
+| GET    | `/admin/team/tickets/summary`                            | 우리 부서 티켓 요약 정보 조회         | TEAM_ADMIN |
+| GET    | `/admin/team/tickets`                                    | 우리 부서 배정 티켓 목록 조회         | TEAM_ADMIN |
+| GET    | `/admin/team/tickets/{ticketId}`                         | 우리 부서 티켓 상세 조회            | TEAM_ADMIN |
+| POST   | `/admin/team/tickets/{ticketId}/transfer`                | 티켓 이관 사유 입력 후 공통 접수 큐로 이동 | TEAM_ADMIN |
+
+전체 관리자 대시보드
+| Method | Path                                                | 설명                 | 인증           |
+| ------ | --------------------------------------------------- | ------------------ | ------------ |
+| GET    | `/admin/dashboard/auto-routing-rate`                | 월별 챗봇 자동 배정률 추이 조회 | SYSTEM_ADMIN |
+| GET    | `/admin/dashboard/ticket-trend`                     | 월별 전체 티켓 발행 추이 조회  | SYSTEM_ADMIN |
+| GET    | `/admin/dashboard/department-statistics`            | 부서별 티켓 현황 조회       | SYSTEM_ADMIN |
+| GET    | `/admin/dashboard/routing-statistics`               | 부서별 자동 배정 성공률 조회   | SYSTEM_ADMIN |
+| GET    | `/admin/common-queue/tickets`                       | 공통 접수 큐 목록 조회      | SYSTEM_ADMIN |
+| PATCH  | `/admin/common-queue/tickets/{ticketId}/department` | 공통 접수 큐 티켓 부서 배정   | SYSTEM_ADMIN |
+
+관리자 설정
+| Method | Path                                       | 설명                            | 인증           |
+| ------ | ------------------------------------------ | ----------------------------- | ------------ |
+| GET    | `/admin/settings/summary`                  | 전체 사용자 수, 당일 로그인 수, 총 문서 수 조회 | SYSTEM_ADMIN |
+| GET    | `/admin/points/search`                     | 사번으로 사용자 포인트 조회               | SYSTEM_ADMIN |
+| PATCH  | `/admin/points/{employeeId}/deduct`        | 포인트 차감                        | SYSTEM_ADMIN |
+| GET    | `/admin/departments`                       | 부서 목록 조회                      | SYSTEM_ADMIN |
+| POST   | `/admin/departments`                       | 부서 등록                         | SYSTEM_ADMIN |
+| PATCH  | `/admin/departments/{departmentId}`        | 부서 정보 수정                      | SYSTEM_ADMIN |
+| DELETE | `/admin/departments/{departmentId}`        | 부서 삭제                         | SYSTEM_ADMIN |
+| GET    | `/admin/users/search`                      | 사번으로 사용자 조회                   | SYSTEM_ADMIN |
+| PATCH  | `/admin/users/{userId}/status`             | 사용자 활성화/비활성화 변경               | SYSTEM_ADMIN |
+| GET    | `/admin/manuals`                           | 매뉴얼 목록 조회                     | SYSTEM_ADMIN |
+| POST   | `/admin/manuals`                           | 매뉴얼 등록                        | SYSTEM_ADMIN |
+| GET    | `/admin/manuals/{manualId}`                | 매뉴얼 상세 조회                     | SYSTEM_ADMIN |
+| PATCH  | `/admin/manuals/{manualId}`                | 매뉴얼 수정 및 신규 버전 등록             | SYSTEM_ADMIN |
+| DELETE | `/admin/manuals/{manualId}`                | 매뉴얼 삭제                        | SYSTEM_ADMIN |
+| GET    | `/admin/flash-chat/settings`               | 채팅 필터 설정 조회                   | SYSTEM_ADMIN |
+| POST   | `/admin/flash-chat/blocked-words`          | 금지어 추가                        | SYSTEM_ADMIN |
+| DELETE | `/admin/flash-chat/blocked-words/{wordId}` | 금지어 삭제                        | SYSTEM_ADMIN |
+
+
 
 ## 13. 미정 항목
 

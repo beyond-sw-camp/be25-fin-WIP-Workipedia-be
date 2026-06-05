@@ -36,6 +36,10 @@ public class Ticket {
 	@Column(nullable = false, columnDefinition = "TEXT")
 	private String content;
 
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, length = 20)
+	private TicketPriority priority;
+
 	private Long assigneeId;
 	private Long assignedDepartmentId;
 
@@ -66,6 +70,7 @@ public class Ticket {
 		Long questionId,
 		Long sourceChatbotMessageId,
 		Long categoryId,
+		TicketPriority priority,
 		String title,
 		String content
 	) {
@@ -76,6 +81,7 @@ public class Ticket {
 		ticket.questionId = questionId;
 		ticket.sourceChatbotMessageId = sourceChatbotMessageId;
 		ticket.categoryId = categoryId;
+		ticket.priority = priority;
 		ticket.title = title;
 		ticket.content = content;
 		ticket.status = TicketStatus.RECEIVED;
