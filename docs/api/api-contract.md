@@ -395,7 +395,7 @@ Response:
 | Method | Path                                         | 설명                            | 인증       |
 | ------ | -------------------------------------------- | ------------------------------- | ---------- |
 | POST   | `/tickets`                                   | 티켓 생성                       | 필요       |
-| GET    | `/tickets`                                   | 티켓 목록                       | 필요       |
+| GET    | `/tickets`                                   | 티켓 목록, 상태/부서 필터 조회  | 필요       |
 | GET    | `/tickets/{ticketId}`                        | 티켓 상세                       | 필요       |
 | PATCH  | `/tickets/{ticketId}/status`                 | 티켓 상태 변경                  | 필요       |
 | PATCH  | `/tickets/{ticketId}/assignee`               | 팀원 담당자 배정                | TEAM_ADMIN |
@@ -422,12 +422,15 @@ Request:
 }
 ```
 
+- `priority` 허용값은 `MEDIUM`, `HIGH`이다. 생략하면 `MEDIUM`으로 저장한다.
+
 Response:
 
 ```json
 {
   "ticketId": 1,
   "status": "ASSIGNED",
+  "priority": "MEDIUM",
   "assignedDepartmentId": 5,
   "assignedDepartmentName": "IT지원팀",
   "routingConfidenceScore": 87.5,
@@ -453,6 +456,7 @@ Response:
 {
   "ticketId": 2,
   "status": "COMMON_QUEUE",
+  "priority": "MEDIUM",
   "assignedDepartmentId": null,
   "assignedDepartmentName": null,
   "routingConfidenceScore": 63.0,
@@ -472,6 +476,66 @@ Response:
 }
 ```
 
+### GET `/tickets`
+
+티켓 목록을 조회한다. 프론트엔드는 같은 엔드포인트에서 상태별, 부서별 필터를 조합해 사용한다.
+
+Query Parameters:
+
+| 이름           | 타입   | 필수 | 설명                                                         |
+| -------------- | ------ | ---- | ------------------------------------------------------------ |
+| `status`       | string | 아니오 | 티켓 상태. 예: `COMMON_QUEUE`, `ASSIGNED`, `IN_PROGRESS`     |
+| `departmentId` | number | 아니오 | 담당 부서 ID. `assignedDepartmentId` 기준으로 조회한다.      |
+| `page`         | number | 아니오 | 페이지 번호. 기본값은 `1`이다.                               |
+| `size`         | number | 아니오 | 페이지 크기. 기본값은 `10`이다.                              |
+
+Request 예시:
+
+```http
+GET /api/v1/tickets?status=COMMON_QUEUE&departmentId=1&page=1&size=10
+```
+
+Response:
+
+```json
+{
+  "content": [
+    {
+      "ticketId": 5,
+      "status": "COMMON_QUEUE",
+      "priority": "MEDIUM",
+      "assignedDepartmentId": null,
+      "assignedDepartmentName": null,
+      "routingConfidenceScore": null,
+      "routingDecision": "COMMON_QUEUE",
+      "routingReasons": [],
+      "candidateDepartments": [],
+      "questionId": null,
+      "sourceChatbotMessageId": null,
+      "categoryId": null,
+      "title": "테스트 티켓 제목",
+      "content": "테스트 티켓 내용",
+      "assigneeId": null,
+      "createdAt": "2026-06-04T17:01:49",
+      "updatedAt": "2026-06-04T17:01:49"
+    }
+  ],
+  "pageInfo": {
+    "page": 1,
+    "size": 10,
+    "totalElements": 1,
+    "totalPages": 1,
+    "hasNext": false,
+    "hasPrevious": false
+  }
+}
+```
+
+비고:
+
+- `departmentId`는 조회 필터이며, 부서 배정/재배정 동작을 의미하지 않는다.
+- 공통 접수 큐의 부서 재배정은 `PATCH /admin/common-queue/tickets/{ticketId}/department`를 사용한다.
+
 ### PATCH `/tickets/{ticketId}/assignee`
 
 Request:
@@ -489,6 +553,7 @@ Response:
 {
   "ticketId": 1,
   "status": "IN_PROGRESS",
+  "priority": "MEDIUM",
   "assigneeId": 12,
   "assigneeNickname": "노잇4821"
 }

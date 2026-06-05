@@ -25,26 +25,16 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		return http
-			.csrf(AbstractHttpConfigurer::disable)
-			.formLogin(AbstractHttpConfigurer::disable)
-			.httpBasic(AbstractHttpConfigurer::disable)
-			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-			.exceptionHandling(exception -> exception
-				.authenticationEntryPoint(authenticationEntryPoint)
-				.accessDeniedHandler(accessDeniedHandler)
-			)
-			.authorizeHttpRequests(auth -> auth
-				.requestMatchers(HttpMethod.GET, "/api/v1/departments").permitAll()
-				.requestMatchers(HttpMethod.POST, "/api/v1/auth/signup/code").permitAll()
-				.requestMatchers(HttpMethod.POST, "/api/v1/auth/signup/code/verify").permitAll()
-				.requestMatchers(HttpMethod.POST, "/api/v1/auth/signup").permitAll()
-				.requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
-				.requestMatchers(HttpMethod.POST, "/api/v1/auth/password-reset/code").permitAll()
-				.requestMatchers(HttpMethod.POST, "/api/v1/auth/password-reset/code/verify").permitAll()
-				.requestMatchers(HttpMethod.PATCH, "/api/v1/auth/password-reset").permitAll()
-				.anyRequest().authenticated()
-			)
-			.build();
+				.csrf(AbstractHttpConfigurer::disable)
+				.formLogin(AbstractHttpConfigurer::disable)
+				.httpBasic(AbstractHttpConfigurer::disable)
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.exceptionHandling(exception -> exception
+						.authenticationEntryPoint(authenticationEntryPoint)
+						.accessDeniedHandler(accessDeniedHandler))
+				.authorizeHttpRequests(auth -> auth
+						.anyRequest().permitAll())
+				.build();
 	}
 
 	@Bean
