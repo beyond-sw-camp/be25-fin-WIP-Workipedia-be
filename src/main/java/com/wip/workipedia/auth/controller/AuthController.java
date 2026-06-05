@@ -35,6 +35,37 @@ public class AuthController {
 	private final SignupEmailCodeService signupEmailCodeService;
 	private final JwtProperties jwtProperties;
 
+	// 회원가입 인증코드 발송
+	@PostMapping("/signup/code")
+	public ResponseEntity<Void> sendSignupCode(
+		@Valid @RequestBody EmailCodeSendRequest emailCodeSendRequest
+	) {
+		signupEmailCodeService.sendSignupCode(emailCodeSendRequest);
+
+		return ResponseEntity.ok().build();
+	}
+
+	// 회원가입 인증코드 확인
+	@PostMapping("/signup/code/verify")
+	public ResponseEntity<Void> verifySignupCode(
+		@Valid @RequestBody EmailCodeVerifyRequest emailCodeVerifyRequest
+	) {
+		signupEmailCodeService.verifySignupCode(emailCodeVerifyRequest);
+
+		return ResponseEntity.ok().build();
+	}
+
+	// 회원가입
+	@PostMapping("/signup")
+	public ResponseEntity<SignupResponse> signup(
+		@Valid @RequestBody SignupRequest signupRequest
+	) {
+		SignupResponse signupResponse = authService.signup(signupRequest);
+
+		return ResponseEntity.status(HttpStatus.CREATED).body(signupResponse);
+	}
+
+	// 로그인
 	@PostMapping("/login")
 	public ResponseEntity<LoginResponse> login(
 		@Valid @RequestBody LoginRequest loginRequest
@@ -46,6 +77,7 @@ public class AuthController {
 			.body(loginResult.loginResponse());
 	}
 
+	// 토큰 재발급
 	@PostMapping("/token/refresh")
 	public ResponseEntity<TokenRefreshResponse> refreshToken(
 		@CookieValue(name = REFRESH_TOKEN_COOKIE_NAME, required = false) String refreshToken
@@ -56,37 +88,6 @@ public class AuthController {
 		return ResponseEntity.ok()
 			.header("Set-Cookie", createRefreshTokenCookie(tokenRefreshResult.refreshToken()).toString())
 			.body(tokenRefreshResponse);
-	}
-
-	// 회원가입용 인증코드 발송 API입니다.
-	// 로컬 환경에서는 인증코드가 콘솔 로그에 출력되고, 운영 환경에서는 이메일로 발송합니다.
-	@PostMapping("/signup/code")
-	public ResponseEntity<Void> sendSignupCode(
-		@Valid @RequestBody EmailCodeSendRequest emailCodeSendRequest
-	) {
-		signupEmailCodeService.sendSignupCode(emailCodeSendRequest);
-
-		return ResponseEntity.ok().build();
-	}
-
-	// 사용자가 입력한 인증코드가 Redis에 저장된 인증코드와 일치하는지 확인합니다.
-	@PostMapping("/signup/code/verify")
-	public ResponseEntity<Void> verifySignupCode(
-		@Valid @RequestBody EmailCodeVerifyRequest emailCodeVerifyRequest
-	) {
-		signupEmailCodeService.verifySignupCode(emailCodeVerifyRequest);
-
-		return ResponseEntity.ok().build();
-	}
-
-	// 이메일 인증 완료 여부를 확인한 뒤 최종 회원가입을 처리합니다.
-	@PostMapping("/signup")
-	public ResponseEntity<SignupResponse> signup(
-		@Valid @RequestBody SignupRequest signupRequest
-	) {
-		SignupResponse signupResponse = authService.signup(signupRequest);
-
-		return ResponseEntity.status(HttpStatus.CREATED).body(signupResponse);
 	}
 
 	private ResponseCookie createRefreshTokenCookie(String refreshToken) {
