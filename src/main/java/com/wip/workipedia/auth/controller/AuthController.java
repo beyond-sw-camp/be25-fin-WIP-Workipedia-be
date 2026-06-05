@@ -11,6 +11,7 @@ import com.wip.workipedia.auth.dto.TokenRefreshResponse;
 import com.wip.workipedia.auth.dto.TokenRefreshResult;
 import com.wip.workipedia.auth.service.AuthService;
 import com.wip.workipedia.auth.service.SignupEmailCodeService;
+import com.wip.workipedia.common.security.JwtProperties;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -29,10 +30,10 @@ public class AuthController {
 
 	private static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
 	private static final String REFRESH_TOKEN_COOKIE_PATH = "/api/v1/auth";
-	private static final long REFRESH_TOKEN_COOKIE_MAX_AGE_SECONDS = 14 * 24 * 60 * 60;
 
 	private final AuthService authService;
 	private final SignupEmailCodeService signupEmailCodeService;
+	private final JwtProperties jwtProperties;
 
 	@PostMapping("/login")
 	public ResponseEntity<LoginResponse> login(
@@ -94,7 +95,7 @@ public class AuthController {
 			.secure(true)
 			.sameSite("Lax")
 			.path(REFRESH_TOKEN_COOKIE_PATH)
-			.maxAge(REFRESH_TOKEN_COOKIE_MAX_AGE_SECONDS)
+			.maxAge(jwtProperties.refreshTokenExpiration())
 			.build();
 	}
 }
