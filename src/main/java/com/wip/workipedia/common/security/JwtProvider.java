@@ -1,9 +1,10 @@
-package com.wip.workipedia.auth.jwt;
+package com.wip.workipedia.common.security;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wip.workipedia.user.domain.User;
+import com.wip.workipedia.user.domain.UserRole;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -17,7 +18,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class JwtTokenProvider {
+public class JwtProvider {
 
 	private static final String HMAC_SHA256 = "HmacSHA256";
 	private static final String ACCESS_TOKEN_TYPE = "access";
@@ -48,6 +49,12 @@ public class JwtTokenProvider {
 		Map<String, Object> claims = parseClaims(token);
 
 		return Long.valueOf(claims.get("sub").toString());
+	}
+
+	public UserRole getRole(String token) {
+		Map<String, Object> claims = parseClaims(token);
+
+		return UserRole.valueOf(claims.get("role").toString());
 	}
 
 	private String createToken(

@@ -1,4 +1,4 @@
-package com.wip.workipedia.auth.jwt;
+package com.wip.workipedia.common.security;
 
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
