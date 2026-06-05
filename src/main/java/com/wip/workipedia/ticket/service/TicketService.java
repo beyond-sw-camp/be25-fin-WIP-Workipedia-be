@@ -29,25 +29,28 @@ public class TicketService {
 	private final TicketRoutingService ticketRoutingService;
 	private final UserRepository userRepository;
 
-	@Transactional
 	public TicketResponse create(CreateTicketRequest request) {
-		Ticket ticket = Ticket.create(
-			SKELETON_REQUESTER_ID,
-			request.questionId(),
-			request.sourceChatbotMessageId(),
-			request.categoryId(),
-			defaultPriority(request.priority()),
-			request.title(),
-			request.content()
-		);
-		RoutingResult routingResult = ticketRoutingService.route(request);
-		ticket.applyRouting(
-			routingResult.assignedDepartmentId(),
-			routingResult.assignedDepartmentName(),
-			routingResult.confidenceScore(),
-			routingResult.decision()
-		);
 
+		RoutingResult routingResult = ticketRoutingService.route(request);
+
+		return saveTicket(request, routingResult);
+	}
+
+	@Transactional
+	public TicketResponse saveTicket(CreateTicketRequest request, RoutingResult routingResult) {
+		Ticket ticket = Ticket.create(
+				SKELETON_REQUESTER_ID,
+				request.questionId(),
+				request.sourceChatbotMessageId(),
+				request.categoryId(),
+				defaultPriority(request.priority()),
+				request.title(),
+				request.content());
+		ticket.applyRouting(
+				routingResult.assignedDepartmentId(),
+				routingResult.assignedDepartmentName(),
+				routingResult.confidenceScore(),
+				routingResult.decision());
 		return TicketResponse.from(ticketRepository.save(ticket), routingResult);
 	}
 
@@ -56,8 +59,7 @@ public class TicketService {
 		Page<Ticket> tickets = findTickets(status, departmentId, pageable);
 
 		return PageResponse.from(
-			tickets.map(ticket -> TicketResponse.from(ticket, emptyRoutingResult()))
-		);
+				tickets.map(ticket -> TicketResponse.from(ticket, emptyRoutingResult())));
 	}
 
 	@Transactional(readOnly = true)
@@ -79,32 +81,31 @@ public class TicketService {
 		ticket.assignTo(assigneeId);
 		ticketRepository.save(ticket);
 		User assignee = userRepository.findById(assigneeId)
-			.orElseThrow(() -> new CustomException(ErrorType.NOT_FOUND, "사용자를 찾을 수 없습니다. id=" + assigneeId));
+				.orElseThrow(() -> new CustomException(ErrorType.NOT_FOUND, "사용자를 찾을 수 없습니다. id=" + assigneeId));
 		return new TicketAssigneeResponse(
-			ticket.getTicketId(),
-			ticket.getStatus(),
-			ticket.getPriority(),
-			ticket.getAssigneeId(),
-			assignee.getNickname()
-		);
+				ticket.getTicketId(),
+				ticket.getStatus(),
+				ticket.getPriority(),
+				ticket.getAssigneeId(),
+				assignee.getNickname());
 	}
 
 	private Ticket getTicket(Long ticketId) {
 		return ticketRepository.findById(ticketId)
-			.orElseThrow(() -> new CustomException(ErrorType.TICKET_NOT_FOUND));
+				.orElseThrow(() -> new CustomException(ErrorType.TICKET_NOT_FOUND));
 	}
 
 	private Page<Ticket> findTickets(TicketStatus status, Long departmentId, Pageable pageable) {
 		if (status != null && departmentId != null) {
-			return ticketRepository.findByStatusAndAssignedDepartmentId(status, departmentId, pageable);
+			return ticketRepository.findByStatusAndAssignedDepartmentIdAndDeletedAtIsNull(status, departmentId, pageable);
 		}
 		if (status != null) {
-			return ticketRepository.findByStatus(status, pageable);
+			return ticketRepository.findByStatusAndDeletedAtIsNull(status, pageable);
 		}
 		if (departmentId != null) {
-			return ticketRepository.findByAssignedDepartmentId(departmentId, pageable);
+			return ticketRepository.findByAssignedDepartmentIdAndDeletedAtIsNull(departmentId, pageable);
 		}
-		return ticketRepository.findAll(pageable);
+		return ticketRepository.findByDeletedAtIsNull(pageable);
 	}
 
 	private RoutingResult emptyRoutingResult() {
