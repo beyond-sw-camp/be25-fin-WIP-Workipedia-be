@@ -2,10 +2,10 @@
 
 > 문서 유형: Definition of Done
 > 상태: Draft
-> 정본 위치: `docs/006-planning/definition-of-done.md`
-> 관련 문서: `docs/004-api/api-contract.md`, `docs/005-database/db-migration-guide.md`, `docs/007-quality/harness-engineering.md`, `docs/010-development/agent-workflow.md`
+> 정본 위치: `docs/dev/definition-of-done.md`
+> 관련 문서: `docs/api/api-contract.md`, `docs/dev/db-migration-guide.md`, `docs/dev/harness-engineering.md`, `docs/dev/development-guide.md`
 > 버전: v0.2
-> 최종 수정: 2026-05-31
+> 최종 수정: 2026-06-04
 
 본 문서는 팀원과 에이전트가 "작업 완료"를 같은 기준으로 판단하기 위한 완료 기준이다.
 기능 구현이 끝났다고 말하기 전에 아래 항목을 확인한다.
@@ -14,9 +14,12 @@
 
 - [ ] 관련 Issue 또는 작업 목적이 명확하다.
 - [ ] 기능 코드 또는 문서 변경 범위가 PR 설명에 적혀 있다.
-- [ ] API request/response가 바뀌면 `docs/004-api/api-contract.md`에 반영했다.
+- [ ] API path, request, response, status code, enum이 바뀌면 `docs/api/api-contract.md`에 반영했다.
+- [ ] 요구사항, 우선순위, 사용자 시나리오가 바뀌면 `docs/reference/prd.md`에 반영했다.
+- [ ] 담당 도메인 구현 범위, 완료 기준, 논의 사항이 바뀌면 `docs/dev/domain-guides/{domain}.md`에 반영했다.
+- [ ] 사용자 흐름이나 채널 구조가 바뀌면 `docs/reference/service-flow.md`에 반영했다.
 - [ ] DB 테이블/컬럼/상태값이 바뀌면 migration 필요 여부를 확인했다.
-- [ ] 프론트 화면, 버튼, 상태값에 영향이 있으면 황희수에게 공유했다.
+- [ ] 프론트 화면, 버튼, 상태값에 영향이 있으면 담당 프론트 개발자에게 공유했다.
 - [ ] 권한이 필요한 API는 USER/TEAM_ADMIN/SYSTEM_ADMIN 기준을 확인했다.
 - [ ] 개인정보 또는 보안 영향이 있으면 마스킹/토큰/쿠키 정책을 확인했다.
 - [ ] 작업 종료 후 daily report를 작성했다.
@@ -67,7 +70,7 @@
 ## 7. Frontend 완료 기준
 
 - [ ] Figma Make 화면이 최신 기획 문서와 맞는다.
-- [ ] 질문/요청 진입이 분리되어 있다.
+- [ ] 질문/요청/Flash Chat 진입이 분리되어 있다.
 - [ ] 챗봇 답변 출처가 화면에 표시된다.
 - [ ] 요청 티켓 생성/상태 확인 흐름이 보인다.
 - [ ] 권한별 메뉴(USER/TEAM_ADMIN/SYSTEM_ADMIN)가 구분된다.
