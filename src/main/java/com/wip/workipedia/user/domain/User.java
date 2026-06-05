@@ -124,4 +124,8 @@ public class User {
 	public LocalDateTime getLastLoginAt() {
 		return lastLoginAt;
 	}
+
+	public void updateLastLoginAt() {
+		this.lastLoginAt = LocalDateTime.now();
+	}
 }
