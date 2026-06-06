@@ -27,7 +27,7 @@ public class PasswordResetEmailCodeService {
 			.orElseThrow(() -> new CustomException(ErrorType.AUTH_USER_NOT_FOUND));
 
 		String code = generateCode();
-		emailSender.sendSignupCode(email, code);
+		emailSender.sendPasswordResetCode(email, code);
 		emailVerificationService.savePasswordResetEmailCode(employeeId, email, code);
 	}
 
