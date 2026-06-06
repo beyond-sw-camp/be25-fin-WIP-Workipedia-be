@@ -135,7 +135,7 @@ Authorization: Bearer <accessToken>
 | POST   | `/auth/signup`                     | 회원가입                      | 불필요             |
 | POST   | `/auth/login`                      | 로그인                        | 불필요             |
 | POST   | `/auth/token/refresh`              | 토큰 재발급                   | Refresh Token 필요 |
-| POST   | `/auth/logout`                     | 로그아웃                      | Access Token 필요  |
+| POST   | `/auth/logout`                     | 로그아웃                      | Access Token 필요 |
 | POST   | `/auth/password-reset/code`        | 비밀번호 재설정 인증코드 발송 | 불필요             |
 | POST   | `/auth/password-reset/code/verify` | 비밀번호 재설정 인증코드 확인 | 불필요             |
 | PATCH  | `/auth/password-reset`             | 비밀번호 재설정               | 본인 인증 필요     |
@@ -289,6 +289,31 @@ Response Header:
 
 ```http
 Set-Cookie: refreshToken=jwt-new-refresh-token; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth
+```
+
+### POST `/auth/logout`
+
+- Request Header의 Access Token을 검증하고, 토큰의 userId로 로그아웃 대상 사용자를 식별합니다.
+- 식별된 userId 기준으로 Redis에 저장된 Refresh Token을 삭제합니다.
+- Refresh Token 쿠키를 만료시켜 클라이언트에서 제거합니다.
+- Access Token이 없거나 유효하지 않으면 `401 Unauthorized`를 반환합니다.
+
+Request Header:
+
+```http
+Authorization: Bearer jwt-access-token
+```
+
+Response:
+
+```http
+200 OK
+```
+
+Response Header:
+
+```http
+Set-Cookie: refreshToken=; Max-Age=0; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth
 ```
 
 ## 5. Chatbot API
