@@ -291,6 +291,28 @@ Response Header:
 Set-Cookie: refreshToken=jwt-new-refresh-token; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth
 ```
 
+### POST `/auth/password-reset/code`
+
+- 비밀번호 재설정을 위한 인증코드를 이메일로 발송한다.
+- 요청한 사번과 이메일이 사용자 계정에 등록된 정보와 일치해야 한다.
+- 인증코드는 숫자 6자리로 생성한다.
+- 인증코드는 Redis에 TTL과 함께 저장한다.
+
+Request:
+
+```json
+{
+  "employeeId": "20260001",
+  "email": "user@company.com"
+}
+```
+
+Response:
+
+```http
+200 OK
+```
+
 ## 5. Chatbot API
 
 담당: 이슬이, 김진혁
