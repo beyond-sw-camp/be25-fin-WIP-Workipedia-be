@@ -92,6 +92,11 @@ public class AuthService {
 		return new TokenRefreshResult(newAccessToken, newRefreshToken);
 	}
 
+	// 로그아웃 시 userId 기준으로 Redis에 저장된 Refresh Token을 삭제합니다.
+	public void logout(Long userId) {
+		refreshTokenService.delete(userId);
+	}
+
 	// 이메일 인증 완료 여부를 확인한 뒤 회원가입을 처리합니다.
 	@Transactional
 	public SignupResponse signup(SignupRequest signupRequest) {

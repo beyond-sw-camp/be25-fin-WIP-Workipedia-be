@@ -34,8 +34,9 @@ spring:
 app:
   jwt:
     # JWT_SECRET은 토큰 서명에 사용하는 민감값이므로 로컬 .env에 설정하고 Git에 커밋하지 않습니다.
-    # Access Token 기본 만료 시간은 30분, Refresh Token 기본 만료 기간은 14일입니다.
     # 만료 시간을 변경해야 하면 .env에서 JWT_ACCESS_TOKEN_EXPIRATION, JWT_REFRESH_TOKEN_EXPIRATION 값을 수정합니다.
     secret: ${JWT_SECRET}
-    access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:30m}
+    # access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:30m}
+    # Access Token 만료 시간은 로컬 테스트 편의를 위해 임시로 12시간으로 설정합니다.
+    access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:12h}
     refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:14d}

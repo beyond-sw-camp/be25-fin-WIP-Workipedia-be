@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseCookie;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -93,6 +94,18 @@ public class AuthController {
 			.body(tokenRefreshResponse);
 	}
 
+	// 로그아웃
+	@PostMapping("/logout")
+	public ResponseEntity<Void> logout(
+		@AuthenticationPrincipal Long userId
+	) {
+		authService.logout(userId);
+
+		return ResponseEntity.ok()
+			.header("Set-Cookie", createExpiredRefreshTokenCookie().toString())
+			.build();
+	}
+
 	// 비밀번호 재설정 인증코드 발송
 	@PostMapping("/password-reset/code")
 	public ResponseEntity<Void> sendPasswordResetCode(
@@ -111,6 +124,17 @@ public class AuthController {
 			.sameSite("Lax")
 			.path(REFRESH_TOKEN_COOKIE_PATH)
 			.maxAge(jwtProperties.refreshTokenExpiration())
+			.build();
+	}
+
+	// 로그아웃 시 Refresh Token 쿠키 만료
+	private ResponseCookie createExpiredRefreshTokenCookie() {
+		return ResponseCookie.from(REFRESH_TOKEN_COOKIE_NAME, "")
+			.httpOnly(true)
+			.secure(true)
+			.sameSite("Lax")
+			.path(REFRESH_TOKEN_COOKIE_PATH)
+			.maxAge(0)
 			.build();
 	}
 }
