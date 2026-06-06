@@ -17,14 +17,16 @@ import com.wip.workipedia.common.security.JwtProperties;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.time.Duration;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -77,7 +79,10 @@ public class AuthController {
 		LoginResult loginResult = authService.login(loginRequest);
 
 		return ResponseEntity.ok()
-			.header("Set-Cookie", createRefreshTokenCookie(loginResult.refreshToken()).toString())
+			.header(
+				"Set-Cookie",
+				buildRefreshTokenCookie(loginResult.refreshToken(), jwtProperties.refreshTokenExpiration()).toString()
+			)
 			.body(loginResult.loginResponse());
 	}
 
@@ -90,7 +95,10 @@ public class AuthController {
 		TokenRefreshResponse tokenRefreshResponse = new TokenRefreshResponse(tokenRefreshResult.accessToken());
 
 		return ResponseEntity.ok()
-			.header("Set-Cookie", createRefreshTokenCookie(tokenRefreshResult.refreshToken()).toString())
+			.header(
+				"Set-Cookie",
+				buildRefreshTokenCookie(tokenRefreshResult.refreshToken(), jwtProperties.refreshTokenExpiration()).toString()
+			)
 			.body(tokenRefreshResponse);
 	}
 
@@ -102,7 +110,7 @@ public class AuthController {
 		authService.logout(userId);
 
 		return ResponseEntity.ok()
-			.header("Set-Cookie", createExpiredRefreshTokenCookie().toString())
+			.header("Set-Cookie", buildRefreshTokenCookie("", Duration.ZERO).toString())
 			.build();
 	}
 
@@ -116,25 +124,14 @@ public class AuthController {
 		return ResponseEntity.ok().build();
 	}
 
-	// 로그인 및 토큰 재발급 시 Refresh Token 쿠키 생성
-	private ResponseCookie createRefreshTokenCookie(String refreshToken) {
-		return ResponseCookie.from(REFRESH_TOKEN_COOKIE_NAME, refreshToken)
+	// Refresh Token 쿠키 생성 및 만료에 공통으로 사용하는 빌더
+	private ResponseCookie buildRefreshTokenCookie(String value, Duration maxAge) {
+		return ResponseCookie.from(REFRESH_TOKEN_COOKIE_NAME, value)
 			.httpOnly(true)
 			.secure(true)
 			.sameSite("Lax")
 			.path(REFRESH_TOKEN_COOKIE_PATH)
-			.maxAge(jwtProperties.refreshTokenExpiration())
-			.build();
-	}
-
-	// 로그아웃 시 Refresh Token 쿠키 만료
-	private ResponseCookie createExpiredRefreshTokenCookie() {
-		return ResponseCookie.from(REFRESH_TOKEN_COOKIE_NAME, "")
-			.httpOnly(true)
-			.secure(true)
-			.sameSite("Lax")
-			.path(REFRESH_TOKEN_COOKIE_PATH)
-			.maxAge(0)
+			.maxAge(maxAge)
 			.build();
 	}
 }
