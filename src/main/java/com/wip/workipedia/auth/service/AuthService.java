@@ -42,6 +42,7 @@ public class AuthService {
 	private final JwtProvider jwtProvider;
 	private final SecureRandom secureRandom = new SecureRandom();
 
+	// 로그인 성공 시 Access Token과 Refresh Token을 발급합니다.
 	@Transactional
 	public LoginResult login(LoginRequest loginRequest) {
 		User user = userRepository.findByEmployeeId(loginRequest.employeeId())
@@ -64,6 +65,7 @@ public class AuthService {
 		);
 	}
 
+	// Refresh Token을 검증한 뒤 Access Token과 Refresh Token을 재발급합니다.
 	@Transactional
 	public TokenRefreshResult refreshToken(String refreshToken) {
 		if (refreshToken == null || refreshToken.isBlank()) {
@@ -90,6 +92,7 @@ public class AuthService {
 		return new TokenRefreshResult(newAccessToken, newRefreshToken);
 	}
 
+	// 이메일 인증 완료 여부를 확인한 뒤 회원가입을 처리합니다.
 	@Transactional
 	public SignupResponse signup(SignupRequest signupRequest) {
 		if (!emailVerificationService.isSignupEmailVerified(signupRequest.email())) {

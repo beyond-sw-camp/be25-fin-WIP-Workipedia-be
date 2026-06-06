@@ -5,11 +5,13 @@ import com.wip.workipedia.auth.dto.EmailCodeVerifyRequest;
 import com.wip.workipedia.auth.dto.LoginRequest;
 import com.wip.workipedia.auth.dto.LoginResponse;
 import com.wip.workipedia.auth.dto.LoginResult;
+import com.wip.workipedia.auth.dto.PasswordResetCodeSendRequest;
 import com.wip.workipedia.auth.dto.SignupRequest;
 import com.wip.workipedia.auth.dto.SignupResponse;
 import com.wip.workipedia.auth.dto.TokenRefreshResponse;
 import com.wip.workipedia.auth.dto.TokenRefreshResult;
 import com.wip.workipedia.auth.service.AuthService;
+import com.wip.workipedia.auth.service.PasswordResetEmailCodeService;
 import com.wip.workipedia.auth.service.SignupEmailCodeService;
 import com.wip.workipedia.common.security.JwtProperties;
 import jakarta.validation.Valid;
@@ -33,6 +35,7 @@ public class AuthController {
 
 	private final AuthService authService;
 	private final SignupEmailCodeService signupEmailCodeService;
+	private final PasswordResetEmailCodeService passwordResetEmailCodeService;
 	private final JwtProperties jwtProperties;
 
 	// 회원가입 인증코드 발송
@@ -90,6 +93,17 @@ public class AuthController {
 			.body(tokenRefreshResponse);
 	}
 
+	// 비밀번호 재설정 인증코드 발송
+	@PostMapping("/password-reset/code")
+	public ResponseEntity<Void> sendPasswordResetCode(
+		@Valid @RequestBody PasswordResetCodeSendRequest passwordResetCodeSendRequest
+	) {
+		passwordResetEmailCodeService.sendPasswordResetCode(passwordResetCodeSendRequest);
+
+		return ResponseEntity.ok().build();
+	}
+
+	// 로그인 및 토큰 재발급 시 Refresh Token 쿠키 생성
 	private ResponseCookie createRefreshTokenCookie(String refreshToken) {
 		return ResponseCookie.from(REFRESH_TOKEN_COOKIE_NAME, refreshToken)
 			.httpOnly(true)
