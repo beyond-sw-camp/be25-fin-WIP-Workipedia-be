@@ -42,6 +42,8 @@ public class SecurityConfig {
 				.requestMatchers(HttpMethod.POST, "/api/v1/auth/password-reset/code").permitAll()
 				.requestMatchers(HttpMethod.POST, "/api/v1/auth/password-reset/code/verify").permitAll()
 				.requestMatchers(HttpMethod.PATCH, "/api/v1/auth/password-reset").permitAll()
+				.requestMatchers("/api/v1/worki/**", "/api/v1/search/**").permitAll()
+				.requestMatchers("/api/v1/faq/**").permitAll()
 				.anyRequest().authenticated()
 			)
 			.build();
