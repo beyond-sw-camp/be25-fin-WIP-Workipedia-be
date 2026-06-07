@@ -123,7 +123,7 @@ Authorization: Bearer <accessToken>
 | ESG 등급                  | 김가영         | 황희수      |
 | ESG 지표                  | 김가영         | 황희수      |
 
-## 23
+## 4. Auth API
 
 담당: 이슬이
 
@@ -135,7 +135,7 @@ Authorization: Bearer <accessToken>
 | POST   | `/auth/signup`                     | 회원가입                      | 불필요             |
 | POST   | `/auth/login`                      | 로그인                        | 불필요             |
 | POST   | `/auth/token/refresh`              | 토큰 재발급                   | Refresh Token 필요 |
-| POST   | `/auth/logout`                     | 로그아웃                      | Access Token 필요  |
+| POST   | `/auth/logout`                     | 로그아웃                      | Access Token 필요 |
 | POST   | `/auth/password-reset/code`        | 비밀번호 재설정 인증코드 발송 | 불필요             |
 | POST   | `/auth/password-reset/code/verify` | 비밀번호 재설정 인증코드 확인 | 불필요             |
 | PATCH  | `/auth/password-reset`             | 비밀번호 재설정               | 본인 인증 필요     |
@@ -264,6 +264,57 @@ Set-Cookie: refreshToken=jwt-refresh-token; HttpOnly; Secure; SameSite=Lax; Path
 - Refresh Token 쿠키는 Access Token 재발급 API 호출을 위한 값이다.
 - 일반 인증 API는 Refresh Token이 아니라 `Authorization` 헤더의 Access Token으로 인증한다.
 - 예를 들어 `/api/v1/me`로 시작하는 마이페이지 조회 API도 Access Token으로 인증한다.
+
+### POST `/auth/token/refresh`
+
+- 로그인 시 발급된 Refresh Token 쿠키를 검증한 뒤 새 Access Token과 새 Refresh Token을 함께 발급한다.
+- 새 Refresh Token은 Redis에 저장하고, 기존 Refresh Token은 폐기한다.
+- Access Token이 만료된 경우 호출하며, `Authorization` 헤더는 사용하지 않는다.
+
+Request Header:
+
+```http
+Cookie: refreshToken=jwt-refresh-token
+```
+
+Response:
+
+```json
+{
+  "accessToken": "jwt-new-access-token"
+}
+```
+
+Response Header:
+
+```http
+Set-Cookie: refreshToken=jwt-new-refresh-token; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth
+```
+
+### POST `/auth/logout`
+
+- Request Header의 Access Token을 검증하고, 토큰의 userId로 로그아웃 대상 사용자를 식별합니다.
+- 식별된 userId 기준으로 Redis에 저장된 Refresh Token을 삭제합니다.
+- Refresh Token 쿠키를 만료시켜 클라이언트에서 제거합니다.
+- Access Token이 없거나 유효하지 않으면 `401 Unauthorized`를 반환합니다.
+
+Request Header:
+
+```http
+Authorization: Bearer jwt-access-token
+```
+
+Response:
+
+```http
+200 OK
+```
+
+Response Header:
+
+```http
+Set-Cookie: refreshToken=; Max-Age=0; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth
+```
 
 ## 5. Chatbot API
 
@@ -395,7 +446,7 @@ Response:
 | Method | Path                                         | 설명                            | 인증       |
 | ------ | -------------------------------------------- | ------------------------------- | ---------- |
 | POST   | `/tickets`                                   | 티켓 생성                       | 필요       |
-| GET    | `/tickets`                                   | 티켓 목록                       | 필요       |
+| GET    | `/tickets`                                   | 티켓 목록, 상태/부서 필터 조회  | 필요       |
 | GET    | `/tickets/{ticketId}`                        | 티켓 상세                       | 필요       |
 | PATCH  | `/tickets/{ticketId}/status`                 | 티켓 상태 변경                  | 필요       |
 | PATCH  | `/tickets/{ticketId}/assignee`               | 팀원 담당자 배정                | TEAM_ADMIN |
@@ -422,12 +473,15 @@ Request:
 }
 ```
 
+- `priority` 허용값은 `MEDIUM`, `HIGH`이다. 생략하면 `MEDIUM`으로 저장한다.
+
 Response:
 
 ```json
 {
   "ticketId": 1,
   "status": "ASSIGNED",
+  "priority": "MEDIUM",
   "assignedDepartmentId": 5,
   "assignedDepartmentName": "IT지원팀",
   "routingConfidenceScore": 87.5,
@@ -453,6 +507,7 @@ Response:
 {
   "ticketId": 2,
   "status": "COMMON_QUEUE",
+  "priority": "MEDIUM",
   "assignedDepartmentId": null,
   "assignedDepartmentName": null,
   "routingConfidenceScore": 63.0,
@@ -472,6 +527,66 @@ Response:
 }
 ```
 
+### GET `/tickets`
+
+티켓 목록을 조회한다. 프론트엔드는 같은 엔드포인트에서 상태별, 부서별 필터를 조합해 사용한다.
+
+Query Parameters:
+
+| 이름           | 타입   | 필수 | 설명                                                         |
+| -------------- | ------ | ---- | ------------------------------------------------------------ |
+| `status`       | string | 아니오 | 티켓 상태. 예: `COMMON_QUEUE`, `ASSIGNED`, `IN_PROGRESS`     |
+| `departmentId` | number | 아니오 | 담당 부서 ID. `assignedDepartmentId` 기준으로 조회한다.      |
+| `page`         | number | 아니오 | 페이지 번호. 기본값은 `1`이다.                               |
+| `size`         | number | 아니오 | 페이지 크기. 기본값은 `10`이다.                              |
+
+Request 예시:
+
+```http
+GET /api/v1/tickets?status=COMMON_QUEUE&departmentId=1&page=1&size=10
+```
+
+Response:
+
+```json
+{
+  "content": [
+    {
+      "ticketId": 5,
+      "status": "COMMON_QUEUE",
+      "priority": "MEDIUM",
+      "assignedDepartmentId": null,
+      "assignedDepartmentName": null,
+      "routingConfidenceScore": null,
+      "routingDecision": "COMMON_QUEUE",
+      "routingReasons": [],
+      "candidateDepartments": [],
+      "questionId": null,
+      "sourceChatbotMessageId": null,
+      "categoryId": null,
+      "title": "테스트 티켓 제목",
+      "content": "테스트 티켓 내용",
+      "assigneeId": null,
+      "createdAt": "2026-06-04T17:01:49",
+      "updatedAt": "2026-06-04T17:01:49"
+    }
+  ],
+  "pageInfo": {
+    "page": 1,
+    "size": 10,
+    "totalElements": 1,
+    "totalPages": 1,
+    "hasNext": false,
+    "hasPrevious": false
+  }
+}
+```
+
+비고:
+
+- `departmentId`는 조회 필터이며, 부서 배정/재배정 동작을 의미하지 않는다.
+- 공통 접수 큐의 부서 재배정은 `PATCH /admin/common-queue/tickets/{ticketId}/department`를 사용한다.
+
 ### PATCH `/tickets/{ticketId}/assignee`
 
 Request:
@@ -489,6 +604,7 @@ Response:
 {
   "ticketId": 1,
   "status": "IN_PROGRESS",
+  "priority": "MEDIUM",
   "assigneeId": 12,
   "assigneeNickname": "노잇4821"
 }

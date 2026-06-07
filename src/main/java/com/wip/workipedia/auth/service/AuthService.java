@@ -1,12 +1,18 @@
 package com.wip.workipedia.auth.service;
 
+import com.wip.workipedia.auth.dto.LoginRequest;
+import com.wip.workipedia.auth.dto.LoginResponse;
+import com.wip.workipedia.auth.dto.LoginResult;
 import com.wip.workipedia.auth.dto.SignupRequest;
 import com.wip.workipedia.auth.dto.SignupResponse;
+import com.wip.workipedia.auth.dto.TokenRefreshResult;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
+import com.wip.workipedia.common.security.JwtProvider;
 import com.wip.workipedia.department.domain.Department;
 import com.wip.workipedia.department.repository.DepartmentRepository;
 import com.wip.workipedia.user.domain.User;
+import com.wip.workipedia.user.domain.UserStatus;
 import com.wip.workipedia.user.repository.UserRepository;
 import java.security.SecureRandom;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +38,61 @@ public class AuthService {
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final EmailVerificationService emailVerificationService;
+	private final RefreshTokenService refreshTokenService;
+	private final JwtProvider jwtProvider;
 	private final SecureRandom secureRandom = new SecureRandom();
+
+	@Transactional
+	public LoginResult login(LoginRequest loginRequest) {
+		User user = userRepository.findByEmployeeId(loginRequest.employeeId())
+			.orElseThrow(() -> new CustomException(ErrorType.AUTH_INVALID_CREDENTIALS));
+
+		if (!passwordEncoder.matches(loginRequest.password(), user.getPassword())) {
+			throw new CustomException(ErrorType.AUTH_INVALID_CREDENTIALS);
+		}
+
+		validateActiveUser(user);
+
+		String accessToken = jwtProvider.createAccessToken(user);
+		String refreshToken = jwtProvider.createRefreshToken(user);
+		refreshTokenService.save(user.getUserId(), refreshToken);
+		user.updateLastLoginAt();
+
+		return new LoginResult(
+			createLoginResponse(user, accessToken),
+			refreshToken
+		);
+	}
+
+	@Transactional
+	public TokenRefreshResult refreshToken(String refreshToken) {
+		if (refreshToken == null || refreshToken.isBlank()) {
+			throw new CustomException(ErrorType.AUTH_REFRESH_TOKEN_REQUIRED);
+		}
+
+		if (!jwtProvider.isValidRefreshToken(refreshToken)) {
+			throw new CustomException(ErrorType.AUTH_REFRESH_TOKEN_INVALID);
+		}
+
+		Long userId = jwtProvider.getUserId(refreshToken);
+		if (!refreshTokenService.matches(userId, refreshToken)) {
+			throw new CustomException(ErrorType.AUTH_REFRESH_TOKEN_INVALID);
+		}
+
+		User user = userRepository.findById(userId)
+			.orElseThrow(() -> new CustomException(ErrorType.AUTH_REFRESH_TOKEN_INVALID));
+		validateActiveUser(user);
+
+		String newAccessToken = jwtProvider.createAccessToken(user);
+		String newRefreshToken = jwtProvider.createRefreshToken(user);
+		refreshTokenService.save(user.getUserId(), newRefreshToken);
+
+		return new TokenRefreshResult(newAccessToken, newRefreshToken);
+	}
+
+	public void logout(Long userId) {
+		refreshTokenService.delete(userId);
+	}
 
 	@Transactional
 	public SignupResponse signup(SignupRequest signupRequest) {
@@ -74,5 +134,25 @@ public class AuthService {
 		String suffix = NICKNAME_SUFFIXES[secureRandom.nextInt(NICKNAME_SUFFIXES.length)];
 
 		return prefix + suffix;
+	}
+
+	private void validateActiveUser(User user) {
+		if (user.getStatus() != UserStatus.ACTIVE) {
+			throw new CustomException(ErrorType.AUTH_INACTIVE_USER);
+		}
+	}
+
+	private LoginResponse createLoginResponse(
+		User user,
+		String accessToken
+	) {
+		return new LoginResponse(
+			accessToken,
+			user.getUserId(),
+			user.getDepartment().getDepartmentId(),
+			user.getRole().name(),
+			user.getNickname(),
+			user.getStatus().name()
+		);
 	}
 }
