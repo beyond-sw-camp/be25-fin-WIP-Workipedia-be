@@ -18,10 +18,6 @@ public interface WorkiQuestionRepository extends JpaRepository<WorkiQuestion, Lo
 
     Optional<WorkiQuestion> findByQuestionIdAndDeletedAtIsNull(Long questionId);
 
-    // 검색어 자동완성용. 제목이 prefix로 "시작하는"(LIKE 'prefix%') 질문을 조회수 높은 순으로 최대 10건.
-    // StartingWith는 LIKE 'prefix%'로 번역되어 title 인덱스를 탈 수 있다(중간 포함 %x%와 달리 효율적).
-    List<WorkiQuestion> findTop10ByDeletedAtIsNullAndTitleStartingWithOrderByViewCountDesc(String prefix);
-
     @Query(value = """
             SELECT q.question_id AS questionId,
                    q.title AS title,
