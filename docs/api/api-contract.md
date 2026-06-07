@@ -316,6 +316,72 @@ Response Header:
 Set-Cookie: refreshToken=; Max-Age=0; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth
 ```
 
+### GET `/me/profile`
+
+- 로그인한 사용자의 마이페이지 요약 정보를 조회한다.
+- 사용자 식별은 Request Header의 Access Token으로 처리한다.
+
+Request Header:
+
+```http
+Authorization: Bearer jwt-access-token
+```
+
+Response:
+
+```json
+{
+  "user": {
+    "userId": 1,
+    "nickname": "눈물흘리는데이지",
+    "role": "USER",
+    "status": "ACTIVE"
+  },
+  "ticket": {
+    "createdTicketCount": 5
+  },
+  "point": {
+    "currentPoint": 450,
+    "esgScore": 520
+  },
+  "level": {
+    "level": 3,
+    "levelName": "건강한 북극곰",
+    "levelImageUrl": null,
+    "currentScore": 520,
+    "minScore": 301,
+    "maxScore": 700,
+    "remainingScoreForNextLevel": 180
+  },
+  "levelProgress": [
+    {
+      "level": 1,
+      "levelName": "아기 북극곰",
+      "minScore": 0,
+      "maxScore": 100
+    },
+    {
+      "level": 2,
+      "levelName": "성장하는 북극곰",
+      "minScore": 101,
+      "maxScore": 300
+    },
+    {
+      "level": 3,
+      "levelName": "건강한 북극곰",
+      "minScore": 301,
+      "maxScore": 700
+    },
+    {
+      "level": 4,
+      "levelName": "북극의 수호자",
+      "minScore": 701,
+      "maxScore": null
+    }
+  ]
+}
+```
+
 ## 5. Chatbot API
 
 담당: 이슬이, 김진혁
