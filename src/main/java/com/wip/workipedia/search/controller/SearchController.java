@@ -4,6 +4,9 @@ import com.wip.workipedia.common.response.PageResponse;
 import com.wip.workipedia.search.dto.WorkiSearchResponse;
 import com.wip.workipedia.search.service.WorkiQuestionIndexer;
 import com.wip.workipedia.search.service.WorkiSearchService;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -27,7 +30,10 @@ public class SearchController {
     /** 워키 질문 키워드 검색. 예) GET /api/v1/search/worki?keyword=휴가&page=0&size=10 */
     @GetMapping("/worki")
     public ResponseEntity<PageResponse<WorkiSearchResponse>> searchWorki(
-            @RequestParam String keyword,
+            @RequestParam 
+            @NotBlank
+            @Size(min = 2, max = 100) 
+            String keyword,
             Pageable pageable) {
         return ResponseEntity.ok(workiSearchService.searchQuestions(keyword, pageable));
     }

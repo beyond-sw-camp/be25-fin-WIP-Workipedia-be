@@ -15,13 +15,23 @@ import org.springframework.data.elasticsearch.repository.ElasticsearchRepository
 public interface WorkiQuestionSearchRepository
         extends ElasticsearchRepository<WorkiQuestionDocument, Long> {
 
-    // multi_match: 키워드 하나로 title, content 두 필드를 한 번에 검색한다.
-    // ?0 자리에 첫 번째 인자(keyword)가 들어간다.
+    // bool 쿼리로 두 조건을 함께 건다.
+    //  - must     : multi_match — 키워드 하나로 title, content 두 필드를 동시 검색(?0 = keyword)
+    //  - must_not : 삭제 처리(status=DELETED)된 질문은 검색 결과에서 제외(방어용 필터)
+    // 평소엔 인디서가 삭제 글을 ES에서 지워 동기화하지만, 이벤트가 누락돼 잔류하더라도
+    // 검색에 노출되지 않도록 쿼리 단에서 한 번 더 막는다.
     @Query("""
             {
-              "multi_match": {
-                "query": "?0",
-                "fields": ["title", "content"]
+              "bool": {
+                "must": {
+                  "multi_match": {
+                    "query": "?0",
+                    "fields": ["title", "content"]
+                  }
+                },
+                "must_not": {
+                  "term": { "status": "DELETED" }
+                }
               }
             }
             """)
