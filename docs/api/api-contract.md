@@ -140,6 +140,8 @@ Authorization: Bearer <accessToken>
 | POST   | `/auth/password-reset/code/verify` | 비밀번호 재설정 인증코드 확인 | 불필요             |
 | PATCH  | `/auth/password-reset`             | 비밀번호 재설정               | 본인 인증 필요     |
 | GET    | `/me/profile`                      | 마이페이지 조회               | Access Token 필요  |
+| GET    | `/me/notification-settings`        | 알림 설정 조회                | Access Token 필요  |
+| PATCH  | `/me/notification-settings`        | 알림 설정 변경                | Access Token 필요  |
 
 ### GET `/departments`
 
@@ -379,6 +381,66 @@ Response:
       "maxScore": null
     }
   ]
+}
+```
+
+### GET `/me/notification-settings`
+
+- 로그인한 사용자의 알림 설정 상태를 조회한다.
+- 사용자 식별은 Request Header의 Access Token으로 처리한다.
+- 현재 DB에는 알림 설정 저장 테이블이 없으므로, 구현 시 사용자별 알림 설정 테이블 추가가 필요하다.
+
+Request Header:
+
+```http
+Authorization: Bearer jwt-access-token
+```
+
+Response:
+
+```json
+{
+  "allEnabled": true,
+  "ticketEnabled": true,
+  "boardEnabled": true,
+  "manualEnabled": false
+}
+```
+
+### PATCH `/me/notification-settings`
+
+- 로그인한 사용자의 알림 설정 상태를 변경한다.
+- 사용자 식별은 Request Header의 Access Token으로 처리한다.
+- 상위 알림 설정을 끄면 하위 알림 설정도 모두 꺼진다.
+- 상위 알림 설정을 켜면 하위 알림 설정도 모두 켜진다.
+- 하위 알림 설정 3개가 모두 켜져 있으면 `allEnabled`는 `true`, 하나라도 꺼져 있으면 `false`로 처리한다.
+- 현재 DB에는 알림 설정 저장 테이블이 없으므로, 구현 시 사용자별 알림 설정 테이블 추가가 필요하다.
+
+Request Header:
+
+```http
+Authorization: Bearer jwt-access-token
+```
+
+Request:
+
+```json
+{
+  "allEnabled": true,
+  "ticketEnabled": true,
+  "boardEnabled": true,
+  "manualEnabled": false
+}
+```
+
+Response:
+
+```json
+{
+  "allEnabled": false,
+  "ticketEnabled": true,
+  "boardEnabled": true,
+  "manualEnabled": false
 }
 ```
 
