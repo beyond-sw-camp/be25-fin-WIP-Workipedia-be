@@ -128,4 +128,8 @@ public class User {
 	public void updateLastLoginAt() {
 		this.lastLoginAt = LocalDateTime.now();
 	}
+
+	public void updatePassword(String password) {
+		this.password = password;
+	}
 }

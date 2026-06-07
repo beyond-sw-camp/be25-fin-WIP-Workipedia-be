@@ -7,6 +7,7 @@ import com.wip.workipedia.auth.dto.LoginResponse;
 import com.wip.workipedia.auth.dto.LoginResult;
 import com.wip.workipedia.auth.dto.PasswordResetCodeSendRequest;
 import com.wip.workipedia.auth.dto.PasswordResetCodeVerifyRequest;
+import com.wip.workipedia.auth.dto.PasswordResetRequest;
 import com.wip.workipedia.auth.dto.SignupRequest;
 import com.wip.workipedia.auth.dto.SignupResponse;
 import com.wip.workipedia.auth.dto.TokenRefreshResponse;
@@ -22,6 +23,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -131,6 +133,16 @@ public class AuthController {
 		@Valid @RequestBody PasswordResetCodeVerifyRequest passwordResetCodeVerifyRequest
 	) {
 		passwordResetEmailCodeService.verifyPasswordResetCode(passwordResetCodeVerifyRequest);
+
+		return ResponseEntity.ok().build();
+	}
+
+	// 비밀번호 재설정
+	@PatchMapping("/password-reset")
+	public ResponseEntity<Void> resetPassword(
+		@Valid @RequestBody PasswordResetRequest passwordResetRequest
+	) {
+		authService.resetPassword(passwordResetRequest);
 
 		return ResponseEntity.ok().build();
 	}

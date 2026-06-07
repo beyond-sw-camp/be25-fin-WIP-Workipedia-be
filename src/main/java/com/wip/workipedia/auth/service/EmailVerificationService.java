@@ -24,9 +24,20 @@ public class EmailVerificationService {
 
 	private final StringRedisTemplate stringRedisTemplate;
 
-	// 회원가입 이메일 인증 완료 여부를 조회합니다.
+	// 회원가입 인증 완료 여부를 조회합니다.
 	public boolean isSignupEmailVerified(String email) {
 		String verified = stringRedisTemplate.opsForValue().get(createSignupEmailVerifiedKey(email));
+
+		return VERIFIED_VALUE.equals(verified);
+	}
+
+	// 비밀번호 재설정 인증 완료 여부를 조회합니다.
+	public boolean isPasswordResetEmailVerified(
+		String employeeId,
+		String email
+	) {
+		String verified = stringRedisTemplate.opsForValue()
+			.get(createPasswordResetEmailVerifiedKey(employeeId, email));
 
 		return VERIFIED_VALUE.equals(verified);
 	}
@@ -66,7 +77,7 @@ public class EmailVerificationService {
 		return code.equals(savedCode);
 	}
 
-	// 회원가입 이메일 인증 완료 상태를 Redis에 저장합니다.
+	// 회원가입 인증 완료 상태를 Redis에 저장합니다.
 	public void markSignupEmailVerified(String email) {
 		stringRedisTemplate.opsForValue()
 			.set(createSignupEmailVerifiedKey(email), VERIFIED_VALUE, SIGNUP_EMAIL_VERIFIED_TTL);
@@ -96,6 +107,14 @@ public class EmailVerificationService {
 		String email
 	) {
 		stringRedisTemplate.delete(createPasswordResetEmailCodeKey(employeeId, email));
+	}
+
+	// 비밀번호 변경 완료 후 인증 완료 상태를 Redis에서 삭제합니다.
+	public void deletePasswordResetEmailVerified(
+		String employeeId,
+		String email
+	) {
+		stringRedisTemplate.delete(createPasswordResetEmailVerifiedKey(employeeId, email));
 	}
 
 	private String createSignupEmailCodeKey(String email) {
