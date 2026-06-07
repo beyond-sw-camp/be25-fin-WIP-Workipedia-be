@@ -128,17 +128,17 @@ Authorization: Bearer <accessToken>
 담당: 이슬이
 
 | Method | Path                               | 설명                          | 인증               |
-| ------ | ---------------------------------- | ----------------------------- | ------------------ |
-| GET    | `/departments`                     | 회원가입 부서 목록 조회       | 불필요             |
-| POST   | `/auth/signup/code`                | 회원가입 인증코드 발송        | 불필요             |
-| POST   | `/auth/signup/code/verify`         | 회원가입 인증코드 확인        | 불필요             |
-| POST   | `/auth/signup`                     | 회원가입                      | 불필요             |
-| POST   | `/auth/login`                      | 로그인                        | 불필요             |
+| ------ | ---------------------------------- | ----------------------------- |------------------|
+| GET    | `/departments`                     | 회원가입 부서 목록 조회       | 불필요              |
+| POST   | `/auth/signup/code`                | 회원가입 인증코드 발송        | 불필요              |
+| POST   | `/auth/signup/code/verify`         | 회원가입 인증코드 확인        | 불필요              |
+| POST   | `/auth/signup`                     | 회원가입                      | 불필요              |
+| POST   | `/auth/login`                      | 로그인                        | 불필요              |
 | POST   | `/auth/token/refresh`              | 토큰 재발급                   | Refresh Token 필요 |
-| POST   | `/auth/logout`                     | 로그아웃                      | Access Token 필요 |
-| POST   | `/auth/password-reset/code`        | 비밀번호 재설정 인증코드 발송 | 불필요             |
-| POST   | `/auth/password-reset/code/verify` | 비밀번호 재설정 인증코드 확인 | 불필요             |
-| PATCH  | `/auth/password-reset`             | 비밀번호 재설정               | 본인 인증 필요     |
+| POST   | `/auth/logout`                     | 로그아웃                      | Access Token 필요  |
+| POST   | `/auth/password-reset/code`        | 비밀번호 재설정 인증코드 발송 | 불필요              |
+| POST   | `/auth/password-reset/code/verify` | 비밀번호 재설정 인증코드 확인 | 불필요              |
+| PATCH  | `/auth/password-reset`             | 비밀번호 재설정               | 불필요              |
 | GET    | `/me/profile`                      | 마이페이지 조회               | Access Token 필요  |
 
 ### GET `/departments`
@@ -351,6 +351,31 @@ Request:
   "employeeId": "20260001",
   "email": "user@company.com",
   "code": "987654"
+}
+```
+
+Response:
+
+```http
+200 OK
+```
+
+### PATCH `/auth/password-reset`
+
+- 비밀번호 재설정 인증코드 확인이 완료된 사용자만 새 비밀번호로 변경할 수 있다.
+- 요청한 사번과 이메일이 DB에 저장된 사용자 정보와 일치해야 한다.
+- 새 비밀번호와 새 비밀번호 확인값이 일치하는지 확인한다.
+- 새 비밀번호는 암호화하여 저장하고, DB에 저장된 기존 비밀번호를 새 비밀번호로 변경한다.
+- 비밀번호 변경이 완료되면 Redis에 저장된 비밀번호 재설정 인증 완료 상태를 삭제한다.
+
+Request:
+
+```json
+{
+  "employeeId": "20260001",
+  "email": "user@company.com",
+  "newPassword": "new12345",
+  "newPasswordConfirm": "new12345"
 }
 ```
 
