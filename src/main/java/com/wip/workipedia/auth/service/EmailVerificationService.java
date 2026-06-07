@@ -15,10 +15,12 @@ public class EmailVerificationService {
 	private static final String SIGNUP_EMAIL_CODE_KEY_PREFIX = "signup:email-code:";
 	private static final String SIGNUP_EMAIL_VERIFIED_KEY_PREFIX = "signup:email-verified:";
 	private static final String PASSWORD_RESET_EMAIL_CODE_KEY_PREFIX = "password-reset:email-code:";
+	private static final String PASSWORD_RESET_EMAIL_VERIFIED_KEY_PREFIX = "password-reset:email-verified:";
 	private static final String VERIFIED_VALUE = "true";
 	private static final Duration SIGNUP_EMAIL_CODE_TTL = Duration.ofMinutes(5);
 	private static final Duration SIGNUP_EMAIL_VERIFIED_TTL = Duration.ofMinutes(30);
 	private static final Duration PASSWORD_RESET_EMAIL_CODE_TTL = Duration.ofMinutes(5);
+	private static final Duration PASSWORD_RESET_EMAIL_VERIFIED_TTL = Duration.ofMinutes(30);
 
 	private final StringRedisTemplate stringRedisTemplate;
 
@@ -52,15 +54,48 @@ public class EmailVerificationService {
 		return code.equals(savedCode);
 	}
 
+	// 비밀번호 재설정 인증코드가 Redis에 저장된 값과 일치하는지 확인합니다.
+	public boolean matchesPasswordResetEmailCode(
+		String employeeId,
+		String email,
+		String code
+	) {
+		String savedCode = stringRedisTemplate.opsForValue()
+			.get(createPasswordResetEmailCodeKey(employeeId, email));
+
+		return code.equals(savedCode);
+	}
+
 	// 회원가입 이메일 인증 완료 상태를 Redis에 저장합니다.
 	public void markSignupEmailVerified(String email) {
 		stringRedisTemplate.opsForValue()
 			.set(createSignupEmailVerifiedKey(email), VERIFIED_VALUE, SIGNUP_EMAIL_VERIFIED_TTL);
 	}
 
+	// 비밀번호 재설정 인증 완료 상태를 Redis에 저장합니다.
+	public void markPasswordResetEmailVerified(
+		String employeeId,
+		String email
+	) {
+		stringRedisTemplate.opsForValue()
+			.set(
+				createPasswordResetEmailVerifiedKey(employeeId, email),
+				VERIFIED_VALUE,
+				PASSWORD_RESET_EMAIL_VERIFIED_TTL
+			);
+	}
+
 	// 사용 완료된 회원가입 인증코드를 Redis에서 삭제합니다.
 	public void deleteSignupEmailCode(String email) {
 		stringRedisTemplate.delete(createSignupEmailCodeKey(email));
+	}
+
+	// 사용 완료된 비밀번호 재설정 인증코드를 Redis에서 삭제합니다.
+	public void deletePasswordResetEmailCode(
+		String employeeId,
+		String email
+	) {
+		stringRedisTemplate.delete(createPasswordResetEmailCodeKey(employeeId, email));
 	}
 
 	private String createSignupEmailCodeKey(String email) {
@@ -76,6 +111,13 @@ public class EmailVerificationService {
 		String email
 	) {
 		return PASSWORD_RESET_EMAIL_CODE_KEY_PREFIX + employeeId.trim() + ":" + normalize(email);
+	}
+
+	private String createPasswordResetEmailVerifiedKey(
+		String employeeId,
+		String email
+	) {
+		return PASSWORD_RESET_EMAIL_VERIFIED_KEY_PREFIX + employeeId.trim() + ":" + normalize(email);
 	}
 
 	private String normalize(String email) {

@@ -6,6 +6,7 @@ import com.wip.workipedia.auth.dto.LoginRequest;
 import com.wip.workipedia.auth.dto.LoginResponse;
 import com.wip.workipedia.auth.dto.LoginResult;
 import com.wip.workipedia.auth.dto.PasswordResetCodeSendRequest;
+import com.wip.workipedia.auth.dto.PasswordResetCodeVerifyRequest;
 import com.wip.workipedia.auth.dto.SignupRequest;
 import com.wip.workipedia.auth.dto.SignupResponse;
 import com.wip.workipedia.auth.dto.TokenRefreshResponse;
@@ -120,6 +121,16 @@ public class AuthController {
 		@Valid @RequestBody PasswordResetCodeSendRequest passwordResetCodeSendRequest
 	) {
 		passwordResetEmailCodeService.sendPasswordResetCode(passwordResetCodeSendRequest);
+
+		return ResponseEntity.ok().build();
+	}
+
+	// 비밀번호 재설정 인증코드 확인
+	@PostMapping("/password-reset/code/verify")
+	public ResponseEntity<Void> verifyPasswordResetCode(
+		@Valid @RequestBody PasswordResetCodeVerifyRequest passwordResetCodeVerifyRequest
+	) {
+		passwordResetEmailCodeService.verifyPasswordResetCode(passwordResetCodeVerifyRequest);
 
 		return ResponseEntity.ok().build();
 	}
