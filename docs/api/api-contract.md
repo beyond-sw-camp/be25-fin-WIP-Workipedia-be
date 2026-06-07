@@ -1,96 +1,96 @@
 # API Contract
 
-> 臾몄꽌 ?좏삎: API Contract
-> ?곹깭: Draft
-> ?뺣낯 ?꾩튂: `docs/004-api/api-contract.md`
-> 愿??臾몄꽌: `docs/001-reference/prd.md`, `docs/001-reference/trd.md`, `docs/006-planning/wbs.md`
-> 踰꾩쟾: v0.3
-> 理쒖쥌 ?섏젙: 2026-06-01
+> 문서 유형: API Contract
+> 상태: Draft
+> 정본 위치: `docs/004-api/api-contract.md`
+> 관련 문서: `docs/001-reference/prd.md`, `docs/001-reference/trd.md`, `docs/006-planning/wbs.md`
+> 버전: v0.3
+> 최종 수정: 2026-06-01
 
-## 1. 紐⑹쟻
+## 1. 목적
 
-?꾨줎?몄뿏?쒖? 諛깆뿏?쒓? 媛숈? ?붿껌/?묐떟 ?뺤떇??湲곗??쇰줈 媛쒕컻?섍린 ?꾪븳 API 怨꾩빟 珥덉븞?대떎.
+프론트엔드와 백엔드가 같은 요청/응답 형식을 기준으로 개발하기 위한 API 계약 초안이다.
 
-??臾몄꽌???뺤젙 API 紐낆꽭媛 ?꾨땲?? 2026-06-26 諛고룷 紐⑺몴源뚯? MVP 媛쒕컻 異⑸룎??以꾩씠湲??꾪븳 湲곗??대떎. API媛 諛붾뚮㈃ ??臾몄꽌瑜?癒쇱? ?섏젙?섍퀬 ?대떦?먯뿉寃?怨듭쑀?쒕떎.
+이 문서는 확정 API 명세가 아니라, 2026-06-26 배포 목표까지 MVP 개발 충돌을 줄이기 위한 기준이다. API가 바뀌면 이 문서를 먼저 수정하고 담당자에게 공유한다.
 
-## 2. 怨듯넻 洹쒖튃
+## 2. 공통 규칙
 
 ### 2.1 Base URL
 
-| ?섍꼍        | Base URL                       |
+| 환경        | Base URL                       |
 | ----------- | ------------------------------ |
 | local       | `http://localhost:8080/api/v1` |
-| dev/staging | 誘몄젙                           |
-| production  | 誘몄젙                           |
+| dev/staging | 미정                           |
+| production  | 미정                           |
 
-### 2.2 ?몄쬆
+### 2.2 인증
 
-?곕━ ?쒕퉬?ㅻ뒗 JWT(JSON Web Token) 湲곕컲 ?몄쬆 諛⑹떇???ъ슜?쒕떎.
+우리 서비스는 JWT(JSON Web Token) 기반 인증 방식을 사용한다.
 
 ```http
 Authorization: Bearer <accessToken>
 ```
 
-#### 濡쒓렇???몄쬆 ?먮쫫
+#### 로그인 인증 흐름
 
-1. ?ъ슜?먮뒗 ?щ쾲怨?鍮꾨?踰덊샇瑜??낅젰?섏뿬 濡쒓렇?명븳??
-2. ?쒕쾭???ъ슜???뺣낫瑜?寃利앺븳 ??JWT ?좏겙??諛쒓툒?쒕떎.
-3. ?몄쬆 ?깃났 ??`Access Token`? Response Body瑜??듯빐 諛섑솚?쒕떎.
-4. ?몄쬆 ?깃났 ??`Refresh Token`? 荑좏궎(Set-Cookie)瑜??듯빐 諛쒓툒?쒕떎.
-5. ?쒕쾭??諛쒓툒??`Refresh Token`??Redis????ν븯??愿由ы븳??
-6. ?대씪?댁뼵?몃뒗 濡쒓렇???묐떟 Body?먯꽌 `Access Token`??諛쏆븘 ??ν븳??
-7. ?댄썑 ?몄쬆???꾩슂??API瑜??몄텧???뚮쭏??`Authorization` ?ㅻ뜑??`Access Token`???ы븿?섏뿬 ?붿껌?쒕떎.
-8. ?쒕쾭???꾨떖諛쏆? `Access Token`??寃利앺븳 ???ъ슜???몄쬆 諛?沅뚰븳 寃?щ? ?섑뻾?쒕떎.
+1. 사용자는 사번과 비밀번호를 입력하여 로그인한다.
+2. 서버는 사용자 정보를 검증한 후 JWT 토큰을 발급한다.
+3. 인증 성공 시 `Access Token`은 Response Body를 통해 반환된다.
+4. 인증 성공 시 `Refresh Token`은 쿠키(Set-Cookie)를 통해 발급된다.
+5. 서버는 발급한 `Refresh Token`을 Redis에 저장하여 관리한다.
+6. 클라이언트는 로그인 응답 Body에서 `Access Token`을 받아 저장한다.
+7. 이후 인증이 필요한 API를 호출할 때마다 `Authorization` 헤더에 `Access Token`을 포함하여 요청한다.
+8. 서버는 전달받은 `Access Token`을 검증한 후 사용자 인증 및 권한 검사를 수행한다.
 
-### 2.3 怨듯넻 ?묐떟
+### 2.3 공통 응답
 
-?깃났 ?묐떟? `ResponseEntity<T>`濡?吏곸젒 諛섑솚?쒕떎.
-?묐떟 Body瑜?`code`, `status`, `message`, `data` ?뺥깭??怨듯넻 媛앹껜濡?媛먯떥吏 ?딅뒗??
+성공 응답은 `ResponseEntity<T>`로 직접 반환한다.
+응답 Body를 `code`, `status`, `message`, `data` 형태의 공통 객체로 감싸지 않는다.
 
-?묐떟 ?곗씠?곌? ?덈뒗 寃쎌슦:
+응답 데이터가 있는 경우:
 
 ```json
 {
   "id": 1,
-  "name": "?덉떆"
+  "name": "예시"
 }
 ```
 
-紐⑸줉 ?묐떟:
+목록 응답:
 
 ```json
 [
   {
     "id": 1,
-    "name": "?덉떆"
+    "name": "예시"
   }
 ]
 ```
 
-?묐떟 ?곗씠?곌? ?녿뒗 寃쎌슦:
+응답 데이터가 없는 경우:
 
 ```http
 200 OK
 ```
 
-援ы쁽 湲곗?:
+구현 기준:
 
-- Spring Controller??`ResponseEntity<T>`瑜?吏곸젒 諛섑솚?쒕떎.
-- ?앹꽦 ?깃났? `ResponseEntity.status(HttpStatus.CREATED).body(response)`瑜??ъ슜?쒕떎.
-- ?쇰컲 議고쉶/?섏젙 ?깃났? `ResponseEntity.ok(response)`瑜??ъ슜?쒕떎.
-- ?묐떟 ?곗씠?곌? ?녿뒗 ?깃났 ?묐떟? `ResponseEntity.ok().build()` ?먮뒗 `ResponseEntity.noContent().build()`瑜??ъ슜?쒕떎.
-- 紐⑸줉 議고쉶??諛곗뿴 ?먮뒗 ?섏씠吏 媛앹껜瑜?吏곸젒 諛섑솚?쒕떎.
-- ?먮윭 ?묐떟? 怨듯넻 ?덉쇅 泥섎━ 援ъ“瑜??곕Ⅸ??
-- 怨듯넻 ?먮윭 肄붾뱶??`bad_request`, `unauthorized`, `forbidden`, `not_found`, `conflict`, `internal_error`瑜??ъ슜?쒕떎.
-- ?꾨찓???먮윭 肄붾뱶??`{domain}-{number}` ?뺤떇???ъ슜?쒕떎. ?? `auth-001`, `ticket-001`, `worki-001`
+- Spring Controller는 `ResponseEntity<T>`를 직접 반환한다.
+- 생성 성공은 `ResponseEntity.status(HttpStatus.CREATED).body(response)`를 사용한다.
+- 일반 조회/수정 성공은 `ResponseEntity.ok(response)`를 사용한다.
+- 응답 데이터가 없는 성공 응답은 `ResponseEntity.ok().build()` 또는 `ResponseEntity.noContent().build()`를 사용한다.
+- 목록 조회는 배열 또는 페이지 객체를 직접 반환한다.
+- 에러 응답은 공통 예외 처리 구조를 따른다.
+- 공통 에러 코드는 `bad_request`, `unauthorized`, `forbidden`, `not_found`, `conflict`, `internal_error`를 사용한다.
+- 도메인 에러 코드는 `{domain}-{number}` 형식을 사용한다. 예: `auth-001`, `ticket-001`, `worki-001`
 
-### 2.4 ?섏씠吏 ?묐떟
+### 2.4 페이지 응답
 
 ```json
 {
   "code": 200,
   "status": "OK",
-  "message": "?깃났",
+  "message": "성공",
   "data": {
     "content": [{}],
     "pageInfo": {
@@ -105,48 +105,48 @@ Authorization: Bearer <accessToken>
 }
 ```
 
-## 3. ?대떦?먮퀎 API 踰붿쐞
+## 3. 담당자별 API 범위
 
-| ?곸뿭                      | 諛깆뿏???대떦    | ?꾨줎???대떦 |
+| 영역                      | 백엔드 담당    | 프론트 담당 |
 | ------------------------- | -------------- | ----------- |
-| Auth                      | ?댁뒳??        | ?⑺씗??     |
-| 梨쀫큸 ?몄뀡/硫붿떆吏          | ?댁뒳??        | 誘쇱젙湲?     |
-| 梨쀫큸 ?듬?/RAG/?꾪솚        | 源吏꾪쁺         | 誘쇱젙湲?     |
-| ?뚰궎 寃뚯떆??              | 誘쇱젙湲?        | ?⑺씗??     |
-| FAQ                       | 誘쇱젙湲?        | ?⑺씗??     |
-| ?뚮┝                      | ?댁뒳??        | ?⑺씗??     |
-| ?곗폆                      | 源吏꾪쁺         | ?⑺씗??     |
-| ?곗폆 吏?앺솕               | 源吏꾪쁺, 源媛??| ?⑺씗??     |
-| 愿由ъ옄 ??쒕낫??          | 源媛??        | ?⑺씗??     |
-| 愿由ъ옄 留ㅻ돱??遺???ъ슜??| 源媛??        | ?⑺씗??     |
-| ?ъ씤??                   | 源媛??        | ?⑺씗??     |
-| ESG ?깃툒                  | 源媛??        | ?⑺씗??     |
-| ESG 吏??                 | 源媛??        | ?⑺씗??     |
+| Auth                      | 이슬이         | 황희수      |
+| 챗봇 세션/메시지          | 이슬이         | 민정기      |
+| 챗봇 답변/RAG/전환        | 김진혁         | 민정기      |
+| 워키 게시판               | 민정기         | 황희수      |
+| FAQ                       | 민정기         | 황희수      |
+| 알림                      | 이슬이         | 황희수      |
+| 티켓                      | 김진혁         | 황희수      |
+| 티켓 지식화               | 김진혁, 김가영 | 황희수      |
+| 관리자 대시보드           | 김가영         | 황희수      |
+| 관리자 매뉴얼/부서/사용자 | 김가영         | 황희수      |
+| 포인트                    | 김가영         | 황희수      |
+| ESG 등급                  | 김가영         | 황희수      |
+| ESG 지표                  | 김가영         | 황희수      |
 
 ## 4. Auth API
 
-?대떦: ?댁뒳??
+담당: 이슬이
 
-| Method | Path                               | ?ㅻ챸                          | ?몄쬆               |
+| Method | Path                               | 설명                          | 인증               |
 | ------ | ---------------------------------- | ----------------------------- | ------------------ |
-| GET    | `/departments`                     | ?뚯썝媛??遺??紐⑸줉 議고쉶       | 遺덊븘??            |
-| POST   | `/auth/signup/code`                | ?뚯썝媛???몄쬆肄붾뱶 諛쒖넚        | 遺덊븘??            |
-| POST   | `/auth/signup/code/verify`         | ?뚯썝媛???몄쬆肄붾뱶 ?뺤씤        | 遺덊븘??            |
-| POST   | `/auth/signup`                     | ?뚯썝媛??                     | 遺덊븘??            |
-| POST   | `/auth/login`                      | 濡쒓렇??                       | 遺덊븘??            |
-| POST   | `/auth/token/refresh`              | ?좏겙 ?щ컻湲?                  | Refresh Token ?꾩슂 |
-| POST   | `/auth/logout`                     | 濡쒓렇?꾩썐                      | Access Token ?꾩슂 |
-| POST   | `/auth/password-reset/code`        | 鍮꾨?踰덊샇 ?ъ꽕???몄쬆肄붾뱶 諛쒖넚 | 遺덊븘??            |
-| POST   | `/auth/password-reset/code/verify` | 鍮꾨?踰덊샇 ?ъ꽕???몄쬆肄붾뱶 ?뺤씤 | 遺덊븘??            |
-| PATCH  | `/auth/password-reset`             | 鍮꾨?踰덊샇 ?ъ꽕??              | 蹂몄씤 ?몄쬆 ?꾩슂     |
-| GET    | `/me/profile`                      | 留덉씠?섏씠吏 議고쉶               | Access Token ?꾩슂  |
+| GET    | `/departments`                     | 회원가입 부서 목록 조회       | 불필요             |
+| POST   | `/auth/signup/code`                | 회원가입 인증코드 발송        | 불필요             |
+| POST   | `/auth/signup/code/verify`         | 회원가입 인증코드 확인        | 불필요             |
+| POST   | `/auth/signup`                     | 회원가입                      | 불필요             |
+| POST   | `/auth/login`                      | 로그인                        | 불필요             |
+| POST   | `/auth/token/refresh`              | 토큰 재발급                   | Refresh Token 필요 |
+| POST   | `/auth/logout`                     | 로그아웃                      | Access Token 필요 |
+| POST   | `/auth/password-reset/code`        | 비밀번호 재설정 인증코드 발송 | 불필요             |
+| POST   | `/auth/password-reset/code/verify` | 비밀번호 재설정 인증코드 확인 | 불필요             |
+| PATCH  | `/auth/password-reset`             | 비밀번호 재설정               | 본인 인증 필요     |
+| GET    | `/me/profile`                      | 마이페이지 조회               | Access Token 필요  |
 
 ### GET `/departments`
 
-- ?뚯썝媛???붾㈃?먯꽌 遺?쒕챸 ?좏깮李쎌뿉 ?쒖떆??遺??紐⑸줉??議고쉶?쒕떎.
-- 遺??紐⑸줉 媛쒖닔??DB???깅줉??遺???곗씠?곕? 湲곗??쇰줈 ?쒕떎.
+- 회원가입 화면에서 부서명 선택창에 표시할 부서 목록을 조회한다.
+- 부서 목록 개수는 DB에 등록된 부서 데이터를 기준으로 한다.
 
-Request: ?놁쓬
+Request: 없음
 
 Response:
 
@@ -154,22 +154,22 @@ Response:
 [
   {
     "departmentId": 1,
-    "departmentName": "?몄궗?"
+    "departmentName": "인사팀"
   },
   {
     "departmentId": 2,
-    "departmentName": "珥앸Т?"
+    "departmentName": "총무팀"
   },
   {
     "departmentId": 3,
-    "departmentName": "IT吏?먰?"
+    "departmentName": "IT지원팀"
   }
 ]
 ```
 
 ### POST `/auth/signup/code`
 
-- ?몄쬆肄붾뱶???レ옄 6?먮━濡??앹꽦?쒕떎.
+- 인증코드는 숫자 6자리로 생성한다.
 
 Request:
 
@@ -187,7 +187,7 @@ Response:
 
 ### POST `/auth/signup/code/verify`
 
-- ?몄쬆肄붾뱶???レ옄 6?먮━濡??낅젰?쒕떎.
+- 인증코드는 숫자 6자리로 입력한다.
 
 Request:
 
@@ -206,8 +206,8 @@ Response:
 
 ### POST `/auth/signup`
 
-- ?뚯썝媛?낆? ?대찓???몄쬆肄붾뱶 ?뺤씤???꾨즺???대찓?쇱뿉 ??댁꽌留?媛?ν븯??
-- `passwordConfirm`? ?꾨줎?몄뿉??`password`????쇱튂 ?щ?瑜?寃利앺븯硫?Request Body?먮뒗 ?ы븿?섏? ?딅뒗??
+- 회원가입은 이메일 인증코드 확인이 완료된 이메일에 대해서만 가능하다.
+- `passwordConfirm`은 프론트에서 `password`와의 일치 여부를 검증하며 Request Body에는 포함하지 않는다.
 
 Request:
 
@@ -226,7 +226,7 @@ Response:
 {
   "userId": 123,
   "role": "USER",
-  "nickname": "?덈Ъ?섎━?붾뜲?댁?",
+  "nickname": "눈물흘리는데이지",
   "status": "ACTIVE"
 }
 ```
@@ -250,7 +250,7 @@ Response:
   "userId": 123,
   "departmentId": 1,
   "role": "USER",
-  "nickname": "?덈Ъ?섎━?붾뜲?댁?",
+  "nickname": "눈물흘리는데이지",
   "status": "ACTIVE"
 }
 ```
@@ -261,15 +261,15 @@ Response Header:
 Set-Cookie: refreshToken=jwt-refresh-token; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth
 ```
 
-- Refresh Token 荑좏궎??Access Token ?щ컻湲?API ?몄텧???꾪븳 媛믪씠??
-- ?쇰컲 ?몄쬆 API??Refresh Token???꾨땲??`Authorization` ?ㅻ뜑??Access Token?쇰줈 ?몄쬆?쒕떎.
-- ?덈? ?ㅼ뼱 `/api/v1/me`濡??쒖옉?섎뒗 留덉씠?섏씠吏 議고쉶 API??Access Token?쇰줈 ?몄쬆?쒕떎.
+- Refresh Token 쿠키는 Access Token 재발급 API 호출을 위한 값이다.
+- 일반 인증 API는 Refresh Token이 아니라 `Authorization` 헤더의 Access Token으로 인증한다.
+- 예를 들어 `/api/v1/me`로 시작하는 마이페이지 조회 API도 Access Token으로 인증한다.
 
 ### POST `/auth/token/refresh`
 
-- 濡쒓렇????諛쒓툒??Refresh Token 荑좏궎瑜?寃利앺븳 ????Access Token怨???Refresh Token???④퍡 諛쒓툒?쒕떎.
-- ??Refresh Token? Redis????ν븯怨? 湲곗〈 Refresh Token? ?먭린?쒕떎.
-- Access Token??留뚮즺??寃쎌슦 ?몄텧?섎ŉ, `Authorization` ?ㅻ뜑???ъ슜?섏? ?딅뒗??
+- 로그인 시 발급된 Refresh Token 쿠키를 검증한 뒤 새 Access Token과 새 Refresh Token을 함께 발급한다.
+- 새 Refresh Token은 Redis에 저장하고, 기존 Refresh Token은 폐기한다.
+- Access Token이 만료된 경우 호출하며, `Authorization` 헤더는 사용하지 않는다.
 
 Request Header:
 
@@ -319,7 +319,7 @@ Set-Cookie: refreshToken=; Max-Age=0; HttpOnly; Secure; SameSite=Lax; Path=/api/
 ### POST `/auth/password-reset/code`
 
 - 비밀번호 재설정을 위한 인증코드를 이메일로 발송한다.
-- 요청한 사번과 이메일이 사용자 계정에 등록된 정보와 일치해야 한다.
+- 요청한 사번과 이메일이 같은 사용자 계정에 등록된 정보와 일치해야 한다.
 - 인증코드는 숫자 6자리로 생성한다.
 - 인증코드는 Redis에 TTL과 함께 저장한다.
 
@@ -338,28 +338,50 @@ Response:
 200 OK
 ```
 
+### POST `/auth/password-reset/code/verify`
+
+- 사용자가 입력한 인증코드가 Redis에 저장된 인증코드와 일치하는지 확인한다.
+- 회원가입 인증코드 확인과 유사하지만, 비밀번호 재설정은 기존 사용자 대상 기능이므로 사번과 이메일이 DB에 저장된 사용자 정보와 일치해야 한다.
+- 인증코드가 일치하면 비밀번호 재설정을 진행할 수 있도록 인증 완료 상태를 저장하고, 사용이 완료된 인증코드는 Redis에서 삭제한다.
+
+Request:
+
+```json
+{
+  "employeeId": "20260001",
+  "email": "user@company.com",
+  "code": "987654"
+}
+```
+
+Response:
+
+```http
+200 OK
+```
+
 ## 5. Chatbot API
 
-?대떦: ?댁뒳?? 源吏꾪쁺
+담당: 이슬이, 김진혁
 
-| Method | Path                                                               | ?ㅻ챸                                             | ?몄쬆 |
+| Method | Path                                                               | 설명                                             | 인증 |
 | ------ | ------------------------------------------------------------------ | ------------------------------------------------ | ---- |
-| POST   | `/chatbot/sessions`                                                | 梨쀫큸 ?몄뀡 ?앹꽦                                   | ?꾩슂 |
-| GET    | `/chatbot/sessions`                                                | ???몄뀡 紐⑸줉                                     | ?꾩슂 |
-| GET    | `/chatbot/sessions/{sessionId}/messages`                           | ?몄뀡 硫붿떆吏 議고쉶                                 | ?꾩슂 |
-| POST   | `/chatbot/sessions/{sessionId}/messages`                           | 吏덈Ц ?꾩넚 諛??듬? ?앹꽦                           | ?꾩슂 |
-| GET    | `/chatbot/sessions/{sessionId}/messages/{messageId}/worki-support` | ?뚰궎 吏덈Ц ?깅줉 吏??(梨쀫큸 硫붿떆吏 湲곕컲 珥덉븞 諛섑솚) | ?꾩슂 |
+| POST   | `/chatbot/sessions`                                                | 챗봇 세션 생성                                   | 필요 |
+| GET    | `/chatbot/sessions`                                                | 내 세션 목록                                     | 필요 |
+| GET    | `/chatbot/sessions/{sessionId}/messages`                           | 세션 메시지 조회                                 | 필요 |
+| POST   | `/chatbot/sessions/{sessionId}/messages`                           | 질문 전송 및 답변 생성                           | 필요 |
+| GET    | `/chatbot/sessions/{sessionId}/messages/{messageId}/worki-support` | 워키 질문 등록 지원 (챗봇 메시지 기반 초안 반환) | 필요 |
 
-### AI ?댁쁺 API
+### AI 운영 API
 
-?대떦: 源吏꾪쁺
+담당: 김진혁
 
-| Method | Path                    | ?ㅻ챸                                         | ?몄쬆         |
+| Method | Path                    | 설명                                         | 인증         |
 | ------ | ----------------------- | -------------------------------------------- | ------------ |
-| POST   | `/ai/fine-tune/trigger` | APPROVED 吏???곗씠??湲곕컲 ?뚯씤?쒕떇 ?ㅽ뻾 ?붿껌 | SYSTEM_ADMIN |
-| GET    | `/ai/fine-tune/status`  | ?뚯씤?쒕떇 吏꾪뻾 ?곹깭 議고쉶                      | SYSTEM_ADMIN |
-| GET    | `/ai/model/current`     | ?꾩옱 紐⑤뜽 踰꾩쟾 諛??대뙌???뺣낫 議고쉶           | SYSTEM_ADMIN |
-| POST   | `/ai/prompt/update`     | base_system/admin_context 媛깆떊               | SYSTEM_ADMIN |
+| POST   | `/ai/fine-tune/trigger` | APPROVED 지식 데이터 기반 파인튜닝 실행 요청 | SYSTEM_ADMIN |
+| GET    | `/ai/fine-tune/status`  | 파인튜닝 진행 상태 조회                      | SYSTEM_ADMIN |
+| GET    | `/ai/model/current`     | 현재 모델 버전 및 어댑터 정보 조회           | SYSTEM_ADMIN |
+| POST   | `/ai/prompt/update`     | base_system/admin_context 갱신               | SYSTEM_ADMIN |
 
 ### POST `/chatbot/sessions/{sessionId}/messages`
 
@@ -367,7 +389,7 @@ Request:
 
 ```json
 {
-  "content": "?곗감 ?좎껌? ?대뵒???섎굹??"
+  "content": "연차 신청은 어디서 하나요?"
 }
 ```
 
@@ -376,13 +398,13 @@ Response:
 ```json
 {
   "messageId": 101,
-  "answer": "?곗감??HR ?쒖뒪?쒖뿉???좎껌?????덉뒿?덈떎.",
+  "answer": "연차는 HR 시스템에서 신청할 수 있습니다.",
   "answerable": true,
   "references": [
     {
       "type": "MANUAL",
       "sourceId": 10,
-      "title": "?닿? 洹쒖젙",
+      "title": "휴가 규정",
       "url": "/manuals/10",
       "chunkId": 1001
     }
@@ -391,52 +413,52 @@ Response:
 }
 ```
 
-洹쇨굅 遺議??묐떟:
+근거 부족 응답:
 
 ```json
 {
   "messageId": 102,
-  "answer": "?꾩옱 ?깅줉??臾몄꽌?먯꽌 ?뺤떎???듬???李얠? 紐삵뻽?듬땲??",
+  "answer": "현재 등록된 문서에서 확실한 답변을 찾지 못했습니다.",
   "answerable": false,
   "references": [],
   "nextAction": "CREATE_WORKI",
   "draftQuestion": {
-    "title": "?곗감 ?좎껌 愿??臾몄쓽",
-    "content": "?곗감 ?좎껌? ?대뵒???섎굹??"
+    "title": "연차 신청 관련 문의",
+    "content": "연차 신청은 어디서 하나요?"
   }
 }
 ```
 
-?붿껌 ?꾪솚 ?묐떟:
+요청 전환 응답:
 
 ```json
 {
   "messageId": 103,
-  "answer": "臾몄꽌 寃?됰쭔?쇰줈 ?닿껐?섍린 ?대졄?듬땲?? ?대떦 遺??泥섎━媛 ?꾩슂???붿껌?쇰줈 ?꾪솚?????덉뒿?덈떎.",
+  "answer": "문서 검색만으로 해결하기 어렵습니다. 담당 부서 처리가 필요한 요청으로 전환할 수 있습니다.",
   "answerable": false,
   "references": [],
   "nextAction": "CREATE_TICKET",
   "draftTicket": {
-    "title": "VPN ?묒냽 ?ㅻ쪟 泥섎━ ?붿껌",
-    "content": "VPN ?묒냽 ?ㅻ쪟 泥섎━瑜??붿껌?⑸땲??"
+    "title": "VPN 접속 오류 처리 요청",
+    "content": "VPN 접속 오류 처리를 요청합니다."
   }
 }
 ```
 
 ## 6. Worki API
 
-?대떦: ?댁뒳??
+담당: 이슬이
 
-| Method | Path                                           | ?ㅻ챸                     | ?몄쬆 |
+| Method | Path                                           | 설명                     | 인증 |
 | ------ | ---------------------------------------------- | ------------------------ | ---- |
-| GET    | `/worki/questions`                             | 吏덈Ц 紐⑸줉                | ?꾩슂 |
-| POST   | `/worki/questions`                             | 吏덈Ц ?깅줉                | ?꾩슂 |
-| GET    | `/worki/questions/{questionId}`                | 吏덈Ц ?곸꽭                | ?꾩슂 |
-| PATCH  | `/worki/questions/{questionId}`                | 吏덈Ц ?섏젙                | ?꾩슂 |
-| POST   | `/worki/questions/{questionId}/answers`        | ?듬? ?깅줉                | ?꾩슂 |
-| POST   | `/worki/questions/{questionId}/ticket-answers` | ?곗폆 怨듭떇 ?듬? ?뚰궎 ?깅줉 | ?꾩슂 |
-| PATCH  | `/worki/answers/{answerId}/adopt`              | ?듬? 梨꾪깮                | ?꾩슂 |
-| PUT    | `/worki/questions/{questionId}/reaction`       | 醫뗭븘???レ뼱??           | ?꾩슂 |
+| GET    | `/worki/questions`                             | 질문 목록                | 필요 |
+| POST   | `/worki/questions`                             | 질문 등록                | 필요 |
+| GET    | `/worki/questions/{questionId}`                | 질문 상세                | 필요 |
+| PATCH  | `/worki/questions/{questionId}`                | 질문 수정                | 필요 |
+| POST   | `/worki/questions/{questionId}/answers`        | 답변 등록                | 필요 |
+| POST   | `/worki/questions/{questionId}/ticket-answers` | 티켓 공식 답변 워키 등록 | 필요 |
+| PATCH  | `/worki/answers/{answerId}/adopt`              | 답변 채택                | 필요 |
+| PUT    | `/worki/questions/{questionId}/reaction`       | 좋아요/싫어요            | 필요 |
 
 ### POST `/worki/questions`
 
@@ -444,8 +466,8 @@ Request:
 
 ```json
 {
-  "title": "?곗감 ?좎껌 愿??臾몄쓽",
-  "content": "?곗감 ?좎껌? ?대뵒???섎굹??",
+  "title": "연차 신청 관련 문의",
+  "content": "연차 신청은 어디서 하나요?",
   "sourceChatbotMessageId": 102
 }
 ```
@@ -455,28 +477,28 @@ Response:
 ```json
 {
   "questionId": 1,
-  "title": "?곗감 ?좎껌 愿??臾몄쓽",
+  "title": "연차 신청 관련 문의",
   "status": "WAITING",
-  "authorNickname": "?몄엲1234"
+  "authorNickname": "노잇1234"
 }
 ```
 
 ## 7. Ticket API
 
-?대떦: 源吏꾪쁺
+담당: 김진혁
 
-| Method | Path                                         | ?ㅻ챸                            | ?몄쬆       |
+| Method | Path                                         | 설명                            | 인증       |
 | ------ | -------------------------------------------- | ------------------------------- | ---------- |
-| POST   | `/tickets`                                   | ?곗폆 ?앹꽦                       | ?꾩슂       |
-| GET    | `/tickets`                                   | ?곗폆 紐⑸줉, ?곹깭/遺???꾪꽣 議고쉶  | ?꾩슂       |
-| GET    | `/tickets/{ticketId}`                        | ?곗폆 ?곸꽭                       | ?꾩슂       |
-| PATCH  | `/tickets/{ticketId}/status`                 | ?곗폆 ?곹깭 蹂寃?                 | ?꾩슂       |
-| PATCH  | `/tickets/{ticketId}/assignee`               | ????대떦??諛곗젙                | TEAM_ADMIN |
-| POST   | `/tickets/{ticketId}/transfer-requests`      | TEAM_ADMIN ?곗폆 ?닿? ?붿껌       | TEAM_ADMIN |
-| PATCH  | `/tickets/{ticketId}/refuse`                 | ?곗폆 諛섎젮                       | TEAM_ADMIN |
-| POST   | `/tickets/{ticketId}/answers`                | ?대떦 遺??怨듭떇 ?듬?             | ?꾩슂       |
-| POST   | `/tickets/{ticketId}/knowledge-candidates`   | 泥섎━ ?꾨즺 ?곗폆 吏?앺솕 ?꾨낫 ?깅줉 | ?꾩슂       |
-| PATCH  | `/knowledge-candidates/{candidateId}/review` | 吏?앺솕 ?꾨낫 ?뱀씤/諛섎젮           | TEAM_ADMIN |
+| POST   | `/tickets`                                   | 티켓 생성                       | 필요       |
+| GET    | `/tickets`                                   | 티켓 목록, 상태/부서 필터 조회  | 필요       |
+| GET    | `/tickets/{ticketId}`                        | 티켓 상세                       | 필요       |
+| PATCH  | `/tickets/{ticketId}/status`                 | 티켓 상태 변경                  | 필요       |
+| PATCH  | `/tickets/{ticketId}/assignee`               | 팀원 담당자 배정                | TEAM_ADMIN |
+| POST   | `/tickets/{ticketId}/transfer-requests`      | TEAM_ADMIN 티켓 이관 요청       | TEAM_ADMIN |
+| PATCH  | `/tickets/{ticketId}/refuse`                 | 티켓 반려                       | TEAM_ADMIN |
+| POST   | `/tickets/{ticketId}/answers`                | 담당 부서 공식 답변             | 필요       |
+| POST   | `/tickets/{ticketId}/knowledge-candidates`   | 처리 완료 티켓 지식화 후보 등록 | 필요       |
+| PATCH  | `/knowledge-candidates/{candidateId}/review` | 지식화 후보 승인/반려           | TEAM_ADMIN |
 
 ### POST `/tickets`
 
@@ -489,13 +511,13 @@ Request:
   "type": "REQUEST",
   "categoryId": 3,
   "priority": "MEDIUM",
-  "title": "VPN ?묒냽 ?ㅻ쪟 泥섎━ ?붿껌",
-  "content": "VPN ?묒냽 ?ㅻ쪟 泥섎━瑜??붿껌?⑸땲??",
+  "title": "VPN 접속 오류 처리 요청",
+  "content": "VPN 접속 오류 처리를 요청합니다.",
   "attachmentIds": [1, 2]
 }
 ```
 
-- `priority` ?덉슜媛믪? `MEDIUM`, `HIGH`?대떎. ?앸왂?섎㈃ `MEDIUM`?쇰줈 ??ν븳??
+- `priority` 허용값은 `MEDIUM`, `HIGH`이다. 생략하면 `MEDIUM`으로 저장한다.
 
 Response:
 
@@ -505,25 +527,25 @@ Response:
   "status": "ASSIGNED",
   "priority": "MEDIUM",
   "assignedDepartmentId": 5,
-  "assignedDepartmentName": "IT吏?먰?",
+  "assignedDepartmentName": "IT지원팀",
   "routingConfidenceScore": 87.5,
   "routingDecision": "AUTO_ASSIGNED",
   "recommendedAssignees": [
     {
       "userId": 12,
-      "nickname": "?몄엲4821",
+      "nickname": "노잇4821",
       "completedTicketCountLast30Days": 14
     }
   ],
   "routingReasons": [
-    "?ㅼ썙?? VPN, ?묒냽 ?ㅻ쪟",
-    "移댄뀒怨좊━: ?쒖뒪???묎렐",
-    "愿??臾몄꽌: VPN ?묒냽 ?μ븷 泥섎━ 媛?대뱶"
+    "키워드: VPN, 접속 오류",
+    "카테고리: 시스템 접근",
+    "관련 문서: VPN 접속 장애 처리 가이드"
   ]
 }
 ```
 
-?좊ː????? ?붿껌 Response:
+신뢰도 낮은 요청 Response:
 
 ```json
 {
@@ -537,12 +559,12 @@ Response:
   "candidateDepartments": [
     {
       "departmentId": 2,
-      "departmentName": "?먯궛愿由ы?",
+      "departmentName": "자산관리팀",
       "confidenceScore": 63.0
     },
     {
       "departmentId": 6,
-      "departmentName": "?뺣낫蹂댁븞?",
+      "departmentName": "정보보안팀",
       "confidenceScore": 58.0
     }
   ]
@@ -551,18 +573,18 @@ Response:
 
 ### GET `/tickets`
 
-?곗폆 紐⑸줉??議고쉶?쒕떎. ?꾨줎?몄뿏?쒕뒗 媛숈? ?붾뱶?ъ씤?몄뿉???곹깭蹂? 遺?쒕퀎 ?꾪꽣瑜?議고빀???ъ슜?쒕떎.
+티켓 목록을 조회한다. 프론트엔드는 같은 엔드포인트에서 상태별, 부서별 필터를 조합해 사용한다.
 
 Query Parameters:
 
-| ?대쫫           | ???  | ?꾩닔 | ?ㅻ챸                                                         |
+| 이름           | 타입   | 필수 | 설명                                                         |
 | -------------- | ------ | ---- | ------------------------------------------------------------ |
-| `status`       | string | ?꾨땲??| ?곗폆 ?곹깭. ?? `COMMON_QUEUE`, `ASSIGNED`, `IN_PROGRESS`     |
-| `departmentId` | number | ?꾨땲??| ?대떦 遺??ID. `assignedDepartmentId` 湲곗??쇰줈 議고쉶?쒕떎.      |
-| `page`         | number | ?꾨땲??| ?섏씠吏 踰덊샇. 湲곕낯媛믪? `1`?대떎.                               |
-| `size`         | number | ?꾨땲??| ?섏씠吏 ?ш린. 湲곕낯媛믪? `10`?대떎.                              |
+| `status`       | string | 아니오 | 티켓 상태. 예: `COMMON_QUEUE`, `ASSIGNED`, `IN_PROGRESS`     |
+| `departmentId` | number | 아니오 | 담당 부서 ID. `assignedDepartmentId` 기준으로 조회한다.      |
+| `page`         | number | 아니오 | 페이지 번호. 기본값은 `1`이다.                               |
+| `size`         | number | 아니오 | 페이지 크기. 기본값은 `10`이다.                              |
 
-Request ?덉떆:
+Request 예시:
 
 ```http
 GET /api/v1/tickets?status=COMMON_QUEUE&departmentId=1&page=1&size=10
@@ -586,8 +608,8 @@ Response:
       "questionId": null,
       "sourceChatbotMessageId": null,
       "categoryId": null,
-      "title": "?뚯뒪???곗폆 ?쒕ぉ",
-      "content": "?뚯뒪???곗폆 ?댁슜",
+      "title": "테스트 티켓 제목",
+      "content": "테스트 티켓 내용",
       "assigneeId": null,
       "createdAt": "2026-06-04T17:01:49",
       "updatedAt": "2026-06-04T17:01:49"
@@ -604,10 +626,10 @@ Response:
 }
 ```
 
-鍮꾧퀬:
+비고:
 
-- `departmentId`??議고쉶 ?꾪꽣?대ŉ, 遺??諛곗젙/?щ같???숈옉???섎??섏? ?딅뒗??
-- 怨듯넻 ?묒닔 ?먯쓽 遺???щ같?뺤? `PATCH /admin/common-queue/tickets/{ticketId}/department`瑜??ъ슜?쒕떎.
+- `departmentId`는 조회 필터이며, 부서 배정/재배정 동작을 의미하지 않는다.
+- 공통 접수 큐의 부서 재배정은 `PATCH /admin/common-queue/tickets/{ticketId}/department`를 사용한다.
 
 ### PATCH `/tickets/{ticketId}/assignee`
 
@@ -616,7 +638,7 @@ Request:
 ```json
 {
   "assigneeId": 12,
-  "memo": "VPN 怨꾩젙 ?뺤씤 ??泥섎━ 遺?곷뱶由쎈땲??"
+  "memo": "VPN 계정 확인 후 처리 부탁드립니다."
 }
 ```
 
@@ -628,7 +650,7 @@ Response:
   "status": "IN_PROGRESS",
   "priority": "MEDIUM",
   "assigneeId": 12,
-  "assigneeNickname": "?몄엲4821"
+  "assigneeNickname": "노잇4821"
 }
 ```
 
@@ -639,7 +661,7 @@ Request:
 ```json
 {
   "suggestedDepartmentId": 2,
-  "reason": "踰뺣Т 寃?좉? ?꾩슂??臾몄쓽?낅땲??"
+  "reason": "법무 검토가 필요한 문의입니다."
 }
 ```
 
@@ -652,13 +674,13 @@ Response:
   "transferStatus": "REQUESTED",
   "ticketStatus": "COMMON_QUEUE",
   "fromDepartmentId": 5,
-  "fromDepartmentName": "寃쎌쁺吏?먰?",
+  "fromDepartmentName": "경영지원팀",
   "suggestedDepartmentId": 2,
-  "suggestedDepartmentName": "踰뺣Т?"
+  "suggestedDepartmentName": "법무팀"
 }
 ```
 
-?닿? ?붿껌 ???곗폆? ?ㅻⅨ 遺?쒕줈 吏곸젒 ?대룞?섏? ?딄퀬 怨듯넻 ?묒닔 ?먮줈 ?대룞?쒕떎. ?댄썑 `SYSTEM_ADMIN`??怨듯넻 ?묒닔 ?먯뿉???대떦 遺?쒕? ?щ같?뺥븳??
+이관 요청 시 티켓은 다른 부서로 직접 이동하지 않고 공통 접수 큐로 이동한다. 이후 `SYSTEM_ADMIN`이 공통 접수 큐에서 담당 부서를 재배정한다.
 
 ### PATCH `/admin/common-queue/tickets/{ticketId}/department`
 
@@ -667,7 +689,7 @@ Request:
 ```json
 {
   "departmentId": 2,
-  "comment": "?닿? ?ъ쑀 ?뺤씤 ??踰뺣Т??쇰줈 ?щ같?뺥빀?덈떎."
+  "comment": "이관 사유 확인 후 법무팀으로 재배정합니다."
 }
 ```
 
@@ -678,7 +700,7 @@ Response:
   "ticketId": 1,
   "status": "ASSIGNED",
   "assignedDepartmentId": 2,
-  "assignedDepartmentName": "踰뺣Т?"
+  "assignedDepartmentName": "법무팀"
 }
 ```
 
@@ -688,8 +710,8 @@ Request:
 
 ```json
 {
-  "draftTitle": "VPN ?묒냽 ?ㅻ쪟 泥섎━ ?덉감",
-  "draftContent": "VPN ?묒냽 ?ㅻ쪟媛 諛쒖깮?섎㈃ 怨꾩젙 ?곹깭? 蹂댁븞 ?꾨줈洹몃옩 ?ㅽ뻾 ?щ?瑜?癒쇱? ?뺤씤????IT吏?먰????붿껌?⑸땲??"
+  "draftTitle": "VPN 접속 오류 처리 절차",
+  "draftContent": "VPN 접속 오류가 발생하면 계정 상태와 보안 프로그램 실행 여부를 먼저 확인한 뒤 IT지원팀에 요청합니다."
 }
 ```
 
@@ -710,7 +732,7 @@ Request:
 ```json
 {
   "decision": "APPROVE",
-  "reviewComment": "媛쒖씤 ?뺣낫 ?쒓굅 ?뺤씤. ?뚰궎 諛섏쁺 ?뱀씤?⑸땲??"
+  "reviewComment": "개인 정보 제거 확인. 워키 반영 승인합니다."
 }
 ```
 
@@ -726,22 +748,22 @@ Response:
 
 ### Attachment API
 
-?대떦: 源吏꾪쁺
+담당: 김진혁
 
-| Method | Path                          | ?ㅻ챸                               | ?몄쬆 |
+| Method | Path                          | 설명                               | 인증 |
 | ------ | ----------------------------- | ---------------------------------- | ---- |
-| POST   | `/attachments`                | ?대?吏 ?낅줈?? `attachmentId` 諛섑솚 | ?꾩슂 |
-| GET    | `/attachments/{attachmentId}` | ?대?吏 議고쉶                        | ?꾩슂 |
+| POST   | `/attachments`                | 이미지 업로드, `attachmentId` 반환 | 필요 |
+| GET    | `/attachments/{attachmentId}` | 이미지 조회                        | 필요 |
 
 ### POST `/attachments`
 
 Request: `multipart/form-data`
 
-| Field        | Type   | ?ㅻ챸                                                                |
+| Field        | Type   | 설명                                                                |
 | ------------ | ------ | ------------------------------------------------------------------- |
-| `file`       | file   | ?대?吏 ?뚯씪                                                         |
-| `targetType` | string | `TICKET` ??泥⑤? ???                                              |
-| `targetId`   | number | ?대? ?앹꽦????곸뿉 ?곌껐?????ъ슜. ?곗폆 ?앹꽦 ???낅줈????null 媛??|
+| `file`       | file   | 이미지 파일                                                         |
+| `targetType` | string | `TICKET` 등 첨부 대상                                               |
+| `targetId`   | number | 이미 생성된 대상에 연결할 때 사용. 티켓 생성 전 업로드 시 null 가능 |
 
 Response:
 
@@ -756,38 +778,38 @@ Response:
 
 ## 8. FAQ API
 
-?대떦: 誘쇱젙湲?
+담당: 민정기
 
-| Method | Path                   | ?ㅻ챸             | ?몄쬆 |
+| Method | Path                   | 설명             | 인증 |
 | ------ | ---------------------- | ---------------- | ---- |
-| GET    | `/faq/worki/popular`   | ?멸린 ?뚰궎        | ?꾩슂 |
-| GET    | `/faq/manuals/popular` | ?멸린 留ㅻ돱??     | ?꾩슂 |
-| GET    | `/faq/manuals/recent`  | 理쒓렐 ?깅줉 留ㅻ돱??| ?꾩슂 |
+| GET    | `/faq/worki/popular`   | 인기 워키        | 필요 |
+| GET    | `/faq/manuals/popular` | 인기 매뉴얼      | 필요 |
+| GET    | `/faq/manuals/recent`  | 최근 등록 매뉴얼 | 필요 |
 
 ## 9. Notification API
 
-?대떦: 誘쇱젙湲?
+담당: 민정기
 
-| Method | Path                                   | ?ㅻ챸             | ?몄쬆 |
+| Method | Path                                   | 설명             | 인증 |
 | ------ | -------------------------------------- | ---------------- | ---- |
-| GET    | `/notifications`                       | ?뚮┝ 紐⑸줉        | ?꾩슂 |
-| GET    | `/notifications/unread-count`          | 誘몄씫? ?뚮┝ 媛?닔 | ?꾩슂 |
-| PATCH  | `/notifications/{notificationId}/read` | 媛쒕퀎 ?쎌쓬        | ?꾩슂 |
-| PATCH  | `/notifications/read-all`              | 紐⑤몢 ?쎌쓬        | ?꾩슂 |
-| DELETE | `/notifications/{notificationId}`      | ?뚮┝ ??젣        | ?꾩슂 |
+| GET    | `/notifications`                       | 알림 목록        | 필요 |
+| GET    | `/notifications/unread-count`          | 미읽은 알림 갯수 | 필요 |
+| PATCH  | `/notifications/{notificationId}/read` | 개별 읽음        | 필요 |
+| PATCH  | `/notifications/read-all`              | 모두 읽음        | 필요 |
+| DELETE | `/notifications/{notificationId}`      | 알림 삭제        | 필요 |
 
-> Phase 2: `GET /notifications/stream` (SSE ?ㅼ떆媛??뚮┝) ??MVP??DB ???+ 議고쉶 API 湲곕컲?쇰줈 ?쒖옉 (ADR 007)
+> Phase 2: `GET /notifications/stream` (SSE 실시간 알림) — MVP는 DB 저장 + 조회 API 기반으로 시작 (ADR 007)
 
 ## 9-1. Flash Chat API
 
-?대떦: 源吏꾪쁺, 誘쇱젙湲? 源媛??
+담당: 김진혁, 민정기, 김가영
 
-| Type            | Path                    | ?ㅻ챸                  | ?몄쬆 |
+| Type            | Path                    | 설명                  | 인증 |
 | --------------- | ----------------------- | --------------------- | ---- |
-| REST GET        | `/flash-chat/messages`  | ?꾩옱 ?쒖꽦 硫붿떆吏 紐⑸줉 | ?꾩슂 |
-| STOMP Subscribe | `/topic/flash-chat`     | 硫붿떆吏/諛섏쓳 ?섏떊      | ?꾩슂 |
-| STOMP Send      | `/app/flash-chat/send`  | 硫붿떆吏 ?꾩넚           | ?꾩슂 |
-| STOMP Send      | `/app/flash-chat/react` | 醫뗭븘??諛섏쓳           | ?꾩슂 |
+| REST GET        | `/flash-chat/messages`  | 현재 활성 메시지 목록 | 필요 |
+| STOMP Subscribe | `/topic/flash-chat`     | 메시지/반응 수신      | 필요 |
+| STOMP Send      | `/app/flash-chat/send`  | 메시지 전송           | 필요 |
+| STOMP Send      | `/app/flash-chat/react` | 좋아요 반응           | 필요 |
 
 ### GET `/flash-chat/messages`
 
@@ -799,8 +821,8 @@ Response:
     {
       "id": "018f6c9d-7b4f-7a9a-9c15-1b0f4b5ad111",
       "userId": 123,
-      "nickname": "?몄엲4821",
-      "content": "?곗감 諛섏감 李⑥씠媛 萸먯삁??",
+      "nickname": "노잇4821",
+      "content": "연차 반차 차이가 뭐예요?",
       "replyToId": null,
       "likeCount": 2,
       "createdAt": "2026-06-03T10:00:00",
@@ -816,7 +838,7 @@ Payload:
 
 ```json
 {
-  "content": "?곗감 諛섏감 李⑥씠媛 萸먯삁??",
+  "content": "연차 반차 차이가 뭐예요?",
   "replyToId": null
 }
 ```
@@ -834,22 +856,22 @@ Payload:
 
 ## 10. Point API
 
-?대떦: 源媛??
+담당: 김가영
 
-| Method | Path                      | ?ㅻ챸                  | ?몄쬆 |
+| Method | Path                      | 설명                  | 인증 |
 | ------ | ------------------------- | --------------------- | ---- |
-| GET    | `/points/me`              | ???ъ씤??            | ?꾩슂 |
-| GET    | `/points/histories`       | ?ъ씤??蹂???대젰 ?꾩껜 | ?꾩슂 |
+| GET    | `/points/me`              | 내 포인트             | 필요 |
+| GET    | `/points/histories`       | 포인트 변동 이력 전체 | 필요 |
 
 
 ## 11. ESG Metrics API
 
-?대떦: 源媛??
+담당: 김가영
 
-| Method | Path                 | ?ㅻ챸                 | ?몄쬆                     |
+| Method | Path                 | 설명                 | 인증                     |
 | ------ | -------------------- | -------------------- | ------------------------ |
-| GET    | `/esg/metrics/me`    | ??ESG/湲곗뿬 吏??    | ?꾩슂                     |
-| GET    | `/admin/esg/metrics` | 愿由ъ옄 ESG ?댁쁺 吏??| TEAM_ADMIN, SYSTEM_ADMIN |
+| GET    | `/esg/metrics/me`    | 내 ESG/기여 지표     | 필요                     |
+| GET    | `/admin/esg/metrics` | 관리자 ESG 운영 지표 | TEAM_ADMIN, SYSTEM_ADMIN |
 
 Response:
 
@@ -867,65 +889,65 @@ Response:
 
 ## 12. Admin API
 
-?대떦: 源媛??
+담당: 김가영
 
-? 愿由ъ옄 ??쒕낫??
-| Method | Path                                                     | ?ㅻ챸                        | ?몄쬆         |
+팀 관리자 대시보드 
+| Method | Path                                                     | 설명                        | 인증         |
 | ------ | -------------------------------------------------------- | ------------------------- | ---------- |
-| GET    | `/admin/team/dashboard/knowledge-trend`                  | ?붾퀎 吏?앺솕 ?뱀씤 嫄댁닔 異붿씠 議고쉶        | TEAM_ADMIN |
-| GET    | `/admin/team/dashboard/chatbot-ticket-trend`             | ?붾퀎 AI 梨쀫큸 諛곗젙 ?곗폆 嫄댁닔 異붿씠 議고쉶   | TEAM_ADMIN |
-| GET    | `/admin/team/knowledge-candidates`                       | 泥섎━ ?꾨즺 ?곗폆 湲곕컲 吏?앺솕 ?꾨낫 紐⑸줉 議고쉶  | TEAM_ADMIN |
-| PATCH  | `/admin/team/knowledge-candidates/{candidateId}`         | 吏?앺솕 ?꾨낫 吏덈Ц/?듬? ?섏젙           | TEAM_ADMIN |
-| POST   | `/admin/team/knowledge-candidates/{candidateId}/approve` | 吏?앺솕 ?꾨낫 ?뱀씤 諛??뚰궎 寃뚯떆???깅줉     | TEAM_ADMIN |
-| DELETE | `/admin/team/knowledge-candidates/{candidateId}`         | 吏?앺솕 ?꾨낫 諛섎젮 諛???젣            | TEAM_ADMIN |
-| GET    | `/admin/team/tickets/summary`                            | ?곕━ 遺???곗폆 ?붿빟 ?뺣낫 議고쉶         | TEAM_ADMIN |
-| GET    | `/admin/team/tickets`                                    | ?곕━ 遺??諛곗젙 ?곗폆 紐⑸줉 議고쉶         | TEAM_ADMIN |
-| GET    | `/admin/team/tickets/{ticketId}`                         | ?곕━ 遺???곗폆 ?곸꽭 議고쉶            | TEAM_ADMIN |
-| POST   | `/admin/team/tickets/{ticketId}/transfer`                | ?곗폆 ?닿? ?ъ쑀 ?낅젰 ??怨듯넻 ?묒닔 ?먮줈 ?대룞 | TEAM_ADMIN |
+| GET    | `/admin/team/dashboard/knowledge-trend`                  | 월별 지식화 승인 건수 추이 조회        | TEAM_ADMIN |
+| GET    | `/admin/team/dashboard/chatbot-ticket-trend`             | 월별 AI 챗봇 배정 티켓 건수 추이 조회   | TEAM_ADMIN |
+| GET    | `/admin/team/knowledge-candidates`                       | 처리 완료 티켓 기반 지식화 후보 목록 조회  | TEAM_ADMIN |
+| PATCH  | `/admin/team/knowledge-candidates/{candidateId}`         | 지식화 후보 질문/답변 수정           | TEAM_ADMIN |
+| POST   | `/admin/team/knowledge-candidates/{candidateId}/approve` | 지식화 후보 승인 및 워키 게시판 등록     | TEAM_ADMIN |
+| DELETE | `/admin/team/knowledge-candidates/{candidateId}`         | 지식화 후보 반려 및 삭제            | TEAM_ADMIN |
+| GET    | `/admin/team/tickets/summary`                            | 우리 부서 티켓 요약 정보 조회         | TEAM_ADMIN |
+| GET    | `/admin/team/tickets`                                    | 우리 부서 배정 티켓 목록 조회         | TEAM_ADMIN |
+| GET    | `/admin/team/tickets/{ticketId}`                         | 우리 부서 티켓 상세 조회            | TEAM_ADMIN |
+| POST   | `/admin/team/tickets/{ticketId}/transfer`                | 티켓 이관 사유 입력 후 공통 접수 큐로 이동 | TEAM_ADMIN |
 
-?꾩껜 愿由ъ옄 ??쒕낫??
-| Method | Path                                                | ?ㅻ챸                 | ?몄쬆           |
+전체 관리자 대시보드
+| Method | Path                                                | 설명                 | 인증           |
 | ------ | --------------------------------------------------- | ------------------ | ------------ |
-| GET    | `/admin/dashboard/auto-routing-rate`                | ?붾퀎 梨쀫큸 ?먮룞 諛곗젙瑜?異붿씠 議고쉶 | SYSTEM_ADMIN |
-| GET    | `/admin/dashboard/ticket-trend`                     | ?붾퀎 ?꾩껜 ?곗폆 諛쒗뻾 異붿씠 議고쉶  | SYSTEM_ADMIN |
-| GET    | `/admin/dashboard/department-statistics`            | 遺?쒕퀎 ?곗폆 ?꾪솴 議고쉶       | SYSTEM_ADMIN |
-| GET    | `/admin/dashboard/routing-statistics`               | 遺?쒕퀎 ?먮룞 諛곗젙 ?깃났瑜?議고쉶   | SYSTEM_ADMIN |
-| GET    | `/admin/common-queue/tickets`                       | 怨듯넻 ?묒닔 ??紐⑸줉 議고쉶      | SYSTEM_ADMIN |
-| PATCH  | `/admin/common-queue/tickets/{ticketId}/department` | 怨듯넻 ?묒닔 ???곗폆 遺??諛곗젙   | SYSTEM_ADMIN |
+| GET    | `/admin/dashboard/auto-routing-rate`                | 월별 챗봇 자동 배정률 추이 조회 | SYSTEM_ADMIN |
+| GET    | `/admin/dashboard/ticket-trend`                     | 월별 전체 티켓 발행 추이 조회  | SYSTEM_ADMIN |
+| GET    | `/admin/dashboard/department-statistics`            | 부서별 티켓 현황 조회       | SYSTEM_ADMIN |
+| GET    | `/admin/dashboard/routing-statistics`               | 부서별 자동 배정 성공률 조회   | SYSTEM_ADMIN |
+| GET    | `/admin/common-queue/tickets`                       | 공통 접수 큐 목록 조회      | SYSTEM_ADMIN |
+| PATCH  | `/admin/common-queue/tickets/{ticketId}/department` | 공통 접수 큐 티켓 부서 배정   | SYSTEM_ADMIN |
 
-愿由ъ옄 ?ㅼ젙
-| Method | Path                                       | ?ㅻ챸                            | ?몄쬆           |
+관리자 설정
+| Method | Path                                       | 설명                            | 인증           |
 | ------ | ------------------------------------------ | ----------------------------- | ------------ |
-| GET    | `/admin/settings/summary`                  | ?꾩껜 ?ъ슜???? ?뱀씪 濡쒓렇???? 珥?臾몄꽌 ??議고쉶 | SYSTEM_ADMIN |
-| GET    | `/admin/points/search`                     | ?щ쾲?쇰줈 ?ъ슜???ъ씤??議고쉶               | SYSTEM_ADMIN |
-| PATCH  | `/admin/points/{employeeId}/deduct`        | ?ъ씤??李④컧                        | SYSTEM_ADMIN |
-| GET    | `/admin/departments`                       | 遺??紐⑸줉 議고쉶                      | SYSTEM_ADMIN |
-| POST   | `/admin/departments`                       | 遺???깅줉                         | SYSTEM_ADMIN |
-| PATCH  | `/admin/departments/{departmentId}`        | 遺???뺣낫 ?섏젙                      | SYSTEM_ADMIN |
-| DELETE | `/admin/departments/{departmentId}`        | 遺????젣                         | SYSTEM_ADMIN |
-| GET    | `/admin/users/search`                      | ?щ쾲?쇰줈 ?ъ슜??議고쉶                   | SYSTEM_ADMIN |
-| PATCH  | `/admin/users/{userId}/status`             | ?ъ슜???쒖꽦??鍮꾪솢?깊솕 蹂寃?              | SYSTEM_ADMIN |
-| GET    | `/admin/manuals`                           | 留ㅻ돱??紐⑸줉 議고쉶                     | SYSTEM_ADMIN |
-| POST   | `/admin/manuals`                           | 留ㅻ돱???깅줉                        | SYSTEM_ADMIN |
-| GET    | `/admin/manuals/{manualId}`                | 留ㅻ돱???곸꽭 議고쉶                     | SYSTEM_ADMIN |
-| PATCH  | `/admin/manuals/{manualId}`                | 留ㅻ돱???섏젙 諛??좉퇋 踰꾩쟾 ?깅줉             | SYSTEM_ADMIN |
-| DELETE | `/admin/manuals/{manualId}`                | 留ㅻ돱????젣                        | SYSTEM_ADMIN |
-| GET    | `/admin/flash-chat/settings`               | 梨꾪똿 ?꾪꽣 ?ㅼ젙 議고쉶                   | SYSTEM_ADMIN |
-| POST   | `/admin/flash-chat/blocked-words`          | 湲덉???異붽?                        | SYSTEM_ADMIN |
-| DELETE | `/admin/flash-chat/blocked-words/{wordId}` | 湲덉?????젣                        | SYSTEM_ADMIN |
+| GET    | `/admin/settings/summary`                  | 전체 사용자 수, 당일 로그인 수, 총 문서 수 조회 | SYSTEM_ADMIN |
+| GET    | `/admin/points/search`                     | 사번으로 사용자 포인트 조회               | SYSTEM_ADMIN |
+| PATCH  | `/admin/points/{employeeId}/deduct`        | 포인트 차감                        | SYSTEM_ADMIN |
+| GET    | `/admin/departments`                       | 부서 목록 조회                      | SYSTEM_ADMIN |
+| POST   | `/admin/departments`                       | 부서 등록                         | SYSTEM_ADMIN |
+| PATCH  | `/admin/departments/{departmentId}`        | 부서 정보 수정                      | SYSTEM_ADMIN |
+| DELETE | `/admin/departments/{departmentId}`        | 부서 삭제                         | SYSTEM_ADMIN |
+| GET    | `/admin/users/search`                      | 사번으로 사용자 조회                   | SYSTEM_ADMIN |
+| PATCH  | `/admin/users/{userId}/status`             | 사용자 활성화/비활성화 변경               | SYSTEM_ADMIN |
+| GET    | `/admin/manuals`                           | 매뉴얼 목록 조회                     | SYSTEM_ADMIN |
+| POST   | `/admin/manuals`                           | 매뉴얼 등록                        | SYSTEM_ADMIN |
+| GET    | `/admin/manuals/{manualId}`                | 매뉴얼 상세 조회                     | SYSTEM_ADMIN |
+| PATCH  | `/admin/manuals/{manualId}`                | 매뉴얼 수정 및 신규 버전 등록             | SYSTEM_ADMIN |
+| DELETE | `/admin/manuals/{manualId}`                | 매뉴얼 삭제                        | SYSTEM_ADMIN |
+| GET    | `/admin/flash-chat/settings`               | 채팅 필터 설정 조회                   | SYSTEM_ADMIN |
+| POST   | `/admin/flash-chat/blocked-words`          | 금지어 추가                        | SYSTEM_ADMIN |
+| DELETE | `/admin/flash-chat/blocked-words/{wordId}` | 금지어 삭제                        | SYSTEM_ADMIN |
 
 
 
-## 13. 誘몄젙 ??ぉ
+## 13. 미정 항목
 
-| ??ぉ                                   | ?곹깭                                    | 寃곗젙 ?꾩슂??    |
+| 항목                                   | 상태                                    | 결정 필요자     |
 | -------------------------------------- | --------------------------------------- | --------------- |
-| Refresh Token ??μ냼                   | Redis ?뺤젙                              | ?댁뒳??         |
-| SYSTEM_ADMIN ?대떦 議곗쭅                 | 湲곕낯: 寃쎌쁺吏?먰?, ?뚯궗蹂?議곗젙 媛??     | 源媛?? ? ?꾩껜 |
-| ?곗폆 ?먮룞 諛곗젙 ?먯닔 媛以묒튂             | 珥덉븞 ?뺤젙 ?꾩슂                          | 源吏꾪쁺          |
-| 濡쒖뺄 ?꾨쿋??紐⑤뜽                       | 誘몄젙                                    | 源吏꾪쁺, ? ?꾩껜 |
-| Elasticsearch ?몃뜳??李⑥썝??similarity | 誘몄젙 (?꾨쿋??紐⑤뜽 ?뺤젙 ??寃곗젙)         | 誘쇱젙湲? 源吏꾪쁺  |
-| ?뚮┝ 援ы쁽 諛⑹떇                         | SSE ?곗꽑, ?대쭅 fallback                 | ?댁뒳?? ?⑺씗??|
-| 梨쀫큸 ?몄뀡 援ъ“                         | ?몄뀡 湲곕컲 ?뺤젙, ?댁뒳?댁? 理쒖쥌 ?⑹쓽 ?꾩슂 | ?댁뒳?? 源吏꾪쁺  |
-| Flash Chat 理쒕? ?쒖꽦 硫붿떆吏 ??        | 誘몄젙                                    | 源吏꾪쁺, 源媛?? |
-| ?대?吏 ??μ냼                          | 濡쒖뺄 ?뚯씪?쒖뒪???먮뒗 S3                 | 源吏꾪쁺, ? ?꾩껜 |
+| Refresh Token 저장소                   | Redis 확정                              | 이슬이          |
+| SYSTEM_ADMIN 담당 조직                 | 기본: 경영지원팀, 회사별 조정 가능      | 김가영, 팀 전체 |
+| 티켓 자동 배정 점수 가중치             | 초안 확정 필요                          | 김진혁          |
+| 로컬 임베딩 모델                       | 미정                                    | 김진혁, 팀 전체 |
+| Elasticsearch 인덱스 차원수/similarity | 미정 (임베딩 모델 확정 후 결정)         | 민정기, 김진혁  |
+| 알림 구현 방식                         | SSE 우선, 폴링 fallback                 | 이슬이, 황희수 |
+| 챗봇 세션 구조                         | 세션 기반 확정, 이슬이와 최종 합의 필요 | 이슬이, 김진혁  |
+| Flash Chat 최대 활성 메시지 수         | 미정                                    | 김진혁, 김가영  |
+| 이미지 저장소                          | 로컬 파일시스템 또는 S3                 | 김진혁, 팀 전체 |
