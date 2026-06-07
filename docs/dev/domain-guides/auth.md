@@ -3,225 +3,290 @@
 > 문서 유형: Development Guide
 > 상태: Draft
 > 정본 위치: `docs/dev/domain-guides/auth.md`
-> 관련 문서: `docs/adr/003-auth-strategy.md`, `docs/api/api-contract.md`, `docs/reference/prd.md`
-> 버전: v0.1
-> 최종 수정: 2026-06-03
+> 관련 문서: `docs/adr/003-auth-strategy.md`, `docs/adr/005-role-permission-strategy.md`, `docs/api/api-contract.md`, `docs/reference/prd.md`
+> 버전: v0.2
+> 최종 수정: 2026-06-07
 
 ## 개발 목표
 
-사용자가 사번/비밀번호로 로그인하고, role과 department 기준으로 API 접근 권한을 분리한다.
+사용자가 사번과 비밀번호 기반으로 인증하고, JWT와 Redis를 사용해 로그인 상태를 관리한다.
+회원가입, 로그인, 토큰 재발급, 로그아웃, 비밀번호 재설정 기능을 제공하며, 역할과 사용자 상태를 기준으로 인증/인가 흐름을 분리한다.
 
-## 먼저 볼 문서
+## 관련 문서
 
 - `docs/adr/003-auth-strategy.md`
 - `docs/adr/005-role-permission-strategy.md`
 - `docs/api/api-contract.md`
 - `docs/reference/prd.md`
 
-## MVP 구현 범위
+## 구현 범위
 
-- 회원가입 또는 seed 사용자 생성
-- 사번 기반 로그인
-- BCrypt 비밀번호 저장
-- JWT access token 발급
-- refresh token 저장 방식 결정 반영
-- `USER`, `TEAM_ADMIN`, `SYSTEM_ADMIN` 권한 분기
-- 비활성 사용자 로그인 차단
+| 기능 | API |
+|---|---|
+| 회원가입 부서 목록 조회 | `GET /api/v1/departments` |
+| 회원가입 인증코드 발송 | `POST /api/v1/auth/signup/code` |
+| 회원가입 인증코드 확인 | `POST /api/v1/auth/signup/code/verify` |
+| 회원가입 | `POST /api/v1/auth/signup` |
+| 로그인 | `POST /api/v1/auth/login` |
+| 토큰 재발급 | `POST /api/v1/auth/token/refresh` |
+| 로그아웃 | `POST /api/v1/auth/logout` |
+| 비밀번호 재설정 인증코드 발송 | `POST /api/v1/auth/password-reset/code` |
+| 비밀번호 재설정 인증코드 확인 | `POST /api/v1/auth/password-reset/code/verify` |
+| 비밀번호 재설정 | `PATCH /api/v1/auth/password-reset` |
+| 마이페이지 조회 | `GET /api/v1/me/profile` |
 
-## API/DB 영향
+## 주요 구현 파일
 
-- `users`
-- `departments`
-- auth request/response DTO
-- security filter
-- role/department 기반 접근 제어
+| 파일 | 역할 |
+|---|---|
+| `AuthController` | Auth API 엔드포인트와 응답 Header/Body 구성 |
+| `AuthService` | 회원가입, 로그인, 토큰 재발급, 로그아웃, 비밀번호 재설정 핵심 로직 |
+| `SignupEmailCodeService` | 회원가입 인증코드 생성, 발송, 확인 흐름 |
+| `PasswordResetEmailCodeService` | 비밀번호 재설정 인증코드 생성, 발송, 확인 흐름 |
+| `EmailVerificationService` | 인증코드와 인증 완료 상태를 Redis에 저장/조회/삭제 |
+| `RefreshTokenService` | Refresh Token을 Redis에 저장/검증/삭제 |
+| `EmailSender` | 인증코드 이메일 발송 인터페이스 |
+| `SmtpEmailSender` | SMTP 기반 실제 이메일 발송 구현체 |
+| `JwtProvider` | Access Token, Refresh Token 생성 및 검증 |
+| `JwtFilter` | `Authorization` Header의 Access Token을 검증하고 SecurityContext에 인증 정보 저장 |
+| `JwtProperties` | JWT secret, Access Token 만료 시간, Refresh Token 만료 시간 설정 |
+| `UserRepository` | 사번, 이메일, 사번+이메일 기준 사용자 조회 |
 
-## 회원가입 구현 범위
+## 인증코드 정책
 
-회원가입 화면에서 호출되는 API는 아래 4개다.
+- 인증코드는 숫자 6자리로 생성한다.
+- 인증코드는 Redis에 TTL과 함께 저장한다.
+- 인증코드 확인 성공 시 인증 완료 상태를 Redis에 별도로 저장한다.
+- 사용이 끝난 인증코드는 Redis에서 삭제한다.
+- 현재 팀 정책상 콘솔 인증코드 발송은 사용하지 않는다.
+- 인증코드는 SMTP 메일 발송 방식으로만 전달한다.
 
-| 순서 | API | 역할 |
-|---|---|---|
-| 1 | `GET /api/v1/departments` | 회원가입 화면의 부서 선택 목록 조회 |
-| 2 | `POST /api/v1/auth/signup/code` | 회원가입 인증코드 발송 |
-| 3 | `POST /api/v1/auth/signup/code/verify` | 회원가입 인증코드 확인 |
-| 4 | `POST /api/v1/auth/signup` | 최종 회원가입 처리 |
+### Redis Key
 
-### 부서 선택 흐름
+| 용도 | Key 형식 |
+|---|---|
+| 회원가입 인증코드 | `signup:email-code:{email}` |
+| 회원가입 인증 완료 상태 | `signup:email-verified:{email}` |
+| 비밀번호 재설정 인증코드 | `password-reset:email-code:{employeeId}:{email}` |
+| 비밀번호 재설정 인증 완료 상태 | `password-reset:email-verified:{employeeId}:{email}` |
+| Refresh Token | `auth:refresh-token:{userId}` |
 
-- 사용자는 화면에서 부서명을 선택한다.
-- 프론트는 `GET /api/v1/departments` 응답의 `departmentName`을 화면에 표시한다.
-- 사용자가 부서를 선택하면 프론트는 해당 부서의 `departmentId`를 보관한다.
+이메일은 앞뒤 공백 제거 후 소문자로 정규화하여 Redis Key에 사용한다.
+비밀번호 재설정은 기존 사용자 확인이 필요하므로 `employeeId + email` 조합을 Key에 포함한다.
+
+## 회원가입 흐름
+
+### 1. 부서 목록 조회
+
+`GET /api/v1/departments`
+
+- 회원가입 화면에서 부서 선택 목록을 표시하기 위해 사용한다.
 - 최종 회원가입 요청에는 부서명이 아니라 `departmentId`를 전달한다.
 
-### 최종 회원가입 처리
+### 2. 회원가입 인증코드 발송
 
-`POST /api/v1/auth/signup`은 아래 순서로 처리한다.
+`POST /api/v1/auth/signup/code`
 
-1. Redis에서 해당 이메일의 인증 완료 상태를 확인한다.
-2. 인증 완료 상태가 없으면 회원가입을 거부한다.
+1. 이메일 형식을 검증한다.
+2. 이미 가입된 이메일인지 확인한다.
+3. 중복 이메일이면 `AUTH_DUPLICATE_EMAIL`을 반환한다.
+4. 6자리 인증코드를 생성한다.
+5. 인증코드를 이메일로 발송한다.
+6. 인증코드를 Redis에 저장한다.
+
+### 3. 회원가입 인증코드 확인
+
+`POST /api/v1/auth/signup/code/verify`
+
+1. 이메일과 인증코드 형식을 검증한다.
+2. Redis에 저장된 인증코드와 사용자가 입력한 인증코드를 비교한다.
+3. 일치하지 않으면 `AUTH_EMAIL_CODE_MISMATCH`를 반환한다.
+4. 일치하면 회원가입 인증 완료 상태를 Redis에 저장한다.
+5. 사용 완료된 인증코드는 Redis에서 삭제한다.
+
+### 4. 회원가입
+
+`POST /api/v1/auth/signup`
+
+1. 이메일 인증 완료 상태를 Redis에서 확인한다.
+2. 인증 완료 상태가 없으면 `AUTH_EMAIL_VERIFICATION_REQUIRED`를 반환한다.
 3. `departmentId`로 부서를 조회한다.
 4. 사번 중복 여부를 확인한다.
 5. 이메일 중복 여부를 확인한다.
 6. 비밀번호를 BCrypt로 암호화한다.
-7. 서버에서 자동 닉네임을 생성한다.
+7. 서버에서 랜덤 닉네임을 생성한다.
 8. `users` 테이블에 사용자 정보를 저장한다.
 
-`passwordConfirm`은 서버 Request Body에 포함하지 않는다.
-비밀번호 확인값은 프론트에서 `password`와 일치하는지 검증한다.
+`passwordConfirm`은 프론트에서 확인용으로만 사용하며 서버 Request Body에는 포함하지 않는다.
 
-### 자동 닉네임 정책
+## 로그인 흐름
 
-- 사용자는 회원가입 시 닉네임을 입력하지 않는다.
-- 서버가 회원가입 완료 시점에 랜덤 닉네임을 자동 생성한다.
-- 닉네임은 `NICKNAME_PREFIXES + NICKNAME_SUFFIXES` 조합으로 만든다.
-- 닉네임 뒤에 숫자는 붙이지 않는다.
-- 닉네임 중복은 허용한다.
+`POST /api/v1/auth/login`
 
-예시:
+1. 사번으로 사용자를 조회한다.
+2. 사용자가 없으면 `AUTH_INVALID_CREDENTIALS`를 반환한다.
+3. 입력 비밀번호와 DB에 저장된 암호화 비밀번호를 비교한다.
+4. 비밀번호가 일치하지 않으면 `AUTH_INVALID_CREDENTIALS`를 반환한다.
+5. 사용자 상태가 `ACTIVE`인지 확인한다.
+6. 비활성 사용자이면 `AUTH_INACTIVE_USER`를 반환한다.
+7. Access Token과 Refresh Token을 발급한다.
+8. Refresh Token을 Redis에 저장한다.
+9. 마지막 로그인 시간을 갱신한다.
+10. Access Token과 사용자 기본 정보는 Response Body로 반환한다.
+11. Refresh Token은 `Set-Cookie` Header로 전달한다.
 
-```text
-연결하는전략가
-성장하는멘토
-공유하는조력자
-개선하는아키텍트
-```
+## JWT 정책
 
-## 권한/보안 체크
+### Access Token
 
-- 비밀번호 plain text 저장 금지
-- access token에 최소 claims만 포함
-- refresh token을 프론트에서 어디에 저장할지 확정 필요
-- 팀 티켓 API는 role뿐 아니라 department 확인 필요
+- Response Body로 반환한다.
+- 일반 인증 API 호출 시 `Authorization: Bearer {accessToken}` Header에 담아 요청한다.
+- `JwtFilter`가 Access Token을 검증하고 `SecurityContext`에 `userId`와 role을 저장한다.
 
-## 이메일 인증코드 정책
+### Refresh Token
 
-회원가입과 비밀번호 재설정은 모두 사내 이메일 기반 인증코드를 사용한다.
-외부 API는 목적별로 분리하되, 내부 인증코드 생성/저장/검증 로직은 공통화할 수 있다.
+- Response Body에 포함하지 않는다.
+- HttpOnly Cookie로 전달한다.
+- Redis에 `auth:refresh-token:{userId}` 형식으로 저장한다.
+- 토큰 재발급과 로그아웃 처리에 사용한다.
 
-### 저장소
+### JWT Claims
 
-- 인증코드는 Redis에 저장한다.
-- 인증코드는 숫자 6자리로 생성한다.
-- 인증코드는 임시 데이터이므로 TTL을 반드시 둔다.
-- 인증 성공 후에는 인증 완료 상태도 Redis에 일정 시간 저장한다.
-- 로컬 개발 환경에서는 인증코드를 콘솔 로그로 출력한다.
-- 운영 환경에서는 SMTP 설정을 통해 실제 이메일을 발송한다.
-- 이메일 발송 방식은 `app.mail.sender` 설정으로 선택한다. 기본값은 `console`이고, 운영에서는 `smtp`를 사용한다.
+| Claim | 의미 |
+|---|---|
+| `sub` | userId |
+| `employeeId` | 사번 |
+| `role` | 사용자 권한 |
+| `type` | `access` 또는 `refresh` |
+| `iat` | 발급 시각 |
+| `exp` | 만료 시각 |
 
-예시:
+Access Token과 Refresh Token은 `type` Claim으로 구분한다.
 
-```text
-signup:email-code:user@company.com = 123456
-signup:email-verified:user@company.com = true
-password-reset:email-code:user@company.com = 123456
-password-reset:email-verified:user@company.com = true
-```
+## 토큰 재발급 흐름
 
-### 회원가입 인증 흐름
+`POST /api/v1/auth/token/refresh`
 
-1. `POST /api/v1/auth/signup/code`
-   - 이메일을 받아 인증코드를 생성한다.
-   - 생성한 인증코드를 Redis에 저장한다.
-   - 로컬 환경에서는 인증코드를 콘솔 로그에 출력한다.
-   - 운영 환경에서는 인증코드를 이메일로 발송한다.
-2. `POST /api/v1/auth/signup/code/verify`
-   - 이메일과 인증코드를 받는다.
-   - 사용자가 입력한 인증번호가 Redis에 저장된 인증번호와 일치하는지 확인한다.
-   - 일치하면 회원가입 인증 완료 상태를 Redis에 저장한다.
-3. `POST /api/v1/auth/signup`
-   - 회원가입 전에 해당 이메일의 인증 완료 상태를 확인한다.
-   - 인증 완료 상태가 없으면 회원가입을 거부한다.
+1. Refresh Token Cookie를 읽는다.
+2. Refresh Token이 없으면 `AUTH_REFRESH_TOKEN_REQUIRED`를 반환한다.
+3. JWT 서명, 만료 시간, 토큰 타입을 검증한다.
+4. 유효하지 않으면 `AUTH_REFRESH_TOKEN_INVALID`를 반환한다.
+5. 토큰에서 userId를 추출한다.
+6. Redis에 저장된 Refresh Token과 요청 Refresh Token이 일치하는지 확인한다.
+7. 일치하지 않으면 `AUTH_REFRESH_TOKEN_INVALID`를 반환한다.
+8. 사용자를 조회하고 `ACTIVE` 상태인지 확인한다.
+9. 새 Access Token과 새 Refresh Token을 발급한다.
+10. 새 Refresh Token으로 Redis 값을 갱신한다.
+11. 새 Access Token은 Response Body로 반환한다.
+12. 새 Refresh Token은 `Set-Cookie` Header로 전달한다.
 
-### 로컬 Postman 테스트
+재발급 성공 시 Refresh Token을 새로 발급하므로 기존 Refresh Token은 Redis 검증에서 실패한다.
 
-로컬 기본 발송 방식은 `console`이다.
-별도 설정이 없으면 `APP_MAIL_SENDER=console`과 동일하게 동작한다.
+## 로그아웃 흐름
 
-1. `POST /api/v1/auth/signup/code`를 호출한다.
-2. 서버 콘솔 로그에서 인증코드를 확인한다.
+`POST /api/v1/auth/logout`
 
-```text
-[회원가입 인증코드] email=user@company.com, code=123456
-```
+1. `Authorization` Header의 Access Token으로 사용자를 식별한다.
+2. `JwtFilter`가 Access Token을 검증하고 `SecurityContext`에 userId를 저장한다.
+3. Controller는 `@AuthenticationPrincipal Long userId`로 사용자 ID를 받는다.
+4. Redis에 저장된 Refresh Token을 userId 기준으로 삭제한다.
+5. `Set-Cookie` Header로 Refresh Token Cookie를 즉시 만료시킨다.
 
-3. 콘솔에 출력된 인증코드를 `POST /api/v1/auth/signup/code/verify` 요청에 사용한다.
-4. 인증 확인이 완료되면 `POST /api/v1/auth/signup`을 호출한다.
+Access Token은 서버에 저장하지 않는 JWT이므로 로그아웃 시 직접 삭제하지 않는다.
+대신 Refresh Token을 Redis와 Cookie에서 제거하여 추가 토큰 재발급을 막는다.
 
-Postman 응답 Body에는 인증코드를 포함하지 않는다.
-인증코드는 로컬 서버 콘솔에서만 확인한다.
+## 비밀번호 재설정 흐름
 
-### 운영 SMTP 전환
+비밀번호 재설정은 로그인하지 못하는 사용자를 위한 기능이므로 Token 인증을 요구하지 않는다.
+대신 `employeeId + email + 인증코드 확인 완료 상태`로 사용자를 검증한다.
 
-운영 환경에서는 콘솔 발송을 사용하지 않는다.
-아래 설정을 통해 SMTP 발송 구현체를 활성화한다.
+### 1. 비밀번호 재설정 인증코드 발송
 
-```properties
-APP_MAIL_SENDER=smtp
-```
+`POST /api/v1/auth/password-reset/code`
 
-추가로 `spring.mail.*` SMTP 설정이 필요하다.
-SMTP 서버는 고객사 또는 배포 환경에 맞게 설정으로 주입하며, Gmail 등 특정 메일 서비스를 코드에 고정하지 않는다.
+1. 사번과 이메일 형식을 검증한다.
+2. `employeeId + email`이 DB에 저장된 사용자 정보와 일치하는지 확인한다.
+3. 일치하는 사용자가 없으면 `AUTH_USER_NOT_FOUND`를 반환한다.
+4. 6자리 인증코드를 생성한다.
+5. 인증코드를 이메일로 발송한다.
+6. 인증코드를 Redis에 저장한다.
 
-예시:
+### 2. 비밀번호 재설정 인증코드 확인
 
-```yaml
-spring:
-  mail:
-    host: ${MAIL_HOST}
-    port: ${MAIL_PORT}
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
-```
+`POST /api/v1/auth/password-reset/code/verify`
 
-### 비밀번호 재설정 인증 흐름
+1. 사번, 이메일, 인증코드 형식을 검증한다.
+2. `employeeId + email`이 DB에 저장된 사용자 정보와 일치하는지 확인한다.
+3. 일치하는 사용자가 없으면 `AUTH_USER_NOT_FOUND`를 반환한다.
+4. Redis에 저장된 인증코드와 사용자가 입력한 인증코드를 비교한다.
+5. 일치하지 않으면 `AUTH_EMAIL_CODE_MISMATCH`를 반환한다.
+6. 일치하면 비밀번호 재설정 인증 완료 상태를 Redis에 저장한다.
+7. 사용 완료된 인증코드는 Redis에서 삭제한다.
 
-1. `POST /api/v1/auth/password-reset/code`
-   - 이메일을 받아 인증코드를 생성한다.
-   - 생성한 인증코드를 Redis에 저장한다.
-   - 인증코드를 이메일로 발송한다.
-2. `POST /api/v1/auth/password-reset/code/verify`
-   - 이메일과 인증코드를 받는다.
-   - 사용자가 입력한 인증번호가 Redis에 저장된 인증번호와 일치하는지 확인한다.
-   - 일치하면 비밀번호 재설정 인증 완료 상태를 Redis에 저장한다.
-3. `PATCH /api/v1/auth/password-reset`
-   - 비밀번호 변경 전에 해당 이메일의 인증 완료 상태를 확인한다.
-   - 인증 완료 상태가 없으면 비밀번호 재설정을 거부한다.
+### 3. 비밀번호 재설정
 
-## 완료 기준
+`PATCH /api/v1/auth/password-reset`
 
-- 회원가입 화면에서 부서 목록을 조회할 수 있다.
-- 인증코드는 숫자 6자리로 생성된다.
-- 로컬 환경에서 인증코드는 서버 콘솔 로그로 확인할 수 있다.
-- 인증코드 확인 성공 시 Redis에 회원가입 인증 완료 상태가 저장된다.
-- 인증 완료되지 않은 이메일로 회원가입하면 실패한다.
-- 사번 또는 이메일이 중복되면 회원가입이 실패한다.
-- 비밀번호는 BCrypt로 암호화되어 저장된다.
-- 닉네임은 서버에서 자동 생성된다.
-- 로그인 성공 시 access token과 사용자 기본 정보가 반환된다.
-- 잘못된 비밀번호는 로그인 실패한다.
-- 비활성 사용자는 로그인할 수 없다.
-- 권한이 없는 API 접근은 거부된다.
+1. 사번, 이메일, 새 비밀번호 형식을 검증한다.
+2. Redis에서 비밀번호 재설정 인증 완료 상태를 확인한다.
+3. 인증 완료 상태가 없으면 `AUTH_PASSWORD_RESET_VERIFICATION_REQUIRED`를 반환한다.
+4. `employeeId + email`로 사용자를 조회한다.
+5. 일치하는 사용자가 없으면 `AUTH_USER_NOT_FOUND`를 반환한다.
+6. 새 비밀번호를 BCrypt로 암호화한다.
+7. DB에 저장된 기존 비밀번호를 새 비밀번호로 변경한다.
+8. Redis에 저장된 비밀번호 재설정 인증 완료 상태를 삭제한다.
 
-## 에러 처리 정책
+`newPasswordConfirm`은 프론트에서 확인용으로만 사용하며 서버 Request Body에는 포함하지 않는다.
 
-Auth 도메인도 별도 ExceptionHandler나 ErrorResponse를 만들지 않는다.
-공통 구조인 `CustomException + ErrorType + GlobalExceptionHandler`를 사용한다.
+## 메일 발송 정책
 
-회원가입 관련 에러 코드는 `ErrorType`에 정의한다.
+- 인증코드는 실제 이메일로 발송한다.
+- `EmailSender` 인터페이스로 발송 방식을 분리한다.
+- 현재 구현체는 `SmtpEmailSender`이다.
+- SMTP 설정은 `spring.mail.*` 설정을 사용한다.
+- 메일 발송 실패 시 `AUTH_EMAIL_SEND_FAILED`를 반환한다.
+
+## 쿠키 정책
+
+Refresh Token Cookie는 로그인, 토큰 재발급, 로그아웃에서 같은 정책을 사용한다.
+
+| 속성 | 값 |
+|---|---|
+| 이름 | `refreshToken` |
+| HttpOnly | `true` |
+| Secure | `true` |
+| SameSite | `Lax` |
+| Path | `/api/v1/auth` |
+
+로그인과 토큰 재발급 시에는 Refresh Token 값을 담아 발급한다.
+로그아웃 시에는 빈 값과 `Max-Age=0`으로 쿠키를 만료시킨다.
+
+## ErrorType
 
 | ErrorType | status | HTTP | 의미 |
 |---|---|---|---|
-| `AUTH_EMAIL_VERIFICATION_REQUIRED` | `auth-001` | 400 | 이메일 인증 완료 상태가 없음 |
+| `AUTH_EMAIL_VERIFICATION_REQUIRED` | `auth-001` | 400 | 회원가입 이메일 인증 완료 상태 없음 |
 | `AUTH_EMAIL_CODE_MISMATCH` | `auth-002` | 400 | 인증코드 불일치 또는 만료 |
 | `AUTH_DUPLICATE_EMAIL` | `auth-003` | 409 | 이미 사용 중인 이메일 |
 | `AUTH_DUPLICATE_EMPLOYEE_ID` | `auth-004` | 409 | 이미 사용 중인 사번 |
-| `AUTH_DEPARTMENT_NOT_FOUND` | `auth-005` | 404 | 부서를 찾을 수 없음 |
+| `AUTH_DEPARTMENT_NOT_FOUND` | `auth-005` | 404 | 존재하지 않는 부서 |
 | `AUTH_EMAIL_SEND_FAILED` | `auth-006` | 500 | 인증코드 이메일 발송 실패 |
+| `AUTH_INVALID_CREDENTIALS` | `auth-007` | 401 | 사번 또는 비밀번호 불일치 |
+| `AUTH_INACTIVE_USER` | `auth-008` | 403 | 비활성화 사용자 |
+| `AUTH_REFRESH_TOKEN_REQUIRED` | `auth-009` | 401 | Refresh Token 없음 |
+| `AUTH_REFRESH_TOKEN_INVALID` | `auth-010` | 401 | 유효하지 않은 Refresh Token |
+| `AUTH_USER_NOT_FOUND` | `auth-011` | 404 | 사번과 이메일에 일치하는 사용자 없음 |
+| `AUTH_PASSWORD_RESET_VERIFICATION_REQUIRED` | `auth-012` | 400 | 비밀번호 재설정 인증 완료 상태 없음 |
 
-## 논의 필요 사항
+## 완료 기준
 
-- refresh token 저장 위치: Redis 또는 DB
-- access token 저장 위치: 메모리 또는 cookie
-- local 테스트에서 secure cookie를 어떻게 처리할지
-- 운영 SMTP 서버와 계정 정책 확정 필요
+- 회원가입 인증코드 발송/확인 API가 정상 동작한다.
+- 회원가입 시 인증 완료 상태, 부서, 사번/이메일 중복 검증이 동작한다.
+- 로그인 성공 시 Access Token Body와 Refresh Token Cookie가 발급된다.
+- 토큰 재발급 시 Refresh Token Cookie와 Redis 저장값 검증이 동작한다.
+- 토큰 재발급 성공 시 새 Access Token과 새 Refresh Token이 발급된다.
+- 로그아웃 시 Redis Refresh Token이 삭제되고 Refresh Token Cookie가 만료된다.
+- 비밀번호 재설정 인증코드 발송/확인이 정상 동작한다.
+- 비밀번호 재설정 시 인증 완료 상태 확인 후 새 비밀번호가 암호화되어 저장된다.
+- 비밀번호 재설정 완료 후 Redis 인증 완료 상태가 삭제된다.
+- Postman으로 주요 성공/실패 케이스를 확인한다.
