@@ -113,6 +113,7 @@ public class AuthService {
 
 		String encodedPassword = passwordEncoder.encode(passwordResetRequest.newPassword());
 		user.updatePassword(encodedPassword);
+		refreshTokenService.delete(user.getUserId());
 		emailVerificationService.deletePasswordResetEmailVerified(employeeId, email);
 	}
 
