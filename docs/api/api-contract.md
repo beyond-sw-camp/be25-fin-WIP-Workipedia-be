@@ -66,7 +66,7 @@ Authorization: Bearer <accessToken>
 | 영역                      | 백엔드 담당    | 프론트 담당 |
 | ------------------------- | -------------- | ----------- |
 | Auth                      | 이슬이         | 황희수      |
-| 챗봇 세션/메시지          | 이슬이         | 민정기      |
+| 챗봇 세션/메시지          | 김진혁         | 민정기      |
 | 챗봇 답변/RAG/전환        | 김진혁         | 민정기      |
 | 워키 게시판               | 민정기         | 황희수      |
 | FAQ                       | 민정기         | 황희수      |
@@ -97,53 +97,11 @@ Authorization: Bearer <accessToken>
 | PATCH  | `/auth/password-reset`             | 비밀번호 재설정               | 본인 인증 필요     |
 | GET    | `/me/profile`                      | 마이페이지 조회               | Access Token 필요  |
 
-### GET `/departments`
-
-- 회원가입 화면에서 부서명 선택창에 표시할 부서 목록을 조회한다.
-- 부서 목록 개수는 DB에 등록된 부서 데이터를 기준으로 한다.
-
-
-### POST `/auth/signup/code`
-
-- 인증코드는 숫자 6자리로 생성한다.
-
-
-### POST `/auth/signup/code/verify`
-
-- 인증코드는 숫자 6자리로 입력한다.
-
-
-### POST `/auth/signup`
-
-- 회원가입은 이메일 인증코드 확인이 완료된 이메일에 대해서만 가능하다.
-- `passwordConfirm`은 프론트에서 `password`와의 일치 여부를 검증하며 Request Body에는 포함하지 않는다.
-
-
-### POST `/auth/login`
-
-
-- Refresh Token 쿠키는 Access Token 재발급 API 호출을 위한 값이다.
-- 일반 인증 API는 Refresh Token이 아니라 `Authorization` 헤더의 Access Token으로 인증한다.
-- 예를 들어 `/api/v1/me`로 시작하는 마이페이지 조회 API도 Access Token으로 인증한다.
-
-### POST `/auth/token/refresh`
-
-- 로그인 시 발급된 Refresh Token 쿠키를 검증한 뒤 새 Access Token과 새 Refresh Token을 함께 발급한다.
-- 새 Refresh Token은 Redis에 저장하고, 기존 Refresh Token은 폐기한다.
-- Access Token이 만료된 경우 호출하며, `Authorization` 헤더는 사용하지 않는다.
-
-
-### POST `/auth/logout`
-
-- Request Header의 Access Token을 검증하고, 토큰의 userId로 로그아웃 대상 사용자를 식별합니다.
-- 식별된 userId 기준으로 Redis에 저장된 Refresh Token을 삭제합니다.
-- Refresh Token 쿠키를 만료시켜 클라이언트에서 제거합니다.
-- Access Token이 없거나 유효하지 않으면 `401 Unauthorized`를 반환합니다.
 
 
 ## 5. Chatbot API
 
-담당: 이슬이, 김진혁
+담당: 김진혁
 
 | Method | Path                                                               | 설명                                             | 인증 |
 | ------ | ------------------------------------------------------------------ | ------------------------------------------------ | ---- |
@@ -164,12 +122,11 @@ Authorization: Bearer <accessToken>
 | GET    | `/ai/model/current`     | 현재 모델 버전 및 어댑터 정보 조회           | SYSTEM_ADMIN |
 | POST   | `/ai/prompt/update`     | base_system/admin_context 갱신               | SYSTEM_ADMIN |
 
-### POST `/chatbot/sessions/{sessionId}/messages`
 
 
 ## 6. Worki API
 
-담당: 이슬이
+담당: 민정기
 
 | Method | Path                                           | 설명                     | 인증 |
 | ------ | ---------------------------------------------- | ------------------------ | ---- |
@@ -181,8 +138,6 @@ Authorization: Bearer <accessToken>
 | POST   | `/worki/questions/{questionId}/ticket-answers` | 티켓 공식 답변 워키 등록 | 필요 |
 | PATCH  | `/worki/answers/{answerId}/adopt`              | 답변 채택                | 필요 |
 | PUT    | `/worki/questions/{questionId}/reaction`       | 좋아요/싫어요            | 필요 |
-
-### POST `/worki/questions`
 
 
 ## 7. Ticket API
@@ -202,46 +157,6 @@ Authorization: Bearer <accessToken>
 | POST   | `/tickets/{ticketId}/knowledge-candidates`   | 처리 완료 티켓 지식화 후보 등록 | 필요       |
 | PATCH  | `/knowledge-candidates/{candidateId}/review` | 지식화 후보 승인/반려           | TEAM_ADMIN |
 
-### POST `/tickets`
-
-
-- `priority` 허용값은 `MEDIUM`, `HIGH`이다. 생략하면 `MEDIUM`으로 저장한다.
-
-
-### GET `/tickets`
-
-티켓 목록을 조회한다. 프론트엔드는 같은 엔드포인트에서 상태별, 부서별 필터를 조합해 사용한다.
-
-Query Parameters:
-
-| 이름           | 타입   | 필수 | 설명                                                         |
-| -------------- | ------ | ---- | ------------------------------------------------------------ |
-| `status`       | string | 아니오 | 티켓 상태. 예: `COMMON_QUEUE`, `ASSIGNED`, `IN_PROGRESS`     |
-| `departmentId` | number | 아니오 | 담당 부서 ID. `assignedDepartmentId` 기준으로 조회한다.      |
-| `page`         | number | 아니오 | 페이지 번호. 기본값은 `1`이다.                               |
-| `size`         | number | 아니오 | 페이지 크기. 기본값은 `10`이다.                              |
-
-
-비고:
-
-- `departmentId`는 조회 필터이며, 부서 배정/재배정 동작을 의미하지 않는다.
-- 공통 접수 큐의 부서 재배정은 `PATCH /admin/common-queue/tickets/{ticketId}/department`를 사용한다.
-
-### PATCH `/tickets/{ticketId}/assignee`
-
-
-### POST `/tickets/{ticketId}/transfer-requests`
-
-
-이관 요청 시 티켓은 다른 부서로 직접 이동하지 않고 공통 접수 큐로 이동한다. 이후 `SYSTEM_ADMIN`이 공통 접수 큐에서 담당 부서를 재배정한다.
-
-### PATCH `/admin/common-queue/tickets/{ticketId}/department`
-
-
-### POST `/tickets/{ticketId}/knowledge-candidates`
-
-
-### PATCH `/knowledge-candidates/{candidateId}/review`
 
 
 ### Attachment API
@@ -253,7 +168,6 @@ Query Parameters:
 | POST   | `/attachments`                | 이미지 업로드, `attachmentId` 반환 | 필요 |
 | GET    | `/attachments/{attachmentId}` | 이미지 조회                        | 필요 |
 
-### POST `/attachments`
 
 
 ## 8. FAQ API
@@ -290,14 +204,6 @@ Query Parameters:
 | STOMP Subscribe | `/topic/flash-chat`     | 메시지/반응 수신      | 필요 |
 | STOMP Send      | `/app/flash-chat/send`  | 메시지 전송           | 필요 |
 | STOMP Send      | `/app/flash-chat/react` | 좋아요 반응           | 필요 |
-
-### GET `/flash-chat/messages`
-
-
-### `/app/flash-chat/send`
-
-
-### `/app/flash-chat/react`
 
 
 ## 10. Point API
