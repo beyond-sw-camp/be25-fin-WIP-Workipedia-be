@@ -3,6 +3,8 @@ package com.wip.workipedia.department.service;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.department.ai.DepartmentRoutingPromptEditor;
+import com.wip.workipedia.department.ai.RoutingPromptEditResult;
+import com.wip.workipedia.department.ai.RoutingPromptEditTarget;
 import com.wip.workipedia.department.domain.Department;
 import com.wip.workipedia.department.domain.DepartmentRoutingPrompt;
 import com.wip.workipedia.department.dto.AdminDepartmentResponse;
@@ -80,20 +82,31 @@ public class DepartmentService {
 	}
 
 	@Transactional
-	public AdminDepartmentResponse editRoutingPrompt(
-		Long departmentId,
-		RoutingPromptEditRequest request
-	) {
-		Department department = getDepartment(departmentId);
-		String currentPrompt = findPromptContent(departmentId);
-		String editedPrompt = departmentRoutingPromptEditor.edit(
-			department.getDepartmentName(),
-			currentPrompt,
-			request.instruction()
-		);
-		DepartmentRoutingPrompt routingPrompt = upsertRoutingPrompt(department, editedPrompt);
+	public List<AdminDepartmentResponse> editRoutingPrompts(RoutingPromptEditRequest request) {
+		List<Department> departments = departmentRepository.findByDeletedAtIsNullOrderByDepartmentIdAsc();
+		Map<Long, DepartmentRoutingPrompt> routingPrompts = findRoutingPromptMap(departments);
+		List<RoutingPromptEditTarget> targets = departments.stream()
+			.map(department -> new RoutingPromptEditTarget(
+				department.getDepartmentId(),
+				department.getDepartmentName(),
+				getPromptContent(routingPrompts, department.getDepartmentId())
+			))
+			.toList();
+		List<RoutingPromptEditResult> editResults = departmentRoutingPromptEditor.edit(targets, request.instruction());
 
-		return AdminDepartmentResponse.from(department, routingPrompt.getPromptContent());
+		if (editResults.isEmpty()) {
+			throw new CustomException(ErrorType.BAD_REQUEST, "수정 명령에서 부서명을 찾을 수 없습니다.");
+		}
+
+		Map<Long, Department> departmentMap = departments.stream()
+			.collect(Collectors.toMap(Department::getDepartmentId, Function.identity()));
+
+		editResults.forEach(editResult -> upsertRoutingPrompt(
+			departmentMap.get(editResult.departmentId()),
+			editResult.routingPrompt()
+		));
+
+		return findAllForAdmin();
 	}
 
 	@Transactional

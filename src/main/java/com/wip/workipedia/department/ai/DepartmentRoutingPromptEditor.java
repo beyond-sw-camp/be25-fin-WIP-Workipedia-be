@@ -1,6 +1,8 @@
 package com.wip.workipedia.department.ai;
 
+import java.util.List;
+
 public interface DepartmentRoutingPromptEditor {
 
-	String edit(String departmentName, String currentPrompt, String instruction);
+	List<RoutingPromptEditResult> edit(List<RoutingPromptEditTarget> targets, String instruction);
 }

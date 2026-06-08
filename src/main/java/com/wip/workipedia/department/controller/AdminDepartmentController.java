@@ -46,7 +46,7 @@ public class AdminDepartmentController {
 		return ResponseEntity.ok(departmentService.update(departmentId, request));
 	}
 
-	// 부서 역할 설명 수정
+	// 부서 역할 설명 직접 수정
 	@PatchMapping("/{departmentId}/routing-prompt")
 	public ResponseEntity<AdminDepartmentResponse> updateRoutingPrompt(
 			@PathVariable Long departmentId,
@@ -55,13 +55,12 @@ public class AdminDepartmentController {
 		return ResponseEntity.ok(departmentService.updateRoutingPrompt(departmentId, request));
 	}
 
-	// 부서 역할 설명 자연어 편집
-	@PatchMapping("/{departmentId}/routing-prompt/instruction")
-	public ResponseEntity<AdminDepartmentResponse> editRoutingPrompt(
-			@PathVariable Long departmentId,
+	// 공용 부서 역할 설명 자연어 편집
+	@PatchMapping("/routing-prompt/instruction")
+	public ResponseEntity<List<AdminDepartmentResponse>> editRoutingPrompts(
 			@Valid @RequestBody RoutingPromptEditRequest request
 	) {
-		return ResponseEntity.ok(departmentService.editRoutingPrompt(departmentId, request));
+		return ResponseEntity.ok(departmentService.editRoutingPrompts(request));
 	}
 
 	// 부서 삭제
