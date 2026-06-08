@@ -2,6 +2,7 @@ package com.wip.workipedia.department.service;
 
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
+import com.wip.workipedia.common.security.SecurityUtil;
 import com.wip.workipedia.department.ai.DepartmentRoutingPromptEditor;
 import com.wip.workipedia.department.ai.RoutingPromptEditResult;
 import com.wip.workipedia.department.ai.RoutingPromptEditTarget;
@@ -55,9 +56,9 @@ public class DepartmentService {
 
 	@Transactional
 	public AdminDepartmentResponse create(DepartmentRequest request) {
-		validateDuplicateName(request.departmentName());
-
-		Department department = departmentRepository.save(Department.create(request.departmentName()));
+		Department department = departmentRepository.findByDepartmentName(request.departmentName())
+			.map(this::restoreOrThrowIfActive)
+			.orElseGet(() -> departmentRepository.save(Department.create(request.departmentName())));
 
 		return AdminDepartmentResponse.from(department, null);
 	}
@@ -103,6 +104,7 @@ public class DepartmentService {
 	@Transactional
 	public void delete(Long departmentId) {
 		Department department = getDepartment(departmentId);
+		Long actorUserId = SecurityUtil.getCurrentUserId();
 
 		if (userRepository.existsByDepartment_DepartmentId(departmentId)) {
 			throw new CustomException(ErrorType.DEPARTMENT_IN_USE);
@@ -110,7 +112,7 @@ public class DepartmentService {
 
 		department.markDeleted();
 		routingPromptRepository.findByDepartment_DepartmentIdAndDeletedAtIsNull(departmentId)
-			.ifPresent(DepartmentRoutingPrompt::markDeleted);
+			.ifPresent(routingPrompt -> routingPrompt.markDeleted(actorUserId));
 	}
 
 	private Map<Long, DepartmentRoutingPrompt> findRoutingPromptMap(List<Department> departments) {
@@ -143,14 +145,16 @@ public class DepartmentService {
 	}
 
 	private DepartmentRoutingPrompt upsertRoutingPrompt(Department department, String promptContent) {
+		Long actorUserId = SecurityUtil.getCurrentUserId();
+
 		return routingPromptRepository
 			.findByDepartment_DepartmentIdAndDeletedAtIsNull(department.getDepartmentId())
 			.map(routingPrompt -> {
-				routingPrompt.update(promptContent);
+				routingPrompt.update(promptContent, actorUserId);
 				return routingPrompt;
 			})
 			.orElseGet(() -> routingPromptRepository.save(
-				DepartmentRoutingPrompt.create(department, promptContent)
+				DepartmentRoutingPrompt.create(department, promptContent, actorUserId)
 			));
 	}
 
@@ -159,15 +163,20 @@ public class DepartmentService {
 			.orElseThrow(() -> new CustomException(ErrorType.DEPARTMENT_NOT_FOUND));
 	}
 
-	private void validateDuplicateName(String departmentName) {
-		if (departmentRepository.existsByDepartmentName(departmentName)) {
-			throw new CustomException(ErrorType.DEPARTMENT_DUPLICATE_NAME);
-		}
+	private void validateDuplicateNameForUpdate(String departmentName, Long departmentId) {
+		departmentRepository.findByDepartmentName(departmentName)
+			.filter(department -> !department.getDepartmentId().equals(departmentId))
+			.ifPresent(department -> {
+				throw new CustomException(ErrorType.DEPARTMENT_DUPLICATE_NAME);
+			});
 	}
 
-	private void validateDuplicateNameForUpdate(String departmentName, Long departmentId) {
-		if (departmentRepository.existsByDepartmentNameAndDepartmentIdNot(departmentName, departmentId)) {
+	private Department restoreOrThrowIfActive(Department department) {
+		if (department.getDeletedAt() == null) {
 			throw new CustomException(ErrorType.DEPARTMENT_DUPLICATE_NAME);
 		}
+
+		department.restore();
+		return department;
 	}
 }

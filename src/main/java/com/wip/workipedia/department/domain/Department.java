@@ -54,6 +54,11 @@ public class Department {
 		this.isDeleted = "Y";
 	}
 
+	public void restore() {
+		this.deletedAt = null;
+		this.isDeleted = "N";
+	}
+
 	@PrePersist
 	void onCreate() {
 		LocalDateTime now = LocalDateTime.now();

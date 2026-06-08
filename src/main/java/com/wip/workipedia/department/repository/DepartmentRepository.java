@@ -10,9 +10,7 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
 	// 삭제되지 않은 부서 한정 오름차순 조회
 	List<Department> findByDeletedAtIsNullOrderByDepartmentIdAsc();
 
+	Optional<Department> findByDepartmentName(String departmentName);
+
 	Optional<Department> findByDepartmentIdAndDeletedAtIsNull(Long departmentId);
-
-	boolean existsByDepartmentName(String departmentName);
-
-	boolean existsByDepartmentNameAndDepartmentIdNot(String departmentName, Long departmentId);
 }

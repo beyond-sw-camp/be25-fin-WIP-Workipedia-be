@@ -37,6 +37,12 @@ public class DepartmentRoutingPrompt {
 	@Column(name = "is_active", nullable = false, length = 1, columnDefinition = "CHAR(1) DEFAULT 'Y'")
 	private String isActive = "Y";
 
+	@Column(name = "created_by")
+	private Long createdBy;
+
+	@Column(name = "updated_by")
+	private Long updatedBy;
+
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private LocalDateTime createdAt;
 
@@ -49,22 +55,26 @@ public class DepartmentRoutingPrompt {
 	@Column(name = "is_deleted", nullable = false, length = 1, columnDefinition = "CHAR(1) DEFAULT 'N'")
 	private String isDeleted = "N";
 
-	public static DepartmentRoutingPrompt create(Department department, String promptContent) {
+	public static DepartmentRoutingPrompt create(Department department, String promptContent, Long actorUserId) {
 		DepartmentRoutingPrompt routingPrompt = new DepartmentRoutingPrompt();
 		routingPrompt.department = department;
 		routingPrompt.promptContent = promptContent;
+		routingPrompt.createdBy = actorUserId;
+		routingPrompt.updatedBy = actorUserId;
 		return routingPrompt;
 	}
 
-	public void update(String promptContent) {
+	public void update(String promptContent, Long actorUserId) {
 		this.promptContent = promptContent;
 		this.isActive = "Y";
+		this.updatedBy = actorUserId;
 	}
 
-	public void markDeleted() {
+	public void markDeleted(Long actorUserId) {
 		this.deletedAt = LocalDateTime.now();
 		this.isDeleted = "Y";
 		this.isActive = "N";
+		this.updatedBy = actorUserId;
 	}
 
 	@PrePersist
