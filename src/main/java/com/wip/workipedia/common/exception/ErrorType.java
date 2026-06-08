@@ -29,6 +29,11 @@ public enum ErrorType {
 	AUTH_USER_NOT_FOUND("auth-011", "일치하는 사용자 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 	AUTH_PASSWORD_RESET_VERIFICATION_REQUIRED("auth-012", "비밀번호 재설정 인증이 필요합니다.", HttpStatus.BAD_REQUEST),
 
+	// department
+	DEPARTMENT_NOT_FOUND("department-001", "부서를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+	DEPARTMENT_DUPLICATE_NAME("department-002", "이미 사용 중인 부서명입니다.", HttpStatus.CONFLICT),
+	DEPARTMENT_IN_USE("department-003", "사용자가 소속된 부서는 삭제할 수 없습니다.", HttpStatus.CONFLICT),
+
 	// ticket
 	TICKET_NOT_FOUND("ticket-001", "티켓을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 
