@@ -1,4 +1,4 @@
-package com.wip.workipedia.storage.config;
+package com.wip.workipedia.config;
 
 import java.net.URI;
 import org.springframework.beans.factory.annotation.Value;
