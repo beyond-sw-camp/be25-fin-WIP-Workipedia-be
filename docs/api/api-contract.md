@@ -123,7 +123,7 @@ Authorization: Bearer <accessToken>
 | ESG 등급                  | 김가영         | 황희수      |
 | ESG 지표                  | 김가영         | 황희수      |
 
-## 4. Auth API
+## 4. Auth & Mypage API
 
 담당: 이슬이
 
