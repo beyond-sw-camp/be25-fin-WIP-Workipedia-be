@@ -10,10 +10,9 @@ import com.wip.workipedia.department.domain.DepartmentRoutingPrompt;
 import com.wip.workipedia.department.dto.AdminDepartmentResponse;
 import com.wip.workipedia.department.dto.DepartmentRequest;
 import com.wip.workipedia.department.dto.DepartmentResponse;
-import com.wip.workipedia.department.dto.DepartmentRoutingPromptRequest;
 import com.wip.workipedia.department.dto.RoutingPromptEditRequest;
 import com.wip.workipedia.department.repository.DepartmentRepository;
-import com.wip.workipedia.department.repository.DepartmentRoutingPromptRepository;
+import com.wip.workipedia.department.repository.RoutingPromptRepository;
 import com.wip.workipedia.user.repository.UserRepository;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +29,7 @@ public class DepartmentService {
 	private static final String ACTIVE = "Y";
 
 	private final DepartmentRepository departmentRepository;
-	private final DepartmentRoutingPromptRepository departmentRoutingPromptRepository;
+	private final RoutingPromptRepository routingPromptRepository;
 	private final DepartmentRoutingPromptEditor departmentRoutingPromptEditor;
 	private final UserRepository userRepository;
 
@@ -74,14 +73,6 @@ public class DepartmentService {
 	}
 
 	@Transactional
-	public AdminDepartmentResponse updateRoutingPrompt(Long departmentId, DepartmentRoutingPromptRequest request) {
-		Department department = getDepartment(departmentId);
-		DepartmentRoutingPrompt routingPrompt = upsertRoutingPrompt(department, request.routingPrompt());
-
-		return AdminDepartmentResponse.from(department, routingPrompt.getPromptContent());
-	}
-
-	@Transactional
 	public List<AdminDepartmentResponse> editRoutingPrompts(RoutingPromptEditRequest request) {
 		List<Department> departments = departmentRepository.findByDeletedAtIsNullOrderByDepartmentIdAsc();
 		Map<Long, DepartmentRoutingPrompt> routingPrompts = findRoutingPromptMap(departments);
@@ -118,7 +109,7 @@ public class DepartmentService {
 		}
 
 		department.markDeleted();
-		departmentRoutingPromptRepository.findByDepartment_DepartmentIdAndDeletedAtIsNull(departmentId)
+		routingPromptRepository.findByDepartment_DepartmentIdAndDeletedAtIsNull(departmentId)
 			.ifPresent(DepartmentRoutingPrompt::markDeleted);
 	}
 
@@ -131,7 +122,7 @@ public class DepartmentService {
 			.map(Department::getDepartmentId)
 			.toList();
 
-		return departmentRoutingPromptRepository
+		return routingPromptRepository
 			.findByDepartment_DepartmentIdInAndDeletedAtIsNullAndIsActive(departmentIds, ACTIVE)
 			.stream()
 			.collect(Collectors.toMap(
@@ -146,19 +137,19 @@ public class DepartmentService {
 	}
 
 	private String findPromptContent(Long departmentId) {
-		return departmentRoutingPromptRepository.findByDepartment_DepartmentIdAndDeletedAtIsNull(departmentId)
+		return routingPromptRepository.findByDepartment_DepartmentIdAndDeletedAtIsNull(departmentId)
 			.map(DepartmentRoutingPrompt::getPromptContent)
 			.orElse(null);
 	}
 
 	private DepartmentRoutingPrompt upsertRoutingPrompt(Department department, String promptContent) {
-		return departmentRoutingPromptRepository
+		return routingPromptRepository
 			.findByDepartment_DepartmentIdAndDeletedAtIsNull(department.getDepartmentId())
 			.map(routingPrompt -> {
 				routingPrompt.update(promptContent);
 				return routingPrompt;
 			})
-			.orElseGet(() -> departmentRoutingPromptRepository.save(
+			.orElseGet(() -> routingPromptRepository.save(
 				DepartmentRoutingPrompt.create(department, promptContent)
 			));
 	}

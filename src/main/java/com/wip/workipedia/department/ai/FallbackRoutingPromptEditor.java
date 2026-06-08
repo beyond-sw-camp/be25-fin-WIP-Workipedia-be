@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 @Component
-public class FallbackDepartmentRoutingPromptEditor implements DepartmentRoutingPromptEditor {
+public class FallbackRoutingPromptEditor implements DepartmentRoutingPromptEditor {
 
 	@Override
 	public List<RoutingPromptEditResult> edit(List<RoutingPromptEditTarget> targets, String instruction) {
@@ -48,9 +48,28 @@ public class FallbackDepartmentRoutingPromptEditor implements DepartmentRoutingP
 			return segment;
 		}
 
-		return currentPrompt.trim()
+		String trimmedCurrentPrompt = currentPrompt.trim();
+		String trimmedSegment = segment.trim();
+
+		if (hasSameLine(trimmedCurrentPrompt, trimmedSegment)) {
+			return trimmedCurrentPrompt;
+		}
+
+		return trimmedCurrentPrompt
 			+ System.lineSeparator()
-			+ segment;
+			+ trimmedSegment;
+	}
+
+	private boolean hasSameLine(String currentPrompt, String segment) {
+		String normalizedSegment = normalize(segment);
+
+		return currentPrompt.lines()
+			.map(this::normalize)
+			.anyMatch(normalizedSegment::equals);
+	}
+
+	private String normalize(String value) {
+		return value.trim().replaceAll("\\s+", " ");
 	}
 
 	private record MatchedTarget(

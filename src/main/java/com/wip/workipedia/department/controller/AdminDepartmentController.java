@@ -2,7 +2,6 @@ package com.wip.workipedia.department.controller;
 
 import com.wip.workipedia.department.dto.AdminDepartmentResponse;
 import com.wip.workipedia.department.dto.DepartmentRequest;
-import com.wip.workipedia.department.dto.DepartmentRoutingPromptRequest;
 import com.wip.workipedia.department.dto.RoutingPromptEditRequest;
 import com.wip.workipedia.department.service.DepartmentService;
 import jakarta.validation.Valid;
@@ -44,15 +43,6 @@ public class AdminDepartmentController {
 			@Valid @RequestBody DepartmentRequest request
 	) {
 		return ResponseEntity.ok(departmentService.update(departmentId, request));
-	}
-
-	// 부서 역할 설명 직접 수정
-	@PatchMapping("/{departmentId}/routing-prompt")
-	public ResponseEntity<AdminDepartmentResponse> updateRoutingPrompt(
-			@PathVariable Long departmentId,
-			@Valid @RequestBody DepartmentRoutingPromptRequest request
-	) {
-		return ResponseEntity.ok(departmentService.updateRoutingPrompt(departmentId, request));
 	}
 
 	// 공용 부서 역할 설명 자연어 편집
