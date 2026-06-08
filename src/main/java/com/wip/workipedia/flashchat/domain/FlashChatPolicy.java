@@ -1,12 +1,12 @@
 package com.wip.workipedia.flashchat.domain;
 
+import com.wip.workipedia.common.domain.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "flash_chat_policy")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class FlashChatPolicy {
+public class FlashChatPolicy extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,9 +29,6 @@ public class FlashChatPolicy {
 
     @Column(columnDefinition = "JSON")
     private String bannedWords;
-
-    @Column
-    private LocalDateTime updatedAt;
 
     public void update(int messageTtlSeconds, int sendCooldownSeconds, String bannedWords) {
         this.messageTtlSeconds = messageTtlSeconds;
