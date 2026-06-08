@@ -9,10 +9,12 @@ import com.wip.workipedia.worki.dto.QuestionSummaryResponse;
 import com.wip.workipedia.worki.dto.QuestionUpdateRequest;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
+import com.wip.workipedia.worki.event.WorkiQuestionChangedEvent;
 import com.wip.workipedia.worki.repository.WorkiAnswerRepository;
 import com.wip.workipedia.worki.repository.WorkiQuestionRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,12 +27,17 @@ public class WorkiQuestionService {
 
     private final WorkiQuestionRepository questionRepository;
     private final WorkiAnswerRepository answerRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public QuestionResponse create(Long actorUserId, QuestionCreateRequest request) {
         WorkiQuestion question = WorkiQuestion.create(
                 actorUserId, request.title(), request.content(), request.sourceChatbotMessageId());
-        return QuestionResponse.from(questionRepository.save(question));
+        WorkiQuestion saved = questionRepository.save(question);
+        // 커밋 후 검색 색인이 반영되도록 이벤트만 발행한다(실제 색인은 search가 구독 즉, search 서비스에서 처리).
+        // 롤백 되면 색인 요청 삭제. 안하게 됨. 커밋과 색인 요청이 동시에 일어남.
+        eventPublisher.publishEvent(new WorkiQuestionChangedEvent(saved.getQuestionId()));
+        return QuestionResponse.from(saved);
     }
 
     public Page<QuestionSummaryResponse> list(Pageable pageable) {
@@ -63,11 +70,35 @@ public class WorkiQuestionService {
             throw new CustomException(ErrorType.WORKI_POLICY_VIOLATION, "답변 대기(WAITING) 상태에서만 질문을 수정할 수 있습니다.");
         }
         question.updateContent(request.title(), request.content());
+        // 커밋 후 검색 색인이 반영되도록 이벤트만 발행한다(실제 색인은 search가 구독 즉, search 서비스에서 처리).
+        eventPublisher.publishEvent(new WorkiQuestionChangedEvent(question.getQuestionId()));
         return QuestionResponse.from(question);
     }
 
     private WorkiQuestion getQuestionOrThrow(Long questionId) {
         return questionRepository.findByQuestionIdAndDeletedAtIsNull(questionId)
                 .orElseThrow(() -> new CustomException(ErrorType.WORKI_NOT_FOUND, "질문을 찾을 수 없습니다. id=" + questionId));
+    }
+
+    @Transactional
+    public List<QuestionResponse> createBulk(Long actorUserId, List<QuestionCreateRequest> requests) {
+        List<WorkiQuestion> questions = requests.stream()
+                .map(request -> WorkiQuestion.create(
+                        actorUserId,
+                        request.title(),
+                        request.content(),
+                        request.sourceChatbotMessageId()
+                ))
+                .toList();
+
+        List<WorkiQuestion> savedQuestions = questionRepository.saveAll(questions);
+
+        savedQuestions.forEach(saved ->
+                eventPublisher.publishEvent(new WorkiQuestionChangedEvent(saved.getQuestionId()))
+        );
+
+        return savedQuestions.stream()
+                .map(QuestionResponse::from)
+                .toList();
     }
 }

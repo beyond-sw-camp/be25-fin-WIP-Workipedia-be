@@ -128,17 +128,17 @@ Authorization: Bearer <accessToken>
 담당: 이슬이
 
 | Method | Path                               | 설명                          | 인증               |
-| ------ | ---------------------------------- | ----------------------------- | ------------------ |
-| GET    | `/departments`                     | 회원가입 부서 목록 조회       | 불필요             |
-| POST   | `/auth/signup/code`                | 회원가입 인증코드 발송        | 불필요             |
-| POST   | `/auth/signup/code/verify`         | 회원가입 인증코드 확인        | 불필요             |
-| POST   | `/auth/signup`                     | 회원가입                      | 불필요             |
-| POST   | `/auth/login`                      | 로그인                        | 불필요             |
+| ------ | ---------------------------------- | ----------------------------- |------------------|
+| GET    | `/departments`                     | 회원가입 부서 목록 조회       | 불필요              |
+| POST   | `/auth/signup/code`                | 회원가입 인증코드 발송        | 불필요              |
+| POST   | `/auth/signup/code/verify`         | 회원가입 인증코드 확인        | 불필요              |
+| POST   | `/auth/signup`                     | 회원가입                      | 불필요              |
+| POST   | `/auth/login`                      | 로그인                        | 불필요              |
 | POST   | `/auth/token/refresh`              | 토큰 재발급                   | Refresh Token 필요 |
-| POST   | `/auth/logout`                     | 로그아웃                      | Access Token 필요 |
-| POST   | `/auth/password-reset/code`        | 비밀번호 재설정 인증코드 발송 | 불필요             |
-| POST   | `/auth/password-reset/code/verify` | 비밀번호 재설정 인증코드 확인 | 불필요             |
-| PATCH  | `/auth/password-reset`             | 비밀번호 재설정               | 본인 인증 필요     |
+| POST   | `/auth/logout`                     | 로그아웃                      | Access Token 필요  |
+| POST   | `/auth/password-reset/code`        | 비밀번호 재설정 인증코드 발송 | 불필요              |
+| POST   | `/auth/password-reset/code/verify` | 비밀번호 재설정 인증코드 확인 | 불필요              |
+| PATCH  | `/auth/password-reset`             | 비밀번호 재설정               | 불필요              |
 | GET    | `/me/profile`                      | 마이페이지 조회               | Access Token 필요  |
 | PATCH  | `/me/notification-settings`        | 알림 설정 변경                | Access Token 필요  |
 | GET    | `/me/tickets`                      | 내 발행 티켓 목록 조회        | Access Token 필요  |
@@ -318,6 +318,75 @@ Response Header:
 Set-Cookie: refreshToken=; Max-Age=0; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth
 ```
 
+### POST `/auth/password-reset/code`
+
+- 비밀번호 재설정을 위한 인증코드를 이메일로 발송한다.
+- 요청한 사번과 이메일이 같은 사용자 계정에 등록된 정보와 일치해야 한다.
+- 인증코드는 숫자 6자리로 생성한다.
+- 인증코드는 Redis에 TTL과 함께 저장한다.
+
+Request:
+
+```json
+{
+  "employeeId": "20260001",
+  "email": "user@company.com"
+}
+```
+
+Response:
+
+```http
+200 OK
+```
+
+### POST `/auth/password-reset/code/verify`
+
+- 사용자가 입력한 인증코드가 Redis에 저장된 인증코드와 일치하는지 확인한다.
+- 회원가입 인증코드 확인과 유사하지만, 비밀번호 재설정은 기존 사용자 대상 기능이므로 사번과 이메일이 DB에 저장된 사용자 정보와 일치해야 한다.
+- 인증코드가 일치하면 비밀번호 재설정을 진행할 수 있도록 인증 완료 상태를 저장하고, 사용이 완료된 인증코드는 Redis에서 삭제한다.
+
+Request:
+
+```json
+{
+  "employeeId": "20260001",
+  "email": "user@company.com",
+  "code": "987654"
+}
+```
+
+Response:
+
+```http
+200 OK
+```
+
+### PATCH `/auth/password-reset`
+
+- 비밀번호 재설정 인증코드 확인이 완료된 사용자만 새 비밀번호로 변경할 수 있다.
+- 요청한 사번과 이메일이 DB에 저장된 사용자 정보와 일치해야 한다.
+- 새 비밀번호와 새 비밀번호 확인값의 일치 여부는 프론트에서 확인한다.
+- 새 비밀번호는 암호화하여 저장하고, DB에 저장된 기존 비밀번호를 새 비밀번호로 변경한다.
+- 비밀번호 변경이 완료되면 Redis에 저장된 기존 Refresh Token을 삭제하여 기존 로그인 세션의 토큰 재발급을 차단한다.
+- 비밀번호 변경이 완료되면 Redis에 저장된 비밀번호 재설정 인증 완료 상태를 삭제한다.
+
+Request:
+
+```json
+{
+  "employeeId": "20260001",
+  "email": "user@company.com",
+  "newPassword": "new12345"
+}
+```
+
+Response:
+
+```http
+200 OK
+```
+
 ### GET `/me/profile`
 
 - 로그인한 사용자의 마이페이지 요약 정보를 조회한다.
@@ -397,7 +466,6 @@ Response:
 - 상위 알림 설정을 끄면 하위 알림 설정도 모두 꺼진다.
 - 상위 알림 설정을 켜면 하위 알림 설정도 모두 켜진다.
 - 하위 알림 설정 3개가 모두 켜져 있으면 `allEnabled`는 `true`, 하나라도 꺼져 있으면 `false`로 처리한다.
-- 현재 DB에는 알림 설정 저장 테이블이 없으므로, 구현 시 사용자별 알림 설정 테이블 추가가 필요하다.
 
 Request Header:
 
@@ -435,6 +503,7 @@ Response:
 - "답변 완료" 탭을 조회할 때는 `status=COMPLETED`를 사용한다.
 - 외부 조회 상태 `WAITING`은 내부 티켓 상태 `RECEIVED`, `COMMON_QUEUE`, `ASSIGNED`, `IN_PROGRESS`를 포함한다.
 - 외부 조회 상태 `COMPLETED`는 내부 티켓 상태 `COMPLETED`를 의미한다.
+- 내부 티켓 상태 `REJECTED`, `DELETED`는 내 발행 티켓 목록에서 조회하지 않는다.
 
 Request Header:
 
@@ -450,7 +519,7 @@ Query Parameter:
 | `page` | number | N | `0` | 페이지 번호 |
 | `size` | number | N | `10` | 페이지 크기 |
 
-Request 예시:
+Request ??:
 
 ```http
 GET /api/v1/me/tickets?status=WAITING&page=0&size=10

@@ -26,6 +26,8 @@ public enum ErrorType {
 	AUTH_INACTIVE_USER("auth-008", "비활성화된 사용자입니다.", HttpStatus.FORBIDDEN),
 	AUTH_REFRESH_TOKEN_REQUIRED("auth-009", "Refresh Token이 필요합니다.", HttpStatus.UNAUTHORIZED),
 	AUTH_REFRESH_TOKEN_INVALID("auth-010", "유효하지 않은 Refresh Token입니다.", HttpStatus.UNAUTHORIZED),
+	AUTH_USER_NOT_FOUND("auth-011", "일치하는 사용자 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+	AUTH_PASSWORD_RESET_VERIFICATION_REQUIRED("auth-012", "비밀번호 재설정 인증이 필요합니다.", HttpStatus.BAD_REQUEST),
 
 	// ticket
 	TICKET_NOT_FOUND("ticket-001", "티켓을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
