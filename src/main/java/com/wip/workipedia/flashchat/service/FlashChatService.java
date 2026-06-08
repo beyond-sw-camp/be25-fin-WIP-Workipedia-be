@@ -71,7 +71,8 @@ public class FlashChatService {
 
         stringRedisTemplate.opsForHash().putAll(messageKey, hash);
         stringRedisTemplate.expire(messageKey, Duration.ofSeconds(policy.getMessageTtlSeconds()));
-        stringRedisTemplate.opsForZSet().add(MESSAGES_ZSET_KEY, messageId, (double) nowEpoch);
+        long expiresEpoch = nowEpoch + (policy.getMessageTtlSeconds() * 1000L);
+        stringRedisTemplate.opsForZSet().add(MESSAGES_ZSET_KEY, messageId, (double) expiresEpoch);
 
         if (policy.getSendCooldownSeconds() > 0) {
             stringRedisTemplate.opsForValue().set(
@@ -86,7 +87,11 @@ public class FlashChatService {
     }
 
     public List<FlashChatMessageResponse> getActiveMessages() {
-        Set<String> ids = stringRedisTemplate.opsForZSet().range(MESSAGES_ZSET_KEY, 0, -1);
+        long now = System.currentTimeMillis();
+        stringRedisTemplate.opsForZSet().removeRangeByScore(MESSAGES_ZSET_KEY, 0, now);
+
+        Set<String> ids = stringRedisTemplate.opsForZSet()
+                .rangeByScore(MESSAGES_ZSET_KEY, now, Double.MAX_VALUE);
         if (ids == null || ids.isEmpty()) return List.of();
 
         return ids.stream()
