@@ -140,7 +140,6 @@ Authorization: Bearer <accessToken>
 | POST   | `/auth/password-reset/code/verify` | 비밀번호 재설정 인증코드 확인 | 불필요             |
 | PATCH  | `/auth/password-reset`             | 비밀번호 재설정               | 본인 인증 필요     |
 | GET    | `/me/profile`                      | 마이페이지 조회               | Access Token 필요  |
-| GET    | `/me/notification-settings`        | 알림 설정 조회                | Access Token 필요  |
 | PATCH  | `/me/notification-settings`        | 알림 설정 변경                | Access Token 필요  |
 
 ### GET `/departments`
@@ -346,6 +345,12 @@ Response:
     "currentPoint": 450,
     "esgScore": 520
   },
+  "notificationSettings": {
+    "allEnabled": true,
+    "ticketEnabled": true,
+    "boardEnabled": true,
+    "manualEnabled": false
+  },
   "esgGrade": {
     "gradeId": 3,
     "gradeName": "건강한 북극곰",
@@ -381,29 +386,6 @@ Response:
       "maxScore": null
     }
   ]
-}
-```
-
-### GET `/me/notification-settings`
-
-- 로그인한 사용자의 알림 설정 상태를 조회한다.
-- 사용자 식별은 Request Header의 Access Token으로 처리한다.
-- 현재 DB에는 알림 설정 저장 테이블이 없으므로, 구현 시 사용자별 알림 설정 테이블 추가가 필요하다.
-
-Request Header:
-
-```http
-Authorization: Bearer jwt-access-token
-```
-
-Response:
-
-```json
-{
-  "allEnabled": true,
-  "ticketEnabled": true,
-  "boardEnabled": true,
-  "manualEnabled": false
 }
 ```
 

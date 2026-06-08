@@ -1,11 +1,12 @@
-package com.wip.workipedia.mypage.dto;
+﻿package com.wip.workipedia.mypage.dto;
 
 import java.util.List;
 
-public record MyProfileResponse(
+public record MyPageResponse(
 	UserSummary user,
 	TicketSummary ticket,
 	PointSummary point,
+	NotificationSettings notificationSettings,
 	EsgGradeSummary esgGrade,
 	List<EsgGradeProgress> esgGradeProgress
 ) {
@@ -26,6 +27,14 @@ public record MyProfileResponse(
 	public record PointSummary(
 		long currentPoint,
 		long esgScore
+	) {
+	}
+
+	public record NotificationSettings(
+		boolean allEnabled,
+		boolean ticketEnabled,
+		boolean boardEnabled,
+		boolean manualEnabled
 	) {
 	}
 
