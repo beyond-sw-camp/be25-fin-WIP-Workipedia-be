@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-// 여기의 경우는 관리자가 사용하는 하나의 컨트롤러
+// 여기의 경우는 관리자가 사용하는 하나의 컨트롤러 관리자 확인은 ManualService에서 각각의 메서드에서 assertSystemAdmin 메서드로 확인함
 // TODO: 이슬이 시큐리티 통합 후 @AuthenticationPrincipal로 교체. 통합 전까지 X-User-Id 헤더로 대체.
 @RestController
 @RequestMapping("/api/v1/admin/manuals")
@@ -67,7 +67,9 @@ public class AdminManualController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(manualService.createFromPdf(actorUserId, departmentId, title, status, sourceUrl, version, file));
     }
-   // 관리자용 메뉴얼 디테일하게 보기. 사용자는 published만 볼수 있기에. 
+
+
+   // 관리자용 메뉴얼 디테일하게 보기. 사용자는 published만 볼수 있고, 관리자는 모든 상태의 메뉴얼을 볼수가 있음
     @GetMapping("/{manualId}")
     public ResponseEntity<ManualDetailResponse> detail(
             @RequestHeader("X-User-Id") Long actorUserId,

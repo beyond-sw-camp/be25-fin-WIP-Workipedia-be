@@ -28,7 +28,7 @@ public class ManualController {
         return ResponseEntity.ok(manualService.findPublished(pageRequest.toPageable(sort)));
     }
 
-    // 메뉴얼 상세조회.
+    // 메뉴얼 상세조회. 사용자는 published만 볼수 있음
     @GetMapping("/{manualId}")
     public ResponseEntity<ManualDetailResponse> detail(@PathVariable Long manualId) {
         return ResponseEntity.ok(manualService.findPublishedById(manualId));

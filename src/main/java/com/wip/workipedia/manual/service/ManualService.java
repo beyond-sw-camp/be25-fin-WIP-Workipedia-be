@@ -29,6 +29,7 @@ public class ManualService {
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
     private final PdfTextExtractor pdfTextExtractor;
+    private final ManualChunkService manualChunkService;
 
     // 상태값중 published만 조회.
     public PageResponse<ManualSummaryResponse> findPublished(Pageable pageable) {
@@ -45,6 +46,7 @@ public class ManualService {
         );
     }
 
+    // 관리자용 메뉴얼 목록 조회
     public PageResponse<ManualSummaryResponse> findAdminAll(Long actorUserId, ManualStatus status, Pageable pageable) {
         assertSystemAdmin(actorUserId);
         if (status == null) {
@@ -59,6 +61,7 @@ public class ManualService {
         );
     }
 
+    // 관리자인지 아닌지 확인하고, 메뉴얼 상세 조회.
     public ManualDetailResponse findAdminById(Long actorUserId, Long manualId) {
         assertSystemAdmin(actorUserId);
         return ManualDetailResponse.from(getManual(manualId));
@@ -78,7 +81,9 @@ public class ManualService {
                 request.version(),
                 actorUserId
         );
-        return ManualDetailResponse.from(manualRepository.save(manual));
+        Manual saved = manualRepository.save(manual);
+        manualChunkService.rebuildChunks(saved);
+        return ManualDetailResponse.from(saved);
     }
 
     @Transactional
@@ -97,7 +102,9 @@ public class ManualService {
                 version,
                 actorUserId
         );
-        return ManualDetailResponse.from(manualRepository.save(manual));
+        Manual saved = manualRepository.save(manual);
+        manualChunkService.rebuildChunks(saved);
+        return ManualDetailResponse.from(saved);
     }
 
     @Transactional
@@ -114,6 +121,9 @@ public class ManualService {
                 request.sourceUrl(),
                 request.version()
         );
+        if (request.content() != null) {
+            manualChunkService.rebuildChunks(manual);
+        }
         return ManualDetailResponse.from(manual);
     }
 
@@ -133,6 +143,7 @@ public class ManualService {
                 sourceUrl,
                 version
         );
+        manualChunkService.rebuildChunks(manual);
         return ManualDetailResponse.from(manual);
     }
 
@@ -141,6 +152,7 @@ public class ManualService {
         assertSystemAdmin(actorUserId);
         Manual manual = getManual(manualId);
         manual.delete();
+        manualChunkService.deleteChunks(manualId);
     }
 
     private Manual getManual(Long manualId) {
@@ -148,6 +160,7 @@ public class ManualService {
                 .orElseThrow(() -> new CustomException(ErrorType.MANUAL_NOT_FOUND));
     }
 
+    // 유저가 어드민인지 확인하는 메서드
     private void assertSystemAdmin(Long actorUserId) {
         User user = userRepository.findById(actorUserId)
                 .orElseThrow(() -> new CustomException(ErrorType.MANUAL_FORBIDDEN));
