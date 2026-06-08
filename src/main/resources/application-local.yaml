@@ -11,6 +11,9 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
 
+  elasticsearch:
+    uris: http://localhost:${ELASTICSEARCH_PORT:9200}
+
   jpa:
     database-platform: org.hibernate.dialect.MariaDBDialect
     hibernate:

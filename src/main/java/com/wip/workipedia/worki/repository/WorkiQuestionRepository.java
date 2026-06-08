@@ -13,6 +13,9 @@ public interface WorkiQuestionRepository extends JpaRepository<WorkiQuestion, Lo
 
     Page<WorkiQuestion> findByDeletedAtIsNull(Pageable pageable);
 
+    // 전체 재색인(reindexAll)용. 삭제되지 않은 질문만 DB에서 걸러 가져온다.
+    List<WorkiQuestion> findByDeletedAtIsNull();
+
     Optional<WorkiQuestion> findByQuestionIdAndDeletedAtIsNull(Long questionId);
 
     @Query(value = """
