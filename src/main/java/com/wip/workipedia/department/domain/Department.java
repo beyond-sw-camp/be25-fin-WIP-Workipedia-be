@@ -24,7 +24,7 @@ public class Department {
 	@Column(name = "department_id")
 	private Long departmentId;
 
-	@Column(name = "department_name", nullable = false, length = 100)
+	@Column(name = "department_name", nullable = false, length = 50)
 	private String departmentName;
 
 	@Column(name = "created_at", nullable = false, updatable = false)
@@ -52,11 +52,6 @@ public class Department {
 	public void markDeleted() {
 		this.deletedAt = LocalDateTime.now();
 		this.isDeleted = "Y";
-	}
-
-	public void restore() {
-		this.deletedAt = null;
-		this.isDeleted = "N";
 	}
 
 	@PrePersist

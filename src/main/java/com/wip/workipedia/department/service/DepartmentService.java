@@ -56,9 +56,9 @@ public class DepartmentService {
 
 	@Transactional
 	public AdminDepartmentResponse create(DepartmentRequest request) {
-		Department department = departmentRepository.findByDepartmentName(request.departmentName())
-			.map(this::restoreOrThrowIfActive)
-			.orElseGet(() -> departmentRepository.save(Department.create(request.departmentName())));
+		validateDuplicateName(request.departmentName());
+
+		Department department = departmentRepository.save(Department.create(request.departmentName()));
 
 		return AdminDepartmentResponse.from(department, null);
 	}
@@ -164,19 +164,14 @@ public class DepartmentService {
 	}
 
 	private void validateDuplicateNameForUpdate(String departmentName, Long departmentId) {
-		departmentRepository.findByDepartmentName(departmentName)
-			.filter(department -> !department.getDepartmentId().equals(departmentId))
-			.ifPresent(department -> {
-				throw new CustomException(ErrorType.DEPARTMENT_DUPLICATE_NAME);
-			});
-	}
-
-	private Department restoreOrThrowIfActive(Department department) {
-		if (department.getDeletedAt() == null) {
+		if (departmentRepository.existsByDepartmentNameAndDepartmentIdNotAndDeletedAtIsNull(departmentName, departmentId)) {
 			throw new CustomException(ErrorType.DEPARTMENT_DUPLICATE_NAME);
 		}
+	}
 
-		department.restore();
-		return department;
+	private void validateDuplicateName(String departmentName) {
+		if (departmentRepository.existsByDepartmentNameAndDeletedAtIsNull(departmentName)) {
+			throw new CustomException(ErrorType.DEPARTMENT_DUPLICATE_NAME);
+		}
 	}
 }
