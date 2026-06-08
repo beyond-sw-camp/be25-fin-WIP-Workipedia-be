@@ -11,14 +11,37 @@ public class FallbackRoutingPromptEditor implements DepartmentRoutingPromptEdito
 	@Override
 	public List<RoutingPromptEditResult> edit(List<RoutingPromptEditTarget> targets, String instruction) {
 		String trimmedInstruction = instruction.trim();
-		List<MatchedTarget> matchedTargets = targets.stream()
-			.map(target -> new MatchedTarget(target, trimmedInstruction.indexOf(target.departmentName())))
-			.filter(matchedTarget -> matchedTarget.startIndex() >= 0)
-			.sorted(Comparator.comparingInt(MatchedTarget::startIndex))
-			.toList();
+		List<MatchedTarget> matchedTargets = findMatchedTargets(targets, trimmedInstruction);
 
 		return matchedTargets.stream()
 			.map(matchedTarget -> toEditResult(matchedTarget, matchedTargets, trimmedInstruction))
+			.toList();
+	}
+
+	private List<MatchedTarget> findMatchedTargets(List<RoutingPromptEditTarget> targets, String instruction) {
+		List<MatchedTarget> candidates = targets.stream()
+			.map(target -> new MatchedTarget(
+				target,
+				instruction.indexOf(target.departmentName()),
+				instruction.indexOf(target.departmentName()) + target.departmentName().length()
+			))
+			.filter(matchedTarget -> matchedTarget.startIndex() >= 0)
+			.sorted(Comparator
+				.comparingInt(MatchedTarget::startIndex)
+				.thenComparing((left, right) -> Integer.compare(right.length(), left.length()))
+			)
+			.toList();
+
+		return candidates.stream()
+			.filter(candidate -> candidates.stream()
+				.filter(other -> other.startIndex() == candidate.startIndex())
+				.findFirst()
+				.orElse(candidate) == candidate
+			)
+			.filter(candidate -> candidates.stream()
+				.filter(other -> other.startIndex() < candidate.startIndex())
+				.noneMatch(other -> other.endIndex() > candidate.startIndex()))
+			.sorted(Comparator.comparingInt(MatchedTarget::startIndex))
 			.toList();
 	}
 
@@ -74,7 +97,11 @@ public class FallbackRoutingPromptEditor implements DepartmentRoutingPromptEdito
 
 	private record MatchedTarget(
 		RoutingPromptEditTarget target,
-		int startIndex
+		int startIndex,
+		int endIndex
 	) {
+		private int length() {
+			return endIndex - startIndex;
+		}
 	}
 }

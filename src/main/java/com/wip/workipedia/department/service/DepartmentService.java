@@ -87,7 +87,7 @@ public class DepartmentService {
 		List<RoutingPromptEditResult> editResults = departmentRoutingPromptEditor.edit(targets, request.instruction());
 
 		if (editResults.isEmpty()) {
-			throw new CustomException(ErrorType.BAD_REQUEST, "수정 명령에서 부서명을 찾을 수 없습니다.");
+			throw new CustomException(ErrorType.BAD_REQUEST, "입력 내용에서 부서명을 찾을 수 없습니다.");
 		}
 
 		Map<Long, Department> departmentMap = departments.stream()
