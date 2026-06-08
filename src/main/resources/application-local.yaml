@@ -34,6 +34,12 @@ spring:
           starttls:
             enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:true}
 
+r2:
+  access-key: ${R2_ACCESS_KEY}
+  secret-key: ${R2_SECRET_KEY}
+  account-id: ${R2_ACCOUNT_ID}
+  bucket: ${R2_BUCKET}
+
 app:
   jwt:
     # JWT_SECRET은 토큰 서명에 사용하는 민감값이므로 로컬 .env에 설정하고 Git에 커밋하지 않습니다.
@@ -43,9 +49,3 @@ app:
     # Access Token 만료 시간은 로컬 테스트 편의를 위해 임시로 12시간으로 설정합니다.
     access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:12h}
     refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:14d}
-
-  mail:
-    # 로컬 테스트에서는 Gmail SMTP로 인증코드를 발송합니다.
-    # 실제 Gmail 계정과 앱 비밀번호는 .env에 설정하고 Git에 커밋하지 않습니다.
-    # SPRING_MAIL_PASSWORD에는 Gmail 로그인 비밀번호가 아니라 Google 계정에서 발급한 앱 비밀번호를 입력합니다.
-    sender: ${APP_MAIL_SENDER:smtp}

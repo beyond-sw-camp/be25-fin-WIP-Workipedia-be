@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/dev/domain-guides/admin-reward-esg.md`
 > 관련 문서: `docs/adr/005-role-permission-strategy.md`, `docs/adr/006-knowledge-conversion-strategy.md`, `docs/reference/prd.md`, `docs/api/api-contract.md`
-> 버전: v0.1
-> 최종 수정: 2026-06-04
+> 버전: v0.2
+> 최종 수정: 2026-06-08
 
 ## 개발 목표
 
@@ -38,7 +38,7 @@
 - `points_daily_limit`
 - `esg_grade`
 - `admin_logs`
-- `flash_chat_settings`
+- `flash_chat_policy`
 - `ai_prompt_settings`
 - dashboard summary APIs
 - ESG grade/score APIs
