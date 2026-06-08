@@ -348,7 +348,7 @@ Response:
   "notificationSettings": {
     "allEnabled": true,
     "ticketEnabled": true,
-    "boardEnabled": true,
+    "workiEnabled": true,
     "manualEnabled": false
   },
   "esgGrade": {
@@ -410,7 +410,7 @@ Request:
 {
   "allEnabled": true,
   "ticketEnabled": true,
-  "boardEnabled": true,
+  "workiEnabled": true,
   "manualEnabled": false
 }
 ```
@@ -421,7 +421,7 @@ Response:
 {
   "allEnabled": false,
   "ticketEnabled": true,
-  "boardEnabled": true,
+  "workiEnabled": true,
   "manualEnabled": false
 }
 ```

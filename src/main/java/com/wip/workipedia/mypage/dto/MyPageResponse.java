@@ -33,7 +33,7 @@ public record MyPageResponse(
 	public record NotificationSettings(
 		boolean allEnabled,
 		boolean ticketEnabled,
-		boolean boardEnabled,
+		boolean workiEnabled,
 		boolean manualEnabled
 	) {
 	}
