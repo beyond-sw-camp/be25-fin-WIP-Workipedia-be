@@ -6,25 +6,20 @@ import java.time.LocalDateTime;
 public record MyTicketResponse(
 	Long ticketId,
 	String title,
+	Long assignedDepartmentId,
+	String assignedDepartmentName,
 	String status,
-	String statusLabel,
 	LocalDateTime createdAt
 ) {
 
-	public static MyTicketResponse from(Ticket ticket) {
+	public static MyTicketResponse from(Ticket ticket, String assignedDepartmentName) {
 		return new MyTicketResponse(
 			ticket.getTicketId(),
 			ticket.getTitle(),
+			ticket.getAssignedDepartmentId(),
+			assignedDepartmentName,
 			ticket.getStatus().name(),
-			createStatusLabel(ticket),
 			ticket.getCreatedAt()
 		);
-	}
-
-	private static String createStatusLabel(Ticket ticket) {
-		return switch (ticket.getStatus()) {
-			case COMPLETED -> "답변 완료";
-			default -> "답변 대기";
-		};
 	}
 }

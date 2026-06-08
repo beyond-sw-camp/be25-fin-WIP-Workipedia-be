@@ -48,7 +48,7 @@ public class NotificationSetting extends BaseTimeEntity {
 		return new NotificationSetting(userId, true, true, true);
 	}
 
-	// 하위 알림 설정이 모두 켜져 있는 경우 전체 알림 설정도 ON으로 계산합니다.
+	// 하위 알림 설정이 모두 켜져 있는 경우 전체 알림 설정을 ON으로 계산합니다.
 	public boolean isAllEnabled() {
 		return ticketEnabled && workiEnabled && manualEnabled;
 	}
