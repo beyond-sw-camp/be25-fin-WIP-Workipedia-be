@@ -5,9 +5,10 @@ CREATE TABLE flash_chat_policy (
     send_cooldown_seconds INT NOT NULL DEFAULT 0,
     banned_words          JSON NULL,
     created_at            DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at            DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    updated_at            DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at            DATETIME NULL,
-    is_deleted            CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N'))
+    is_deleted            CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
+    modified_source       VARCHAR(30) NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO flash_chat_policy (message_ttl_seconds, send_cooldown_seconds, banned_words)

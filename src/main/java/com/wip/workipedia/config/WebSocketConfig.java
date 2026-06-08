@@ -12,7 +12,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws/flash-chat").withSockJS();
+        registry.addEndpoint("/ws/flash-chat")
+                .setAllowedOriginPatterns("*")
+                .withSockJS();
+        registry.addEndpoint("/ws/flash-chat-native")
+                .setAllowedOriginPatterns("*");
     }
 
     @Override
