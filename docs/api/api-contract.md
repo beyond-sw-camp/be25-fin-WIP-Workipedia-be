@@ -416,16 +416,16 @@ Response:
 담당: 이슬이
 
 
-| Method | Path                                           | 설명             | 인증  |
-| ------ | ---------------------------------------------- | -------------- | --- |
-| GET    | `/worki/questions`                             | 질문 목록          | 필요  |
-| POST   | `/worki/questions`                             | 질문 등록          | 필요  |
-| GET    | `/worki/questions/{questionId}`                | 질문 상세          | 필요  |
-| PATCH  | `/worki/questions/{questionId}`                | 질문 수정          | 필요  |
-| POST   | `/worki/questions/{questionId}/answers`        | 답변 등록          | 필요  |
-| POST   | `/worki/questions/{questionId}/ticket-answers` | 티켓 공식 답변 워키 등록 | 필요  |
-| PATCH  | `/worki/answers/{answerId}/adopt`              | 답변 채택          | 필요  |
-| PUT    | `/worki/questions/{questionId}/reaction`       | 좋아요            | 필요  |
+| Method | Path                                    | 설명      | 인증 |
+| ------ | --------------------------------------- | --------- | ---- |
+| GET    | `/worki/questions`                      | 질문 목록 | 필요 |
+| POST   | `/worki/questions`                      | 질문 등록 | 필요 |
+| GET    | `/worki/questions/{questionId}`         | 질문 상세 | 필요 |
+| PATCH  | `/worki/questions/{questionId}`         | 질문 수정 | 필요 |
+| POST   | `/worki/questions/{questionId}/answers` | 답변 등록 | 필요 |
+| POST   | `/worki/answers/{answerId}/accept`      | 답변 채택 | 필요 |
+| POST   | `/worki/questions/{questionId}/like`    | 좋아요    | 필요 |
+| DELETE | `/worki/questions/{questionId}/like`    | 좋아요 취소 | 필요 |
 
 
 ### POST `/worki/questions`
@@ -944,5 +944,4 @@ Response:
 | 챗봇 세션 구조                         | 세션 기반 확정, 이슬이와 최종 합의 필요 | 이슬이, 김진혁  |
 | Flash Chat 최대 활성 메시지 수           | 미정                      | 김진혁, 김가영  |
 | 이미지 저장소                          | 로컬 파일시스템 또는 S3          | 김진혁, 팀 전체 |
-
 
