@@ -6,6 +6,7 @@ CREATE TABLE notification_settings (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
+    modified_source VARCHAR(30) NULL,
     is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N')),
     CONSTRAINT fk_notification_settings_user
         FOREIGN KEY (user_id)
