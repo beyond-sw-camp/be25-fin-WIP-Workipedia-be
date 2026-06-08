@@ -9,7 +9,7 @@
 
 ## 개발 목표
 
-실시간 사내 익명 채팅 기능. 메시지는 Redis에 TTL로 저장되고 만료 시 자동 삭제된다. 관리자는 정책(TTL, 쿨다운, 금지어)을 설정하고 메시지를 강제 삭제할 수 있다.
+실시간 사내 닉네임 기반 공개 채팅 기능. 메시지는 Redis에 TTL로 저장되고 만료 시 자동 삭제된다. 관리자는 정책(TTL, 쿨다운, 금지어)을 설정하고 메시지를 강제 삭제할 수 있다.
 
 ## 먼저 볼 문서
 
@@ -40,12 +40,13 @@
 | 엔드포인트 | 용도 |
 |---|---|
 | `/ws/flash-chat` | 프론트엔드 (SockJS 클라이언트) |
-| `/ws/flash-chat-native` | 테스트용 (순수 WebSocket) |
+| `/ws/flash-chat-native` | 테스트용 (native WebSocket 연결 위 STOMP) |
 
 ### STOMP
 
 - Subscribe: `/topic/flash-chat`
 - Send: `/app/flash-chat/send`
+- Broadcast type: `MESSAGE`, `DELETE`
 
 ## API
 

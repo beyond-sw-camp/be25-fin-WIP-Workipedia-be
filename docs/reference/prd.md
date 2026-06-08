@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/001-reference/prd.md`
 > 관련 문서: `docs/001-reference/constitution.md`, `docs/001-reference/service-flow.md`, `docs/001-reference/trd.md`
-> 버전: v0.2
-> 최종 수정: 2026-06-04
+> 버전: v0.3
+> 최종 수정: 2026-06-08
 
 ---
 
@@ -159,7 +159,7 @@ Workipedia는 사내 구성원이 회사 규정·매뉴얼·동료의 경험 지
 | FLASH_001 | 전사 단일 공개 채널에서 실시간 메시지 송수신 | 중 |
 | FLASH_002 | 메시지는 10분 후 자동 삭제되며 영구 DB에 저장하지 않음 | 중 |
 | FLASH_003 | 특정 메시지에 답장(reply) 가능 | 중 |
-| FLASH_004 | 메시지에 좋아요 반응 가능 | 중 |
+| FLASH_004 | 메시지에 좋아요 반응 가능 (MVP 이후) | 중 |
 | FLASH_005 | 사용자별 Flash Chat 알림 on/off 설정 | 하 |
 | FLASH_006 | SYSTEM_ADMIN은 TTL, 전송 쿨다운, 금지어, 강제 삭제를 관리 | 중 |
 
@@ -219,13 +219,13 @@ Workipedia는 사내 구성원이 회사 규정·매뉴얼·동료의 경험 지
 - 포인트/ESG 점수 기준 등급
 - ESG 지표 카드
 - 관리자 대시보드 기본 기능
-- Flash Chat 기본 송수신/TTL 삭제
+- Flash Chat 메시지/답장 송수신, TTL 삭제, 관리자 정책 관리
 - 티켓 사진 첨부
 - 모바일 핵심 흐름 반응형 대응
 
 ### Phase 2 (우선순위 '중/하')
 - WebSocket/SSE 기반 완전 실시간 알림
-- Flash Chat 운영 정책 고도화
+- Flash Chat 좋아요 반응 및 알림 연동
 - PWA/Capacitor 앱 래핑
 - CDN 챗봇 컴포넌트 스크립트 주입
 - QLoRA 행동 패턴 학습 자동화
