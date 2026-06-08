@@ -43,14 +43,17 @@ public class NotificationSetting extends BaseTimeEntity {
 		this.manualEnabled = manualEnabled;
 	}
 
+	// 알림 설정이 없는 사용자에게 기본 전체 ON 설정을 생성합니다.
 	public static NotificationSetting createDefault(Long userId) {
 		return new NotificationSetting(userId, true, true, true);
 	}
 
+	// 하위 알림 설정이 모두 켜져 있는 경우 전체 알림 설정도 ON으로 계산합니다.
 	public boolean isAllEnabled() {
 		return ticketEnabled && workiEnabled && manualEnabled;
 	}
 
+	// 사용자가 변경한 티켓, Worki, 매뉴얼 알림 설정값을 저장합니다.
 	public void update(
 		boolean ticketEnabled,
 		boolean workiEnabled,

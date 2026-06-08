@@ -1,4 +1,4 @@
-﻿package com.wip.workipedia.mypage.dto;
+package com.wip.workipedia.mypage.dto;
 
 import java.util.List;
 
