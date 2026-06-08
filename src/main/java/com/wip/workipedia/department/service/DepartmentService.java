@@ -2,12 +2,14 @@ package com.wip.workipedia.department.service;
 
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
+import com.wip.workipedia.department.ai.DepartmentRoutingPromptEditor;
 import com.wip.workipedia.department.domain.Department;
 import com.wip.workipedia.department.domain.DepartmentRoutingPrompt;
 import com.wip.workipedia.department.dto.AdminDepartmentResponse;
 import com.wip.workipedia.department.dto.DepartmentRequest;
 import com.wip.workipedia.department.dto.DepartmentResponse;
 import com.wip.workipedia.department.dto.DepartmentRoutingPromptRequest;
+import com.wip.workipedia.department.dto.RoutingPromptEditRequest;
 import com.wip.workipedia.department.repository.DepartmentRepository;
 import com.wip.workipedia.department.repository.DepartmentRoutingPromptRepository;
 import com.wip.workipedia.user.repository.UserRepository;
@@ -27,6 +29,7 @@ public class DepartmentService {
 
 	private final DepartmentRepository departmentRepository;
 	private final DepartmentRoutingPromptRepository departmentRoutingPromptRepository;
+	private final DepartmentRoutingPromptEditor departmentRoutingPromptEditor;
 	private final UserRepository userRepository;
 
 	@Transactional(readOnly = true)
@@ -72,6 +75,23 @@ public class DepartmentService {
 	public AdminDepartmentResponse updateRoutingPrompt(Long departmentId, DepartmentRoutingPromptRequest request) {
 		Department department = getDepartment(departmentId);
 		DepartmentRoutingPrompt routingPrompt = upsertRoutingPrompt(department, request.routingPrompt());
+
+		return AdminDepartmentResponse.from(department, routingPrompt.getPromptContent());
+	}
+
+	@Transactional
+	public AdminDepartmentResponse editRoutingPrompt(
+		Long departmentId,
+		RoutingPromptEditRequest request
+	) {
+		Department department = getDepartment(departmentId);
+		String currentPrompt = findPromptContent(departmentId);
+		String editedPrompt = departmentRoutingPromptEditor.edit(
+			department.getDepartmentName(),
+			currentPrompt,
+			request.instruction()
+		);
+		DepartmentRoutingPrompt routingPrompt = upsertRoutingPrompt(department, editedPrompt);
 
 		return AdminDepartmentResponse.from(department, routingPrompt.getPromptContent());
 	}
