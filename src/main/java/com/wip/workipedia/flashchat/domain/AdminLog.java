@@ -40,7 +40,7 @@ public class AdminLog {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(nullable = false, length = 1)
+    @Column(nullable = false, columnDefinition = "CHAR(1)")
     private String isDeleted = "N";
 
     public static AdminLog of(Long actorId, String actionType, String targetType,
