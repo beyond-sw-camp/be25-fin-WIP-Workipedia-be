@@ -3,11 +3,18 @@ package com.wip.workipedia.department.service;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.department.domain.Department;
+import com.wip.workipedia.department.domain.DepartmentRoutingPrompt;
+import com.wip.workipedia.department.dto.AdminDepartmentResponse;
 import com.wip.workipedia.department.dto.DepartmentRequest;
 import com.wip.workipedia.department.dto.DepartmentResponse;
+import com.wip.workipedia.department.dto.DepartmentRoutingPromptRequest;
 import com.wip.workipedia.department.repository.DepartmentRepository;
+import com.wip.workipedia.department.repository.DepartmentRoutingPromptRepository;
 import com.wip.workipedia.user.repository.UserRepository;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class DepartmentService {
 
+	private static final String ACTIVE = "Y";
+
 	private final DepartmentRepository departmentRepository;
+	private final DepartmentRoutingPromptRepository departmentRoutingPromptRepository;
 	private final UserRepository userRepository;
 
 	@Transactional(readOnly = true)
@@ -26,23 +36,44 @@ public class DepartmentService {
 			.toList();
 	}
 
+	@Transactional(readOnly = true)
+	public List<AdminDepartmentResponse> findAllForAdmin() {
+		List<Department> departments = departmentRepository.findByDeletedAtIsNullOrderByDepartmentIdAsc();
+		Map<Long, DepartmentRoutingPrompt> routingPrompts = findRoutingPromptMap(departments);
+
+		return departments.stream()
+			.map(department -> AdminDepartmentResponse.from(
+				department,
+				getPromptContent(routingPrompts, department.getDepartmentId())
+			))
+			.toList();
+	}
+
 	@Transactional
-	public DepartmentResponse create(DepartmentRequest request) {
+	public AdminDepartmentResponse create(DepartmentRequest request) {
 		validateDuplicateName(request.departmentName());
 
 		Department department = departmentRepository.save(Department.create(request.departmentName()));
 
-		return DepartmentResponse.from(department);
+		return AdminDepartmentResponse.from(department, null);
 	}
 
 	@Transactional
-	public DepartmentResponse update(Long departmentId, DepartmentRequest request) {
+	public AdminDepartmentResponse update(Long departmentId, DepartmentRequest request) {
 		Department department = getDepartment(departmentId);
 		validateDuplicateNameForUpdate(request.departmentName(), departmentId);
 
 		department.update(request.departmentName());
 
-		return DepartmentResponse.from(department);
+		return AdminDepartmentResponse.from(department, findPromptContent(departmentId));
+	}
+
+	@Transactional
+	public AdminDepartmentResponse updateRoutingPrompt(Long departmentId, DepartmentRoutingPromptRequest request) {
+		Department department = getDepartment(departmentId);
+		DepartmentRoutingPrompt routingPrompt = upsertRoutingPrompt(department, request.routingPrompt());
+
+		return AdminDepartmentResponse.from(department, routingPrompt.getPromptContent());
 	}
 
 	@Transactional
@@ -54,6 +85,49 @@ public class DepartmentService {
 		}
 
 		department.markDeleted();
+		departmentRoutingPromptRepository.findByDepartment_DepartmentIdAndDeletedAtIsNull(departmentId)
+			.ifPresent(DepartmentRoutingPrompt::markDeleted);
+	}
+
+	private Map<Long, DepartmentRoutingPrompt> findRoutingPromptMap(List<Department> departments) {
+		if (departments.isEmpty()) {
+			return Map.of();
+		}
+
+		List<Long> departmentIds = departments.stream()
+			.map(Department::getDepartmentId)
+			.toList();
+
+		return departmentRoutingPromptRepository
+			.findByDepartment_DepartmentIdInAndDeletedAtIsNullAndIsActive(departmentIds, ACTIVE)
+			.stream()
+			.collect(Collectors.toMap(
+				routingPrompt -> routingPrompt.getDepartment().getDepartmentId(),
+				Function.identity()
+			));
+	}
+
+	private String getPromptContent(Map<Long, DepartmentRoutingPrompt> routingPrompts, Long departmentId) {
+		DepartmentRoutingPrompt routingPrompt = routingPrompts.get(departmentId);
+		return routingPrompt == null ? null : routingPrompt.getPromptContent();
+	}
+
+	private String findPromptContent(Long departmentId) {
+		return departmentRoutingPromptRepository.findByDepartment_DepartmentIdAndDeletedAtIsNull(departmentId)
+			.map(DepartmentRoutingPrompt::getPromptContent)
+			.orElse(null);
+	}
+
+	private DepartmentRoutingPrompt upsertRoutingPrompt(Department department, String promptContent) {
+		return departmentRoutingPromptRepository
+			.findByDepartment_DepartmentIdAndDeletedAtIsNull(department.getDepartmentId())
+			.map(routingPrompt -> {
+				routingPrompt.update(promptContent);
+				return routingPrompt;
+			})
+			.orElseGet(() -> departmentRoutingPromptRepository.save(
+				DepartmentRoutingPrompt.create(department, promptContent)
+			));
 	}
 
 	private Department getDepartment(Long departmentId) {

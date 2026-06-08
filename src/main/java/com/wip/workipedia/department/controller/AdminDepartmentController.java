@@ -1,7 +1,8 @@
 package com.wip.workipedia.department.controller;
 
+import com.wip.workipedia.department.dto.AdminDepartmentResponse;
 import com.wip.workipedia.department.dto.DepartmentRequest;
-import com.wip.workipedia.department.dto.DepartmentResponse;
+import com.wip.workipedia.department.dto.DepartmentRoutingPromptRequest;
 import com.wip.workipedia.department.service.DepartmentService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -25,23 +26,32 @@ public class AdminDepartmentController {
 
 	// 부서 목록 조회
 	@GetMapping
-	public ResponseEntity<List<DepartmentResponse>> findAll() {
-		return ResponseEntity.ok(departmentService.findAll());
+	public ResponseEntity<List<AdminDepartmentResponse>> findAll() {
+		return ResponseEntity.ok(departmentService.findAllForAdmin());
 	}
 
 	// 부서 등록
 	@PostMapping
-	public ResponseEntity<DepartmentResponse> create(@Valid @RequestBody DepartmentRequest request) {
+	public ResponseEntity<AdminDepartmentResponse> create(@Valid @RequestBody DepartmentRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(departmentService.create(request));
 	}
 
 	// 부서 정보 수정
 	@PatchMapping("/{departmentId}")
-	public ResponseEntity<DepartmentResponse> update(
+	public ResponseEntity<AdminDepartmentResponse> update(
 			@PathVariable Long departmentId,
 			@Valid @RequestBody DepartmentRequest request
 	) {
 		return ResponseEntity.ok(departmentService.update(departmentId, request));
+	}
+
+	// 부서 역할 설명 수정
+	@PatchMapping("/{departmentId}/routing-prompt")
+	public ResponseEntity<AdminDepartmentResponse> updateRoutingPrompt(
+			@PathVariable Long departmentId,
+			@Valid @RequestBody DepartmentRoutingPromptRequest request
+	) {
+		return ResponseEntity.ok(departmentService.updateRoutingPrompt(departmentId, request));
 	}
 
 	// 부서 삭제
