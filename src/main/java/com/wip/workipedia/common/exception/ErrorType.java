@@ -44,7 +44,13 @@ public enum ErrorType {
 
 	// notification
 	NOTIFICATION_NOT_FOUND("notification-001", "알림을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
-	NOTIFICATION_FORBIDDEN("notification-002", "본인 알림이 아닙니다.", HttpStatus.FORBIDDEN);
+	NOTIFICATION_FORBIDDEN("notification-002", "본인 알림이 아닙니다.", HttpStatus.FORBIDDEN),
+
+	// flash-chat
+	FLASH_CHAT_COOLDOWN("flash-chat-001", "메시지 전송 쿨다운 중입니다.", HttpStatus.TOO_MANY_REQUESTS),
+	FLASH_CHAT_BANNED_WORD("flash-chat-002", "금지어가 포함된 메시지입니다.", HttpStatus.BAD_REQUEST),
+	FLASH_CHAT_MESSAGE_NOT_FOUND("flash-chat-003", "메시지를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+	FLASH_CHAT_POLICY_NOT_FOUND("flash-chat-004", "Flash Chat 정책을 찾을 수 없습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
 
 	private final String status;
 	private final String message;

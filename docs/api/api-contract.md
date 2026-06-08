@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/004-api/api-contract.md`
 > 관련 문서: `docs/001-reference/prd.md`, `docs/001-reference/trd.md`, `docs/006-planning/wbs.md`
-> 버전: v0.3
-> 최종 수정: 2026-06-01
+> 버전: v0.4
+> 최종 수정: 2026-06-08
 
 ## 1. 목적
 
@@ -267,13 +267,72 @@ Response:
 
 담당: 김진혁, 민정기, 김가영
 
-| Type            | Path                    | 설명                  | 인증 |
-| --------------- | ----------------------- | --------------------- | ---- |
-| REST GET        | `/flash-chat/messages`  | 현재 활성 메시지 목록 | 필요 |
-| STOMP Subscribe | `/topic/flash-chat`     | 메시지/반응 수신      | 필요 |
-| STOMP Send      | `/app/flash-chat/send`  | 메시지 전송           | 필요 |
-| STOMP Send      | `/app/flash-chat/react` | 좋아요 반응           | 필요 |
+> MVP는 메시지/답장과 관리자 운영 정책을 구현한다. 좋아요 반응(`/app/flash-chat/react`)은 MVP 이후 범위다.
 
+| Type            | Path                       | 설명                         | 인증 |
+| --------------- | -------------------------- | ---------------------------- | ---- |
+| WS Connect      | `/ws/flash-chat`           | STOMP 연결 (SockJS 지원)     | 필요 |
+| WS Connect      | `/ws/flash-chat-native`    | Native WebSocket STOMP 연결  | 필요 |
+| REST GET        | `/flash-chat/messages`     | 현재 활성 메시지 목록        | 필요 |
+| STOMP Subscribe | `/topic/flash-chat`        | 메시지/삭제 이벤트 수신      | 필요 |
+| STOMP Send      | `/app/flash-chat/send`     | 메시지/답장 전송             | 필요 |
+
+### GET `/flash-chat/messages`
+
+Response:
+
+```json
+{
+  "messages": [
+    {
+      "id": "018f6c9d-7b4f-7a9a-9c15-1b0f4b5ad111",
+      "userId": 123,
+      "nickname": "노잇4821",
+      "content": "연차 반차 차이가 뭐예요?",
+      "replyToId": null,
+      "createdAt": "2026-06-08T10:00:00",
+      "expiresAt": "2026-06-08T10:10:00"
+    }
+  ]
+}
+```
+
+### `/app/flash-chat/send`
+
+Payload:
+
+```json
+{
+  "content": "연차 반차 차이가 뭐예요?",
+  "replyToId": null
+}
+```
+
+### `/topic/flash-chat` 브로드캐스트
+
+메시지 전송 이벤트:
+
+```json
+{
+  "type": "MESSAGE",
+  "id": "018f6c9d-7b4f-7a9a-9c15-1b0f4b5ad111",
+  "userId": 1,
+  "nickname": "노잇0001",
+  "content": "연차 반차 차이가 뭐예요?",
+  "replyToId": null,
+  "createdAt": "2026-06-08T10:00:00",
+  "expiresAt": "2026-06-08T10:10:00"
+}
+```
+
+관리자 강제 삭제 이벤트:
+
+```json
+{
+  "type": "DELETE",
+  "id": "018f6c9d-7b4f-7a9a-9c15-1b0f4b5ad111"
+}
+```
 
 ## 10. Point API
 
@@ -341,9 +400,43 @@ Response:
 | GET    | `/admin/manuals/{manualId}`                | 매뉴얼 상세 조회                     | SYSTEM_ADMIN |
 | PATCH  | `/admin/manuals/{manualId}`                | 매뉴얼 수정 및 신규 버전 등록             | SYSTEM_ADMIN |
 | DELETE | `/admin/manuals/{manualId}`                | 매뉴얼 삭제                        | SYSTEM_ADMIN |
-| GET    | `/admin/flash-chat/settings`               | 채팅 필터 설정 조회                   | SYSTEM_ADMIN |
-| POST   | `/admin/flash-chat/blocked-words`          | 금지어 추가                        | SYSTEM_ADMIN |
-| DELETE | `/admin/flash-chat/blocked-words/{wordId}` | 금지어 삭제                        | SYSTEM_ADMIN |
+| GET    | `/admin/flash-chat/policy`                 | TTL, 쿨다운, 금지어 정책 조회          | SYSTEM_ADMIN |
+| PATCH  | `/admin/flash-chat/policy`                 | TTL, 쿨다운, 금지어 정책 일괄 변경      | SYSTEM_ADMIN |
+| DELETE | `/admin/flash-chat/messages/{messageId}`   | Flash Chat 메시지 강제 삭제             | SYSTEM_ADMIN |
+
+### GET `/admin/flash-chat/policy`
+
+Response:
+
+```json
+{
+  "messageTtlSeconds": 600,
+  "sendCooldownSeconds": 0,
+  "bannedWords": []
+}
+```
+
+### PATCH `/admin/flash-chat/policy`
+
+Request:
+
+```json
+{
+  "messageTtlSeconds": 600,
+  "sendCooldownSeconds": 0,
+  "bannedWords": ["금지어"]
+}
+```
+
+- `messageTtlSeconds`는 60초 이상이어야 한다.
+- `sendCooldownSeconds`가 0이면 쿨다운을 적용하지 않는다.
+- 정책 변경은 `FLASH_CHAT_CONFIG_UPDATE` action type으로 `admin_logs`에 기록한다.
+
+### DELETE `/admin/flash-chat/messages/{messageId}`
+
+- Redis Hash와 Sorted Set에서 메시지를 제거한다.
+- 삭제 결과를 `/topic/flash-chat`에 `DELETE` 이벤트로 브로드캐스트한다.
+- 강제 삭제는 `FLASH_CHAT_MESSAGE_DELETE` action type으로 `admin_logs`에 기록한다.
 
 
 ## 13. 미정 항목
