@@ -346,37 +346,37 @@ Response:
     "currentPoint": 450,
     "esgScore": 520
   },
-  "level": {
-    "level": 3,
-    "levelName": "건강한 북극곰",
-    "levelImageUrl": null,
-    "currentScore": 520,
+  "esgGrade": {
+    "gradeId": 3,
+    "gradeName": "건강한 북극곰",
+    "gradeImageUrl": null,
+    "esgScore": 520,
     "minScore": 301,
     "maxScore": 700,
-    "remainingScoreForNextLevel": 180
+    "remainingScoreForNextGrade": 180
   },
-  "levelProgress": [
+  "esgGradeProgress": [
     {
-      "level": 1,
-      "levelName": "아기 북극곰",
+      "gradeId": 1,
+      "gradeName": "아기 북극곰",
       "minScore": 0,
       "maxScore": 100
     },
     {
-      "level": 2,
-      "levelName": "성장하는 북극곰",
+      "gradeId": 2,
+      "gradeName": "성장하는 북극곰",
       "minScore": 101,
       "maxScore": 300
     },
     {
-      "level": 3,
-      "levelName": "건강한 북극곰",
+      "gradeId": 3,
+      "gradeName": "건강한 북극곰",
       "minScore": 301,
       "maxScore": 700
     },
     {
-      "level": 4,
-      "levelName": "북극의 수호자",
+      "gradeId": 4,
+      "gradeName": "북극의 수호자",
       "minScore": 701,
       "maxScore": null
     }
