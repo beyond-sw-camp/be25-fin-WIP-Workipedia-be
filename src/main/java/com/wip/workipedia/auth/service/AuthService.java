@@ -90,6 +90,10 @@ public class AuthService {
 		return new TokenRefreshResult(newAccessToken, newRefreshToken);
 	}
 
+	public void logout(Long userId) {
+		refreshTokenService.delete(userId);
+	}
+
 	@Transactional
 	public SignupResponse signup(SignupRequest signupRequest) {
 		if (!emailVerificationService.isSignupEmailVerified(signupRequest.email())) {
