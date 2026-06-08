@@ -141,6 +141,7 @@ Authorization: Bearer <accessToken>
 | PATCH  | `/auth/password-reset`             | 비밀번호 재설정               | 본인 인증 필요     |
 | GET    | `/me/profile`                      | 마이페이지 조회               | Access Token 필요  |
 | PATCH  | `/me/notification-settings`        | 알림 설정 변경                | Access Token 필요  |
+| GET    | `/me/tickets`                      | 내 발행 티켓 목록 조회        | Access Token 필요  |
 
 ### GET `/departments`
 
@@ -423,6 +424,64 @@ Response:
   "ticketEnabled": true,
   "workiEnabled": true,
   "manualEnabled": false
+}
+```
+
+### GET `/me/tickets`
+
+- 로그인한 사용자가 발행한 티켓 목록을 조회한다.
+- 사용자 식별은 Request Header의 Access Token으로 처리한다.
+- 기본 조회 상태는 `WAITING`이며, 화면의 "답변 대기" 탭에 해당한다.
+- "답변 완료" 탭을 조회할 때는 `status=COMPLETED`를 사용한다.
+- 외부 조회 상태 `WAITING`은 내부 티켓 상태 `RECEIVED`, `COMMON_QUEUE`, `ASSIGNED`, `IN_PROGRESS`를 포함한다.
+- 외부 조회 상태 `COMPLETED`는 내부 티켓 상태 `COMPLETED`를 의미한다.
+
+Request Header:
+
+```http
+Authorization: Bearer jwt-access-token
+```
+
+Query Parameter:
+
+| 이름 | 타입 | 필수 | 기본값 | 설명 |
+|---|---|---|---|---|
+| `status` | string | N | `WAITING` | `WAITING`, `COMPLETED` 중 하나 |
+| `page` | number | N | `0` | 페이지 번호 |
+| `size` | number | N | `10` | 페이지 크기 |
+
+Request 예시:
+
+```http
+GET /api/v1/me/tickets?status=WAITING&page=0&size=10
+```
+
+Response:
+
+```json
+{
+  "content": [
+    {
+      "ticketId": 1,
+      "title": "비밀번호 재설정이 되지 않습니다.",
+      "status": "RECEIVED",
+      "statusLabel": "답변 대기",
+      "createdAt": "2026-06-08T09:30:00"
+    },
+    {
+      "ticketId": 2,
+      "title": "사내 매뉴얼 접근 권한 문의",
+      "status": "IN_PROGRESS",
+      "statusLabel": "답변 대기",
+      "createdAt": "2026-06-08T10:15:00"
+    }
+  ],
+  "page": 0,
+  "size": 10,
+  "totalElements": 5,
+  "totalPages": 1,
+  "first": true,
+  "last": true
 }
 ```
 
