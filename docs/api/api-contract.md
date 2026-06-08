@@ -47,31 +47,6 @@ Authorization: Bearer <accessToken>
 성공 응답은 `ResponseEntity<T>`로 직접 반환한다.
 응답 Body를 `code`, `status`, `message`, `data` 형태의 공통 객체로 감싸지 않는다.
 
-응답 데이터가 있는 경우:
-
-```json
-{
-  "id": 1,
-  "name": "예시"
-}
-```
-
-목록 응답:
-
-```json
-[
-  {
-    "id": 1,
-    "name": "예시"
-  }
-]
-```
-
-응답 데이터가 없는 경우:
-
-```http
-200 OK
-```
 
 구현 기준:
 
@@ -85,25 +60,6 @@ Authorization: Bearer <accessToken>
 - 도메인 에러 코드는 `{domain}-{number}` 형식을 사용한다. 예: `auth-001`, `ticket-001`, `worki-001`
 
 ### 2.4 페이지 응답
-
-```json
-{
-  "code": 200,
-  "status": "OK",
-  "message": "성공",
-  "data": {
-    "content": [{}],
-    "pageInfo": {
-      "page": 1,
-      "size": 10,
-      "totalElements": 0,
-      "totalPages": 0,
-      "hasNext": false,
-      "hasPrevious": false
-    }
-  }
-}
-```
 
 ## 3. 담당자별 API 범위
 
@@ -146,120 +102,25 @@ Authorization: Bearer <accessToken>
 - 회원가입 화면에서 부서명 선택창에 표시할 부서 목록을 조회한다.
 - 부서 목록 개수는 DB에 등록된 부서 데이터를 기준으로 한다.
 
-Request: 없음
-
-Response:
-
-```json
-[
-  {
-    "departmentId": 1,
-    "departmentName": "인사팀"
-  },
-  {
-    "departmentId": 2,
-    "departmentName": "총무팀"
-  },
-  {
-    "departmentId": 3,
-    "departmentName": "IT지원팀"
-  }
-]
-```
 
 ### POST `/auth/signup/code`
 
 - 인증코드는 숫자 6자리로 생성한다.
 
-Request:
-
-```json
-{
-  "email": "user@company.com"
-}
-```
-
-Response:
-
-```http
-200 OK
-```
 
 ### POST `/auth/signup/code/verify`
 
 - 인증코드는 숫자 6자리로 입력한다.
 
-Request:
-
-```json
-{
-  "email": "user@company.com",
-  "code": "123456"
-}
-```
-
-Response:
-
-```http
-200 OK
-```
 
 ### POST `/auth/signup`
 
 - 회원가입은 이메일 인증코드 확인이 완료된 이메일에 대해서만 가능하다.
 - `passwordConfirm`은 프론트에서 `password`와의 일치 여부를 검증하며 Request Body에는 포함하지 않는다.
 
-Request:
-
-```json
-{
-  "employeeId": "20260001",
-  "departmentId": 1,
-  "email": "user@company.com",
-  "password": "abc12345"
-}
-```
-
-Response:
-
-```json
-{
-  "userId": 123,
-  "role": "USER",
-  "nickname": "눈물흘리는데이지",
-  "status": "ACTIVE"
-}
-```
 
 ### POST `/auth/login`
 
-Request:
-
-```json
-{
-  "employeeId": "20260001",
-  "password": "abc12345"
-}
-```
-
-Response:
-
-```json
-{
-  "accessToken": "jwt-access-token",
-  "userId": 123,
-  "departmentId": 1,
-  "role": "USER",
-  "nickname": "눈물흘리는데이지",
-  "status": "ACTIVE"
-}
-```
-
-Response Header:
-
-```http
-Set-Cookie: refreshToken=jwt-refresh-token; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth
-```
 
 - Refresh Token 쿠키는 Access Token 재발급 API 호출을 위한 값이다.
 - 일반 인증 API는 Refresh Token이 아니라 `Authorization` 헤더의 Access Token으로 인증한다.
@@ -271,25 +132,6 @@ Set-Cookie: refreshToken=jwt-refresh-token; HttpOnly; Secure; SameSite=Lax; Path
 - 새 Refresh Token은 Redis에 저장하고, 기존 Refresh Token은 폐기한다.
 - Access Token이 만료된 경우 호출하며, `Authorization` 헤더는 사용하지 않는다.
 
-Request Header:
-
-```http
-Cookie: refreshToken=jwt-refresh-token
-```
-
-Response:
-
-```json
-{
-  "accessToken": "jwt-new-access-token"
-}
-```
-
-Response Header:
-
-```http
-Set-Cookie: refreshToken=jwt-new-refresh-token; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth
-```
 
 ### POST `/auth/logout`
 
@@ -298,23 +140,6 @@ Set-Cookie: refreshToken=jwt-new-refresh-token; HttpOnly; Secure; SameSite=Lax; 
 - Refresh Token 쿠키를 만료시켜 클라이언트에서 제거합니다.
 - Access Token이 없거나 유효하지 않으면 `401 Unauthorized`를 반환합니다.
 
-Request Header:
-
-```http
-Authorization: Bearer jwt-access-token
-```
-
-Response:
-
-```http
-200 OK
-```
-
-Response Header:
-
-```http
-Set-Cookie: refreshToken=; Max-Age=0; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth
-```
 
 ## 5. Chatbot API
 
@@ -341,65 +166,6 @@ Set-Cookie: refreshToken=; Max-Age=0; HttpOnly; Secure; SameSite=Lax; Path=/api/
 
 ### POST `/chatbot/sessions/{sessionId}/messages`
 
-Request:
-
-```json
-{
-  "content": "연차 신청은 어디서 하나요?"
-}
-```
-
-Response:
-
-```json
-{
-  "messageId": 101,
-  "answer": "연차는 HR 시스템에서 신청할 수 있습니다.",
-  "answerable": true,
-  "references": [
-    {
-      "type": "MANUAL",
-      "sourceId": 10,
-      "title": "휴가 규정",
-      "url": "/manuals/10",
-      "chunkId": 1001
-    }
-  ],
-  "nextAction": "SHOW_SOURCES"
-}
-```
-
-근거 부족 응답:
-
-```json
-{
-  "messageId": 102,
-  "answer": "현재 등록된 문서에서 확실한 답변을 찾지 못했습니다.",
-  "answerable": false,
-  "references": [],
-  "nextAction": "CREATE_WORKI",
-  "draftQuestion": {
-    "title": "연차 신청 관련 문의",
-    "content": "연차 신청은 어디서 하나요?"
-  }
-}
-```
-
-요청 전환 응답:
-
-```json
-{
-  "messageId": 103,
-  "answer": "문서 검색만으로 해결하기 어렵습니다. 담당 부서 처리가 필요한 요청으로 전환할 수 있습니다.",
-  "answerable": false,
-  "references": [],
-  "nextAction": "CREATE_TICKET",
-  "draftTicket": {
-    "title": "VPN 접속 오류 처리 요청",
-    "content": "VPN 접속 오류 처리를 요청합니다."
-  }
-}
-```
 
 ## 6. Worki API
 
@@ -418,26 +184,6 @@ Response:
 
 ### POST `/worki/questions`
 
-Request:
-
-```json
-{
-  "title": "연차 신청 관련 문의",
-  "content": "연차 신청은 어디서 하나요?",
-  "sourceChatbotMessageId": 102
-}
-```
-
-Response:
-
-```json
-{
-  "questionId": 1,
-  "title": "연차 신청 관련 문의",
-  "status": "WAITING",
-  "authorNickname": "노잇1234"
-}
-```
 
 ## 7. Ticket API
 
@@ -458,74 +204,9 @@ Response:
 
 ### POST `/tickets`
 
-Request:
-
-```json
-{
-  "questionId": null,
-  "sourceChatbotMessageId": 102,
-  "type": "REQUEST",
-  "categoryId": 3,
-  "priority": "MEDIUM",
-  "title": "VPN 접속 오류 처리 요청",
-  "content": "VPN 접속 오류 처리를 요청합니다.",
-  "attachmentIds": [1, 2]
-}
-```
 
 - `priority` 허용값은 `MEDIUM`, `HIGH`이다. 생략하면 `MEDIUM`으로 저장한다.
 
-Response:
-
-```json
-{
-  "ticketId": 1,
-  "status": "ASSIGNED",
-  "priority": "MEDIUM",
-  "assignedDepartmentId": 5,
-  "assignedDepartmentName": "IT지원팀",
-  "routingConfidenceScore": 87.5,
-  "routingDecision": "AUTO_ASSIGNED",
-  "recommendedAssignees": [
-    {
-      "userId": 12,
-      "nickname": "노잇4821",
-      "completedTicketCountLast30Days": 14
-    }
-  ],
-  "routingReasons": [
-    "키워드: VPN, 접속 오류",
-    "카테고리: 시스템 접근",
-    "관련 문서: VPN 접속 장애 처리 가이드"
-  ]
-}
-```
-
-신뢰도 낮은 요청 Response:
-
-```json
-{
-  "ticketId": 2,
-  "status": "COMMON_QUEUE",
-  "priority": "MEDIUM",
-  "assignedDepartmentId": null,
-  "assignedDepartmentName": null,
-  "routingConfidenceScore": 63.0,
-  "routingDecision": "COMMON_QUEUE",
-  "candidateDepartments": [
-    {
-      "departmentId": 2,
-      "departmentName": "자산관리팀",
-      "confidenceScore": 63.0
-    },
-    {
-      "departmentId": 6,
-      "departmentName": "정보보안팀",
-      "confidenceScore": 58.0
-    }
-  ]
-}
-```
 
 ### GET `/tickets`
 
@@ -540,47 +221,6 @@ Query Parameters:
 | `page`         | number | 아니오 | 페이지 번호. 기본값은 `1`이다.                               |
 | `size`         | number | 아니오 | 페이지 크기. 기본값은 `10`이다.                              |
 
-Request 예시:
-
-```http
-GET /api/v1/tickets?status=COMMON_QUEUE&departmentId=1&page=1&size=10
-```
-
-Response:
-
-```json
-{
-  "content": [
-    {
-      "ticketId": 5,
-      "status": "COMMON_QUEUE",
-      "priority": "MEDIUM",
-      "assignedDepartmentId": null,
-      "assignedDepartmentName": null,
-      "routingConfidenceScore": null,
-      "routingDecision": "COMMON_QUEUE",
-      "routingReasons": [],
-      "candidateDepartments": [],
-      "questionId": null,
-      "sourceChatbotMessageId": null,
-      "categoryId": null,
-      "title": "테스트 티켓 제목",
-      "content": "테스트 티켓 내용",
-      "assigneeId": null,
-      "createdAt": "2026-06-04T17:01:49",
-      "updatedAt": "2026-06-04T17:01:49"
-    }
-  ],
-  "pageInfo": {
-    "page": 1,
-    "size": 10,
-    "totalElements": 1,
-    "totalPages": 1,
-    "hasNext": false,
-    "hasPrevious": false
-  }
-}
-```
 
 비고:
 
@@ -589,118 +229,20 @@ Response:
 
 ### PATCH `/tickets/{ticketId}/assignee`
 
-Request:
-
-```json
-{
-  "assigneeId": 12,
-  "memo": "VPN 계정 확인 후 처리 부탁드립니다."
-}
-```
-
-Response:
-
-```json
-{
-  "ticketId": 1,
-  "status": "IN_PROGRESS",
-  "priority": "MEDIUM",
-  "assigneeId": 12,
-  "assigneeNickname": "노잇4821"
-}
-```
 
 ### POST `/tickets/{ticketId}/transfer-requests`
 
-Request:
-
-```json
-{
-  "suggestedDepartmentId": 2,
-  "reason": "법무 검토가 필요한 문의입니다."
-}
-```
-
-Response:
-
-```json
-{
-  "requestId": 1,
-  "ticketId": 1,
-  "transferStatus": "REQUESTED",
-  "ticketStatus": "COMMON_QUEUE",
-  "fromDepartmentId": 5,
-  "fromDepartmentName": "경영지원팀",
-  "suggestedDepartmentId": 2,
-  "suggestedDepartmentName": "법무팀"
-}
-```
 
 이관 요청 시 티켓은 다른 부서로 직접 이동하지 않고 공통 접수 큐로 이동한다. 이후 `SYSTEM_ADMIN`이 공통 접수 큐에서 담당 부서를 재배정한다.
 
 ### PATCH `/admin/common-queue/tickets/{ticketId}/department`
 
-Request:
-
-```json
-{
-  "departmentId": 2,
-  "comment": "이관 사유 확인 후 법무팀으로 재배정합니다."
-}
-```
-
-Response:
-
-```json
-{
-  "ticketId": 1,
-  "status": "ASSIGNED",
-  "assignedDepartmentId": 2,
-  "assignedDepartmentName": "법무팀"
-}
-```
 
 ### POST `/tickets/{ticketId}/knowledge-candidates`
 
-Request:
-
-```json
-{
-  "draftTitle": "VPN 접속 오류 처리 절차",
-  "draftContent": "VPN 접속 오류가 발생하면 계정 상태와 보안 프로그램 실행 여부를 먼저 확인한 뒤 IT지원팀에 요청합니다."
-}
-```
-
-Response:
-
-```json
-{
-  "candidateId": 1,
-  "ticketId": 1,
-  "status": "REVIEW_REQUESTED"
-}
-```
 
 ### PATCH `/knowledge-candidates/{candidateId}/review`
 
-Request:
-
-```json
-{
-  "decision": "APPROVE",
-  "reviewComment": "개인 정보 제거 확인. 워키 반영 승인합니다."
-}
-```
-
-Response:
-
-```json
-{
-  "candidateId": 1,
-  "status": "PUBLISHED",
-  "publishedWorkiQuestionId": 30
-}
-```
 
 ### Attachment API
 
@@ -713,24 +255,6 @@ Response:
 
 ### POST `/attachments`
 
-Request: `multipart/form-data`
-
-| Field        | Type   | 설명                                                                |
-| ------------ | ------ | ------------------------------------------------------------------- |
-| `file`       | file   | 이미지 파일                                                         |
-| `targetType` | string | `TICKET` 등 첨부 대상                                               |
-| `targetId`   | number | 이미 생성된 대상에 연결할 때 사용. 티켓 생성 전 업로드 시 null 가능 |
-
-Response:
-
-```json
-{
-  "attachmentId": 1,
-  "contentType": "image/png",
-  "fileSize": 123456,
-  "url": "/attachments/1"
-}
-```
 
 ## 8. FAQ API
 
@@ -769,46 +293,12 @@ Response:
 
 ### GET `/flash-chat/messages`
 
-Response:
-
-```json
-{
-  "messages": [
-    {
-      "id": "018f6c9d-7b4f-7a9a-9c15-1b0f4b5ad111",
-      "userId": 123,
-      "nickname": "노잇4821",
-      "content": "연차 반차 차이가 뭐예요?",
-      "replyToId": null,
-      "likeCount": 2,
-      "createdAt": "2026-06-03T10:00:00",
-      "expiresAt": "2026-06-03T10:10:00"
-    }
-  ]
-}
-```
 
 ### `/app/flash-chat/send`
 
-Payload:
-
-```json
-{
-  "content": "연차 반차 차이가 뭐예요?",
-  "replyToId": null
-}
-```
 
 ### `/app/flash-chat/react`
 
-Payload:
-
-```json
-{
-  "messageId": "018f6c9d-7b4f-7a9a-9c15-1b0f4b5ad111",
-  "reactionType": "LIKE"
-}
-```
 
 ## 10. Point API
 
@@ -829,19 +319,6 @@ Payload:
 | GET    | `/esg/metrics/me`    | 내 ESG/기여 지표     | 필요                     |
 | GET    | `/admin/esg/metrics` | 관리자 ESG 운영 지표 | TEAM_ADMIN, SYSTEM_ADMIN |
 
-Response:
-
-```json
-{
-  "knowledgeShareCount": 12,
-  "acceptedAnswerCount": 4,
-  "estimatedSavedMinutes": 60,
-  "esgScore": 320,
-  "gradeName": "SILVER",
-  "sourceBackedAnswerRate": 0.85,
-  "ticketCompletionRate": 0.72
-}
-```
 
 ## 12. Admin API
 
@@ -891,7 +368,6 @@ Response:
 | GET    | `/admin/flash-chat/settings`               | 채팅 필터 설정 조회                   | SYSTEM_ADMIN |
 | POST   | `/admin/flash-chat/blocked-words`          | 금지어 추가                        | SYSTEM_ADMIN |
 | DELETE | `/admin/flash-chat/blocked-words/{wordId}` | 금지어 삭제                        | SYSTEM_ADMIN |
-
 
 
 ## 13. 미정 항목
