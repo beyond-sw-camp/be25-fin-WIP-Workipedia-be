@@ -9,6 +9,9 @@ import com.wip.workipedia.worki.service.WorkiQuestionLikeService;
 import com.wip.workipedia.worki.service.WorkiQuestionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -76,5 +79,16 @@ public class WorkiQuestionController {
             @PathVariable Long questionId) {
         likeService.unlike(actorUserId, questionId);
         return ResponseEntity.noContent().build();
+    }
+
+    // 테스트용 일괄 등록 API. 검색 색인 테스트처럼 여러 건을 한 번에 넣을 때 사용.
+    // TODO: 이슬이 시큐리티 통합 후 @AuthenticationPrincipal로 교체. 통합 전까지 X-User-Id 헤더로 대체.
+    @PostMapping("/bulk")
+    public ResponseEntity<List<QuestionResponse>> createBulk(
+            @RequestHeader("X-User-Id") Long actorUserId,
+            @Valid @RequestBody List<QuestionCreateRequest> requests
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(questionService.createBulk(actorUserId, requests));
     }
 }
