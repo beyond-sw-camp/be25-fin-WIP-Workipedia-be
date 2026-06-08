@@ -47,31 +47,6 @@ Authorization: Bearer <accessToken>
 성공 응답은 `ResponseEntity<T>`로 직접 반환한다.
 응답 Body를 `code`, `status`, `message`, `data` 형태의 공통 객체로 감싸지 않는다.
 
-응답 데이터가 있는 경우:
-
-```json
-{
-  "id": 1,
-  "name": "예시"
-}
-```
-
-목록 응답:
-
-```json
-[
-  {
-    "id": 1,
-    "name": "예시"
-  }
-]
-```
-
-응답 데이터가 없는 경우:
-
-```http
-200 OK
-```
 
 구현 기준:
 
@@ -86,31 +61,12 @@ Authorization: Bearer <accessToken>
 
 ### 2.4 페이지 응답
 
-```json
-{
-  "code": 200,
-  "status": "OK",
-  "message": "성공",
-  "data": {
-    "content": [{}],
-    "pageInfo": {
-      "page": 1,
-      "size": 10,
-      "totalElements": 0,
-      "totalPages": 0,
-      "hasNext": false,
-      "hasPrevious": false
-    }
-  }
-}
-```
-
 ## 3. 담당자별 API 범위
 
 | 영역                      | 백엔드 담당    | 프론트 담당 |
 | ------------------------- | -------------- | ----------- |
 | Auth                      | 이슬이         | 황희수      |
-| 챗봇 세션/메시지          | 이슬이         | 민정기      |
+| 챗봇 세션/메시지          | 김진혁         | 민정기      |
 | 챗봇 답변/RAG/전환        | 김진혁         | 민정기      |
 | 워키 게시판               | 민정기         | 황희수      |
 | FAQ                       | 민정기         | 황희수      |
@@ -128,53 +84,33 @@ Authorization: Bearer <accessToken>
 담당: 이슬이
 
 | Method | Path                               | 설명                          | 인증               |
-| ------ | ---------------------------------- | ----------------------------- | ------------------ |
-| GET    | `/departments`                     | 회원가입 부서 목록 조회       | 불필요             |
-| POST   | `/auth/signup/code`                | 회원가입 인증코드 발송        | 불필요             |
-| POST   | `/auth/signup/code/verify`         | 회원가입 인증코드 확인        | 불필요             |
-| POST   | `/auth/signup`                     | 회원가입                      | 불필요             |
-| POST   | `/auth/login`                      | 로그인                        | 불필요             |
+| ------ | ---------------------------------- | ----------------------------- |------------------|
+| GET    | `/departments`                     | 회원가입 부서 목록 조회       | 불필요              |
+| POST   | `/auth/signup/code`                | 회원가입 인증코드 발송        | 불필요              |
+| POST   | `/auth/signup/code/verify`         | 회원가입 인증코드 확인        | 불필요              |
+| POST   | `/auth/signup`                     | 회원가입                      | 불필요              |
+| POST   | `/auth/login`                      | 로그인                        | 불필요              |
 | POST   | `/auth/token/refresh`              | 토큰 재발급                   | Refresh Token 필요 |
-| POST   | `/auth/logout`                     | 로그아웃                      | Access Token 필요 |
-| POST   | `/auth/password-reset/code`        | 비밀번호 재설정 인증코드 발송 | 불필요             |
-| POST   | `/auth/password-reset/code/verify` | 비밀번호 재설정 인증코드 확인 | 불필요             |
-| PATCH  | `/auth/password-reset`             | 비밀번호 재설정               | 본인 인증 필요     |
+| POST   | `/auth/logout`                     | 로그아웃                      | Access Token 필요  |
+| POST   | `/auth/password-reset/code`        | 비밀번호 재설정 인증코드 발송 | 불필요              |
+| POST   | `/auth/password-reset/code/verify` | 비밀번호 재설정 인증코드 확인 | 불필요              |
+| PATCH  | `/auth/password-reset`             | 비밀번호 재설정               | 불필요              |
 | GET    | `/me/profile`                      | 마이페이지 조회               | Access Token 필요  |
 
-### GET `/departments`
 
-- 회원가입 화면에서 부서명 선택창에 표시할 부서 목록을 조회한다.
-- 부서 목록 개수는 DB에 등록된 부서 데이터를 기준으로 한다.
 
-Request: 없음
+### POST `/auth/password-reset/code`
 
-Response:
-
-```json
-[
-  {
-    "departmentId": 1,
-    "departmentName": "인사팀"
-  },
-  {
-    "departmentId": 2,
-    "departmentName": "총무팀"
-  },
-  {
-    "departmentId": 3,
-    "departmentName": "IT지원팀"
-  }
-]
-```
-
-### POST `/auth/signup/code`
-
+- 비밀번호 재설정을 위한 인증코드를 이메일로 발송한다.
+- 요청한 사번과 이메일이 같은 사용자 계정에 등록된 정보와 일치해야 한다.
 - 인증코드는 숫자 6자리로 생성한다.
+- 인증코드는 Redis에 TTL과 함께 저장한다.
 
 Request:
 
 ```json
 {
+  "employeeId": "20260001",
   "email": "user@company.com"
 }
 ```
@@ -185,16 +121,19 @@ Response:
 200 OK
 ```
 
-### POST `/auth/signup/code/verify`
+### POST `/auth/password-reset/code/verify`
 
-- 인증코드는 숫자 6자리로 입력한다.
+- 사용자가 입력한 인증코드가 Redis에 저장된 인증코드와 일치하는지 확인한다.
+- 회원가입 인증코드 확인과 유사하지만, 비밀번호 재설정은 기존 사용자 대상 기능이므로 사번과 이메일이 DB에 저장된 사용자 정보와 일치해야 한다.
+- 인증코드가 일치하면 비밀번호 재설정을 진행할 수 있도록 인증 완료 상태를 저장하고, 사용이 완료된 인증코드는 Redis에서 삭제한다.
 
 Request:
 
 ```json
 {
+  "employeeId": "20260001",
   "email": "user@company.com",
-  "code": "123456"
+  "code": "987654"
 }
 ```
 
@@ -204,121 +143,34 @@ Response:
 200 OK
 ```
 
-### POST `/auth/signup`
+### PATCH `/auth/password-reset`
 
-- 회원가입은 이메일 인증코드 확인이 완료된 이메일에 대해서만 가능하다.
-- `passwordConfirm`은 프론트에서 `password`와의 일치 여부를 검증하며 Request Body에는 포함하지 않는다.
+- 비밀번호 재설정 인증코드 확인이 완료된 사용자만 새 비밀번호로 변경할 수 있다.
+- 요청한 사번과 이메일이 DB에 저장된 사용자 정보와 일치해야 한다.
+- 새 비밀번호와 새 비밀번호 확인값의 일치 여부는 프론트에서 확인한다.
+- 새 비밀번호는 암호화하여 저장하고, DB에 저장된 기존 비밀번호를 새 비밀번호로 변경한다.
+- 비밀번호 변경이 완료되면 Redis에 저장된 기존 Refresh Token을 삭제하여 기존 로그인 세션의 토큰 재발급을 차단한다.
+- 비밀번호 변경이 완료되면 Redis에 저장된 비밀번호 재설정 인증 완료 상태를 삭제한다.
 
 Request:
 
 ```json
 {
   "employeeId": "20260001",
-  "departmentId": 1,
   "email": "user@company.com",
-  "password": "abc12345"
+  "newPassword": "new12345"
 }
-```
-
-Response:
-
-```json
-{
-  "userId": 123,
-  "role": "USER",
-  "nickname": "눈물흘리는데이지",
-  "status": "ACTIVE"
-}
-```
-
-### POST `/auth/login`
-
-Request:
-
-```json
-{
-  "employeeId": "20260001",
-  "password": "abc12345"
-}
-```
-
-Response:
-
-```json
-{
-  "accessToken": "jwt-access-token",
-  "userId": 123,
-  "departmentId": 1,
-  "role": "USER",
-  "nickname": "눈물흘리는데이지",
-  "status": "ACTIVE"
-}
-```
-
-Response Header:
-
-```http
-Set-Cookie: refreshToken=jwt-refresh-token; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth
-```
-
-- Refresh Token 쿠키는 Access Token 재발급 API 호출을 위한 값이다.
-- 일반 인증 API는 Refresh Token이 아니라 `Authorization` 헤더의 Access Token으로 인증한다.
-- 예를 들어 `/api/v1/me`로 시작하는 마이페이지 조회 API도 Access Token으로 인증한다.
-
-### POST `/auth/token/refresh`
-
-- 로그인 시 발급된 Refresh Token 쿠키를 검증한 뒤 새 Access Token과 새 Refresh Token을 함께 발급한다.
-- 새 Refresh Token은 Redis에 저장하고, 기존 Refresh Token은 폐기한다.
-- Access Token이 만료된 경우 호출하며, `Authorization` 헤더는 사용하지 않는다.
-
-Request Header:
-
-```http
-Cookie: refreshToken=jwt-refresh-token
-```
-
-Response:
-
-```json
-{
-  "accessToken": "jwt-new-access-token"
-}
-```
-
-Response Header:
-
-```http
-Set-Cookie: refreshToken=jwt-new-refresh-token; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth
-```
-
-### POST `/auth/logout`
-
-- Request Header의 Access Token을 검증하고, 토큰의 userId로 로그아웃 대상 사용자를 식별합니다.
-- 식별된 userId 기준으로 Redis에 저장된 Refresh Token을 삭제합니다.
-- Refresh Token 쿠키를 만료시켜 클라이언트에서 제거합니다.
-- Access Token이 없거나 유효하지 않으면 `401 Unauthorized`를 반환합니다.
-
-Request Header:
-
-```http
-Authorization: Bearer jwt-access-token
 ```
 
 Response:
 
 ```http
 200 OK
-```
-
-Response Header:
-
-```http
-Set-Cookie: refreshToken=; Max-Age=0; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth
 ```
 
 ## 5. Chatbot API
 
-담당: 이슬이, 김진혁
+담당: 김진혁
 
 | Method | Path                                                               | 설명                                             | 인증 |
 | ------ | ------------------------------------------------------------------ | ------------------------------------------------ | ---- |
@@ -339,71 +191,11 @@ Set-Cookie: refreshToken=; Max-Age=0; HttpOnly; Secure; SameSite=Lax; Path=/api/
 | GET    | `/ai/model/current`     | 현재 모델 버전 및 어댑터 정보 조회           | SYSTEM_ADMIN |
 | POST   | `/ai/prompt/update`     | base_system/admin_context 갱신               | SYSTEM_ADMIN |
 
-### POST `/chatbot/sessions/{sessionId}/messages`
 
-Request:
-
-```json
-{
-  "content": "연차 신청은 어디서 하나요?"
-}
-```
-
-Response:
-
-```json
-{
-  "messageId": 101,
-  "answer": "연차는 HR 시스템에서 신청할 수 있습니다.",
-  "answerable": true,
-  "references": [
-    {
-      "type": "MANUAL",
-      "sourceId": 10,
-      "title": "휴가 규정",
-      "url": "/manuals/10",
-      "chunkId": 1001
-    }
-  ],
-  "nextAction": "SHOW_SOURCES"
-}
-```
-
-근거 부족 응답:
-
-```json
-{
-  "messageId": 102,
-  "answer": "현재 등록된 문서에서 확실한 답변을 찾지 못했습니다.",
-  "answerable": false,
-  "references": [],
-  "nextAction": "CREATE_WORKI",
-  "draftQuestion": {
-    "title": "연차 신청 관련 문의",
-    "content": "연차 신청은 어디서 하나요?"
-  }
-}
-```
-
-요청 전환 응답:
-
-```json
-{
-  "messageId": 103,
-  "answer": "문서 검색만으로 해결하기 어렵습니다. 담당 부서 처리가 필요한 요청으로 전환할 수 있습니다.",
-  "answerable": false,
-  "references": [],
-  "nextAction": "CREATE_TICKET",
-  "draftTicket": {
-    "title": "VPN 접속 오류 처리 요청",
-    "content": "VPN 접속 오류 처리를 요청합니다."
-  }
-}
-```
 
 ## 6. Worki API
 
-담당: 이슬이
+담당: 민정기
 
 | Method | Path                                           | 설명                     | 인증 |
 | ------ | ---------------------------------------------- | ------------------------ | ---- |
@@ -416,28 +208,6 @@ Response:
 | PATCH  | `/worki/answers/{answerId}/adopt`              | 답변 채택                | 필요 |
 | PUT    | `/worki/questions/{questionId}/reaction`       | 좋아요/싫어요            | 필요 |
 
-### POST `/worki/questions`
-
-Request:
-
-```json
-{
-  "title": "연차 신청 관련 문의",
-  "content": "연차 신청은 어디서 하나요?",
-  "sourceChatbotMessageId": 102
-}
-```
-
-Response:
-
-```json
-{
-  "questionId": 1,
-  "title": "연차 신청 관련 문의",
-  "status": "WAITING",
-  "authorNickname": "노잇1234"
-}
-```
 
 ## 7. Ticket API
 
@@ -456,251 +226,7 @@ Response:
 | POST   | `/tickets/{ticketId}/knowledge-candidates`   | 처리 완료 티켓 지식화 후보 등록 | 필요       |
 | PATCH  | `/knowledge-candidates/{candidateId}/review` | 지식화 후보 승인/반려           | TEAM_ADMIN |
 
-### POST `/tickets`
 
-Request:
-
-```json
-{
-  "questionId": null,
-  "sourceChatbotMessageId": 102,
-  "type": "REQUEST",
-  "categoryId": 3,
-  "priority": "MEDIUM",
-  "title": "VPN 접속 오류 처리 요청",
-  "content": "VPN 접속 오류 처리를 요청합니다.",
-  "attachmentIds": [1, 2]
-}
-```
-
-- `priority` 허용값은 `MEDIUM`, `HIGH`이다. 생략하면 `MEDIUM`으로 저장한다.
-
-Response:
-
-```json
-{
-  "ticketId": 1,
-  "status": "ASSIGNED",
-  "priority": "MEDIUM",
-  "assignedDepartmentId": 5,
-  "assignedDepartmentName": "IT지원팀",
-  "routingConfidenceScore": 87.5,
-  "routingDecision": "AUTO_ASSIGNED",
-  "recommendedAssignees": [
-    {
-      "userId": 12,
-      "nickname": "노잇4821",
-      "completedTicketCountLast30Days": 14
-    }
-  ],
-  "routingReasons": [
-    "키워드: VPN, 접속 오류",
-    "카테고리: 시스템 접근",
-    "관련 문서: VPN 접속 장애 처리 가이드"
-  ]
-}
-```
-
-신뢰도 낮은 요청 Response:
-
-```json
-{
-  "ticketId": 2,
-  "status": "COMMON_QUEUE",
-  "priority": "MEDIUM",
-  "assignedDepartmentId": null,
-  "assignedDepartmentName": null,
-  "routingConfidenceScore": 63.0,
-  "routingDecision": "COMMON_QUEUE",
-  "candidateDepartments": [
-    {
-      "departmentId": 2,
-      "departmentName": "자산관리팀",
-      "confidenceScore": 63.0
-    },
-    {
-      "departmentId": 6,
-      "departmentName": "정보보안팀",
-      "confidenceScore": 58.0
-    }
-  ]
-}
-```
-
-### GET `/tickets`
-
-티켓 목록을 조회한다. 프론트엔드는 같은 엔드포인트에서 상태별, 부서별 필터를 조합해 사용한다.
-
-Query Parameters:
-
-| 이름           | 타입   | 필수 | 설명                                                         |
-| -------------- | ------ | ---- | ------------------------------------------------------------ |
-| `status`       | string | 아니오 | 티켓 상태. 예: `COMMON_QUEUE`, `ASSIGNED`, `IN_PROGRESS`     |
-| `departmentId` | number | 아니오 | 담당 부서 ID. `assignedDepartmentId` 기준으로 조회한다.      |
-| `page`         | number | 아니오 | 페이지 번호. 기본값은 `1`이다.                               |
-| `size`         | number | 아니오 | 페이지 크기. 기본값은 `10`이다.                              |
-
-Request 예시:
-
-```http
-GET /api/v1/tickets?status=COMMON_QUEUE&departmentId=1&page=1&size=10
-```
-
-Response:
-
-```json
-{
-  "content": [
-    {
-      "ticketId": 5,
-      "status": "COMMON_QUEUE",
-      "priority": "MEDIUM",
-      "assignedDepartmentId": null,
-      "assignedDepartmentName": null,
-      "routingConfidenceScore": null,
-      "routingDecision": "COMMON_QUEUE",
-      "routingReasons": [],
-      "candidateDepartments": [],
-      "questionId": null,
-      "sourceChatbotMessageId": null,
-      "categoryId": null,
-      "title": "테스트 티켓 제목",
-      "content": "테스트 티켓 내용",
-      "assigneeId": null,
-      "createdAt": "2026-06-04T17:01:49",
-      "updatedAt": "2026-06-04T17:01:49"
-    }
-  ],
-  "pageInfo": {
-    "page": 1,
-    "size": 10,
-    "totalElements": 1,
-    "totalPages": 1,
-    "hasNext": false,
-    "hasPrevious": false
-  }
-}
-```
-
-비고:
-
-- `departmentId`는 조회 필터이며, 부서 배정/재배정 동작을 의미하지 않는다.
-- 공통 접수 큐의 부서 재배정은 `PATCH /admin/common-queue/tickets/{ticketId}/department`를 사용한다.
-
-### PATCH `/tickets/{ticketId}/assignee`
-
-Request:
-
-```json
-{
-  "assigneeId": 12,
-  "memo": "VPN 계정 확인 후 처리 부탁드립니다."
-}
-```
-
-Response:
-
-```json
-{
-  "ticketId": 1,
-  "status": "IN_PROGRESS",
-  "priority": "MEDIUM",
-  "assigneeId": 12,
-  "assigneeNickname": "노잇4821"
-}
-```
-
-### POST `/tickets/{ticketId}/transfer-requests`
-
-Request:
-
-```json
-{
-  "suggestedDepartmentId": 2,
-  "reason": "법무 검토가 필요한 문의입니다."
-}
-```
-
-Response:
-
-```json
-{
-  "requestId": 1,
-  "ticketId": 1,
-  "transferStatus": "REQUESTED",
-  "ticketStatus": "COMMON_QUEUE",
-  "fromDepartmentId": 5,
-  "fromDepartmentName": "경영지원팀",
-  "suggestedDepartmentId": 2,
-  "suggestedDepartmentName": "법무팀"
-}
-```
-
-이관 요청 시 티켓은 다른 부서로 직접 이동하지 않고 공통 접수 큐로 이동한다. 이후 `SYSTEM_ADMIN`이 공통 접수 큐에서 담당 부서를 재배정한다.
-
-### PATCH `/admin/common-queue/tickets/{ticketId}/department`
-
-Request:
-
-```json
-{
-  "departmentId": 2,
-  "comment": "이관 사유 확인 후 법무팀으로 재배정합니다."
-}
-```
-
-Response:
-
-```json
-{
-  "ticketId": 1,
-  "status": "ASSIGNED",
-  "assignedDepartmentId": 2,
-  "assignedDepartmentName": "법무팀"
-}
-```
-
-### POST `/tickets/{ticketId}/knowledge-candidates`
-
-Request:
-
-```json
-{
-  "draftTitle": "VPN 접속 오류 처리 절차",
-  "draftContent": "VPN 접속 오류가 발생하면 계정 상태와 보안 프로그램 실행 여부를 먼저 확인한 뒤 IT지원팀에 요청합니다."
-}
-```
-
-Response:
-
-```json
-{
-  "candidateId": 1,
-  "ticketId": 1,
-  "status": "REVIEW_REQUESTED"
-}
-```
-
-### PATCH `/knowledge-candidates/{candidateId}/review`
-
-Request:
-
-```json
-{
-  "decision": "APPROVE",
-  "reviewComment": "개인 정보 제거 확인. 워키 반영 승인합니다."
-}
-```
-
-Response:
-
-```json
-{
-  "candidateId": 1,
-  "status": "PUBLISHED",
-  "publishedWorkiQuestionId": 30
-}
-```
 
 ### Attachment API
 
@@ -711,26 +237,7 @@ Response:
 | POST   | `/attachments`                | 이미지 업로드, `attachmentId` 반환 | 필요 |
 | GET    | `/attachments/{attachmentId}` | 이미지 조회                        | 필요 |
 
-### POST `/attachments`
 
-Request: `multipart/form-data`
-
-| Field        | Type   | 설명                                                                |
-| ------------ | ------ | ------------------------------------------------------------------- |
-| `file`       | file   | 이미지 파일                                                         |
-| `targetType` | string | `TICKET` 등 첨부 대상                                               |
-| `targetId`   | number | 이미 생성된 대상에 연결할 때 사용. 티켓 생성 전 업로드 시 null 가능 |
-
-Response:
-
-```json
-{
-  "attachmentId": 1,
-  "contentType": "image/png",
-  "fileSize": 123456,
-  "url": "/attachments/1"
-}
-```
 
 ## 8. FAQ API
 
@@ -846,19 +353,6 @@ Payload:
 | GET    | `/esg/metrics/me`    | 내 ESG/기여 지표     | 필요                     |
 | GET    | `/admin/esg/metrics` | 관리자 ESG 운영 지표 | TEAM_ADMIN, SYSTEM_ADMIN |
 
-Response:
-
-```json
-{
-  "knowledgeShareCount": 12,
-  "acceptedAnswerCount": 4,
-  "estimatedSavedMinutes": 60,
-  "esgScore": 320,
-  "gradeName": "SILVER",
-  "sourceBackedAnswerRate": 0.85,
-  "ticketCompletionRate": 0.72
-}
-```
 
 ## 12. Admin API
 
@@ -894,10 +388,11 @@ Response:
 | GET    | `/admin/settings/summary`                  | 전체 사용자 수, 당일 로그인 수, 총 문서 수 조회 | SYSTEM_ADMIN |
 | GET    | `/admin/points/search`                     | 사번으로 사용자 포인트 조회               | SYSTEM_ADMIN |
 | PATCH  | `/admin/points/{employeeId}/deduct`        | 포인트 차감                        | SYSTEM_ADMIN |
-| GET    | `/admin/departments`                       | 부서 목록 조회                      | SYSTEM_ADMIN |
+| GET    | `/admin/departments`                       | 관리자 부서 목록 조회                  | SYSTEM_ADMIN |
 | POST   | `/admin/departments`                       | 부서 등록                         | SYSTEM_ADMIN |
 | PATCH  | `/admin/departments/{departmentId}`        | 부서 정보 수정                      | SYSTEM_ADMIN |
 | DELETE | `/admin/departments/{departmentId}`        | 부서 삭제                         | SYSTEM_ADMIN |
+| PATCH  | `/admin/departments/routing-prompt/instruction` | 부서 라우팅 프롬프트                | SYSTEM_ADMIN |
 | GET    | `/admin/users/search`                      | 사번으로 사용자 조회                   | SYSTEM_ADMIN |
 | PATCH  | `/admin/users/{userId}/status`             | 사용자 활성화/비활성화 변경               | SYSTEM_ADMIN |
 | GET    | `/admin/manuals`                           | 매뉴얼 목록 조회                     | SYSTEM_ADMIN |
@@ -942,7 +437,6 @@ Request:
 - Redis Hash와 Sorted Set에서 메시지를 제거한다.
 - 삭제 결과를 `/topic/flash-chat`에 `DELETE` 이벤트로 브로드캐스트한다.
 - 강제 삭제는 `FLASH_CHAT_MESSAGE_DELETE` action type으로 `admin_logs`에 기록한다.
-
 
 
 ## 13. 미정 항목

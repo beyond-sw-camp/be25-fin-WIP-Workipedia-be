@@ -3,6 +3,7 @@ package com.wip.workipedia.auth.service;
 import com.wip.workipedia.auth.dto.LoginRequest;
 import com.wip.workipedia.auth.dto.LoginResponse;
 import com.wip.workipedia.auth.dto.LoginResult;
+import com.wip.workipedia.auth.dto.PasswordResetRequest;
 import com.wip.workipedia.auth.dto.SignupRequest;
 import com.wip.workipedia.auth.dto.SignupResponse;
 import com.wip.workipedia.auth.dto.TokenRefreshResult;
@@ -42,6 +43,7 @@ public class AuthService {
 	private final JwtProvider jwtProvider;
 	private final SecureRandom secureRandom = new SecureRandom();
 
+	// 로그인 성공 시 Access Token과 Refresh Token을 발급합니다.
 	@Transactional
 	public LoginResult login(LoginRequest loginRequest) {
 		User user = userRepository.findByEmployeeId(loginRequest.employeeId())
@@ -64,6 +66,7 @@ public class AuthService {
 		);
 	}
 
+	// Refresh Token을 검증한 뒤 Access Token과 Refresh Token을 재발급합니다.
 	@Transactional
 	public TokenRefreshResult refreshToken(String refreshToken) {
 		if (refreshToken == null || refreshToken.isBlank()) {
@@ -90,10 +93,31 @@ public class AuthService {
 		return new TokenRefreshResult(newAccessToken, newRefreshToken);
 	}
 
+	// 로그아웃 시 userId 기준으로 Redis에 저장된 Refresh Token을 삭제합니다.
 	public void logout(Long userId) {
 		refreshTokenService.delete(userId);
 	}
 
+	// 비밀번호 재설정 인증 완료 여부를 확인한 뒤 새 비밀번호로 변경합니다.
+	@Transactional
+	public void resetPassword(PasswordResetRequest passwordResetRequest) {
+		String employeeId = passwordResetRequest.employeeId();
+		String email = passwordResetRequest.email();
+
+		if (!emailVerificationService.isPasswordResetEmailVerified(employeeId, email)) {
+			throw new CustomException(ErrorType.AUTH_PASSWORD_RESET_VERIFICATION_REQUIRED);
+		}
+
+		User user = userRepository.findByEmployeeIdAndEmail(employeeId, email)
+			.orElseThrow(() -> new CustomException(ErrorType.AUTH_USER_NOT_FOUND));
+
+		String encodedPassword = passwordEncoder.encode(passwordResetRequest.newPassword());
+		user.updatePassword(encodedPassword);
+		refreshTokenService.delete(user.getUserId());
+		emailVerificationService.deletePasswordResetEmailVerified(employeeId, email);
+	}
+
+	// 이메일 인증 완료 여부를 확인한 뒤 회원가입을 처리합니다.
 	@Transactional
 	public SignupResponse signup(SignupRequest signupRequest) {
 		if (!emailVerificationService.isSignupEmailVerified(signupRequest.email())) {
