@@ -35,14 +35,13 @@ public class TicketController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(ticketService.create(request));
 	}
 
-	// 티켓 목록 조회(부서별, 상태별 필터링)
+	// 내 팀 티켓 목록 조회(상태별 필터링)
 	@GetMapping
 	public ResponseEntity<PageResponse<TicketResponse>> findAll(
 			@RequestParam(required = false) TicketStatus status,
-			@RequestParam(required = false) Long departmentId,
 			@Valid BasePageRequest pageRequest) {
 		Sort sort = Sort.by(Sort.Direction.DESC, "ticketId");
-		return ResponseEntity.ok(ticketService.findAll(status, departmentId, pageRequest.toPageable(sort)));
+		return ResponseEntity.ok(ticketService.findMyTeamTickets(status, pageRequest.toPageable(sort)));
 	}
 
 	// 티켓 상세 조회
