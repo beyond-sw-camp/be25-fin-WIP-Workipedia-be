@@ -8,6 +8,8 @@ import com.wip.workipedia.esg.repository.EsgGradeRepository;
 import com.wip.workipedia.mypage.domain.MyTicketStatus;
 import com.wip.workipedia.mypage.dto.MyPageResponse;
 import com.wip.workipedia.mypage.dto.MyTicketResponse;
+import com.wip.workipedia.mypage.repository.MyPageTicketProjection;
+import com.wip.workipedia.mypage.repository.MyPageTicketRepository;
 import com.wip.workipedia.notification.domain.NotificationSetting;
 import com.wip.workipedia.notification.repository.NotificationSettingRepository;
 import com.wip.workipedia.point.domain.UserPoint;
@@ -16,6 +18,8 @@ import com.wip.workipedia.ticket.domain.TicketStatus;
 import com.wip.workipedia.ticket.repository.TicketRepository;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.repository.UserRepository;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +33,7 @@ public class MyPageService {
 
 	private final UserRepository userRepository;
 	private final TicketRepository ticketRepository;
+	private final MyPageTicketRepository myPageTicketRepository;
 	private final UserPointRepository userPointRepository;
 	private final EsgGradeRepository esgGradeRepository;
 	private final NotificationSettingRepository notificationSettingRepository;
@@ -69,8 +74,18 @@ public class MyPageService {
 			.map(TicketStatus::name)
 			.toList();
 
-		return PageResponse.from(ticketRepository.findMyTickets(userId, statuses, pageable)
-			.map(MyTicketResponse::from));
+		return PageResponse.from(myPageTicketRepository.findMyTickets(userId, statuses, pageable)
+			.map(this::toMyTicketResponse));
+	}
+
+	// 티켓 생성 시각 기준 48시간까지의 남은 시간과 만료 여부를 계산해 응답 DTO를 생성합니다.
+	private MyTicketResponse toMyTicketResponse(MyPageTicketProjection projection) {
+		LocalDateTime deadline = projection.getCreatedAt().plusHours(48);
+		LocalDateTime now = LocalDateTime.now();
+		boolean expired = !now.isBefore(deadline);
+		long remainingHours = expired ? 0L : Duration.between(now, deadline).toHours();
+
+		return MyTicketResponse.from(projection, remainingHours, expired);
 	}
 
 	// 사용자 포인트 정보의 gradeId를 기준으로 현재 ESG 등급을 찾고, 포인트 정보가 없으면 첫 등급을 기본값으로 사용합니다.

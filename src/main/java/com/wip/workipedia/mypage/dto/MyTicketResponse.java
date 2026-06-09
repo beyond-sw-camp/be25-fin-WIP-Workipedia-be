@@ -1,6 +1,7 @@
 package com.wip.workipedia.mypage.dto;
 
-import com.wip.workipedia.ticket.repository.MyTicketProjection;
+import com.wip.workipedia.mypage.repository.MyPageTicketProjection;
+
 import java.time.LocalDateTime;
 
 public record MyTicketResponse(
@@ -9,17 +10,25 @@ public record MyTicketResponse(
 	Long assignedDepartmentId,
 	String assignedDepartmentName,
 	String status,
+	Long remainingHours,
+	boolean expired,
 	LocalDateTime createdAt
 ) {
 
-	public static MyTicketResponse from(MyTicketProjection projection) {
+	public static MyTicketResponse from(
+		MyPageTicketProjection projection,
+		long remainingHours,
+		boolean expired
+	) {
 		return new MyTicketResponse(
-			projection.getTicketId(),
-			projection.getTitle(),
-			projection.getAssignedDepartmentId(),
-			projection.getAssignedDepartmentName(),
-			projection.getStatus(),
-			projection.getCreatedAt()
+				projection.getTicketId(),
+				projection.getTitle(),
+				projection.getAssignedDepartmentId(),
+				projection.getAssignedDepartmentName(),
+				projection.getStatus(),
+				remainingHours,
+				expired,
+				projection.getCreatedAt()
 		);
 	}
 }
