@@ -3,6 +3,7 @@ package com.wip.workipedia.mypage.controller;
 import com.wip.workipedia.common.response.PageResponse;
 import com.wip.workipedia.mypage.domain.MyTicketStatus;
 import com.wip.workipedia.mypage.dto.MyPageResponse;
+import com.wip.workipedia.mypage.dto.MyTicketDetailResponse;
 import com.wip.workipedia.mypage.dto.MyTicketResponse;
 import com.wip.workipedia.mypage.service.MyPageService;
 import com.wip.workipedia.notification.dto.NotificationSettingRequest;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -61,5 +63,16 @@ public class MyPageController {
 		PageResponse<MyTicketResponse> myTicketResponses = myPageService.getMyTickets(userId, status, pageable);
 
 		return ResponseEntity.ok(myTicketResponses);
+	}
+
+	// 내 발행 티켓 상세 조회
+	@GetMapping("/tickets/{ticketId}")
+	public ResponseEntity<MyTicketDetailResponse> getMyTicketDetail(
+		@AuthenticationPrincipal Long userId,
+		@PathVariable Long ticketId
+	) {
+		MyTicketDetailResponse myTicketDetailResponse = myPageService.getMyTicketDetail(userId, ticketId);
+
+		return ResponseEntity.ok(myTicketDetailResponse);
 	}
 }

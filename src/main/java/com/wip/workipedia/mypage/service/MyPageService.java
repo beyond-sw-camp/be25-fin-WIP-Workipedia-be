@@ -7,9 +7,11 @@ import com.wip.workipedia.esg.domain.EsgGrade;
 import com.wip.workipedia.esg.repository.EsgGradeRepository;
 import com.wip.workipedia.mypage.domain.MyTicketStatus;
 import com.wip.workipedia.mypage.dto.MyPageResponse;
+import com.wip.workipedia.mypage.dto.MyTicketDetailResponse;
 import com.wip.workipedia.mypage.dto.MyTicketResponse;
 import com.wip.workipedia.mypage.repository.MyPageTicketProjection;
 import com.wip.workipedia.mypage.repository.MyPageTicketRepository;
+import com.wip.workipedia.mypage.repository.MyTicketDetailProjection;
 import com.wip.workipedia.notification.domain.NotificationSetting;
 import com.wip.workipedia.notification.repository.NotificationSettingRepository;
 import com.wip.workipedia.point.domain.UserPoint;
@@ -21,6 +23,7 @@ import com.wip.workipedia.user.repository.UserRepository;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,6 +33,13 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MyPageService {
+
+	private static final int TICKET_EDITABLE_HOURS = 48;
+	private static final Set<String> EDITABLE_TICKET_STATUSES = Set.of(
+		TicketStatus.RECEIVED.name(),
+		TicketStatus.ASSIGNED.name(),
+		TicketStatus.IN_PROGRESS.name()
+	);
 
 	private final UserRepository userRepository;
 	private final TicketRepository ticketRepository;
@@ -78,14 +88,42 @@ public class MyPageService {
 			.map(this::toMyTicketResponse));
 	}
 
+	// 로그인 사용자가 발행한 티켓의 상세 정보를 조회합니다.
+	public MyTicketDetailResponse getMyTicketDetail(Long userId, Long ticketId) {
+		MyTicketDetailProjection projection = myPageTicketRepository.findMyTicketDetail(userId, ticketId)
+			.orElseThrow(() -> new CustomException(ErrorType.TICKET_NOT_FOUND));
+		TicketTimeStatus ticketTimeStatus = calculateTicketTimeStatus(projection.getCreatedAt());
+		boolean editable = isEditable(projection.getStatus(), ticketTimeStatus.expired());
+
+		return MyTicketDetailResponse.from(
+			projection,
+			ticketTimeStatus.remainingHours(),
+			ticketTimeStatus.expired(),
+			editable,
+			editable
+		);
+	}
+
 	// 티켓 생성 시각 기준 48시간까지의 남은 시간과 만료 여부를 계산해 응답 DTO를 생성합니다.
 	private MyTicketResponse toMyTicketResponse(MyPageTicketProjection projection) {
-		LocalDateTime deadline = projection.getCreatedAt().plusHours(48);
+		TicketTimeStatus ticketTimeStatus = calculateTicketTimeStatus(projection.getCreatedAt());
+
+		return MyTicketResponse.from(projection, ticketTimeStatus.remainingHours(), ticketTimeStatus.expired());
+	}
+
+	// 티켓 생성 시각 기준 48시간까지의 남은 시간과 만료 여부를 계산합니다.
+	private TicketTimeStatus calculateTicketTimeStatus(LocalDateTime createdAt) {
+		LocalDateTime deadline = createdAt.plusHours(TICKET_EDITABLE_HOURS);
 		LocalDateTime now = LocalDateTime.now();
 		boolean expired = !now.isBefore(deadline);
 		long remainingHours = expired ? 0L : Duration.between(now, deadline).toHours();
 
-		return MyTicketResponse.from(projection, remainingHours, expired);
+		return new TicketTimeStatus(remainingHours, expired);
+	}
+
+	// 답변 대기 상태이면서 48시간이 지나지 않은 티켓만 수정/삭제 가능하도록 판단합니다.
+	private boolean isEditable(String status, boolean expired) {
+		return !expired && EDITABLE_TICKET_STATUSES.contains(status);
 	}
 
 	// 사용자 포인트 정보의 gradeId를 기준으로 현재 ESG 등급을 찾고, 포인트 정보가 없으면 첫 등급을 기본값으로 사용합니다.
@@ -165,5 +203,8 @@ public class MyPageService {
 		}
 
 		return Math.max(esgGrade.getMaxScore() - esgScore, 0L);
+	}
+
+	private record TicketTimeStatus(long remainingHours, boolean expired) {
 	}
 }
