@@ -497,14 +497,6 @@ Response:
 
 ### GET `/me/tickets`
 
-- 로그인한 사용자가 발행한 티켓 목록을 조회한다.
-- 사용자 식별은 Request Header의 Access Token으로 처리한다.
-- 기본 조회 상태는 `WAITING`이며, 화면의 "답변 대기" 탭에 해당한다.
-- "답변 완료" 탭을 조회할 때는 `status=COMPLETED`를 사용한다.
-- 외부 조회 상태 `WAITING`은 내부 티켓 상태 `RECEIVED`, `COMMON_QUEUE`, `ASSIGNED`, `IN_PROGRESS`를 포함한다.
-- 외부 조회 상태 `COMPLETED`는 내부 티켓 상태 `COMPLETED`를 의미한다.
-- 내부 티켓 상태 `REJECTED`, `DELETED`는 내 발행 티켓 목록에서 조회하지 않는다.
-
 Request Header:
 
 ```http
@@ -519,7 +511,7 @@ Query Parameter:
 | `page` | number | N | `0` | 페이지 번호 |
 | `size` | number | N | `10` | 페이지 크기 |
 
-Request ??:
+API Example:
 
 ```http
 GET /api/v1/me/tickets?status=WAITING&page=0&size=10

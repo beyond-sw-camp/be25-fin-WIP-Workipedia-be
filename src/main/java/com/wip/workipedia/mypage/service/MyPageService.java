@@ -2,18 +2,23 @@ package com.wip.workipedia.mypage.service;
 
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
+import com.wip.workipedia.common.response.PageResponse;
 import com.wip.workipedia.esg.domain.EsgGrade;
 import com.wip.workipedia.esg.repository.EsgGradeRepository;
+import com.wip.workipedia.mypage.domain.MyTicketStatus;
 import com.wip.workipedia.mypage.dto.MyPageResponse;
+import com.wip.workipedia.mypage.dto.MyTicketResponse;
 import com.wip.workipedia.notification.domain.NotificationSetting;
 import com.wip.workipedia.notification.repository.NotificationSettingRepository;
 import com.wip.workipedia.point.domain.UserPoint;
 import com.wip.workipedia.point.repository.UserPointRepository;
+import com.wip.workipedia.ticket.domain.TicketStatus;
 import com.wip.workipedia.ticket.repository.TicketRepository;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.repository.UserRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,6 +56,21 @@ public class MyPageService {
 			toEsgGradeSummary(currentEsgGrade, esgScore),
 			toEsgGradeProgress(esgGrades)
 		);
+	}
+
+	// 로그인 사용자가 발행한 티켓 목록을 화면 탭 상태에 맞게 조회합니다.
+	public PageResponse<MyTicketResponse> getMyTickets(
+		Long userId,
+		MyTicketStatus status,
+		Pageable pageable
+	) {
+		MyTicketStatus myTicketStatus = status == null ? MyTicketStatus.WAITING : status;
+		List<String> statuses = myTicketStatus.getTicketStatuses().stream()
+			.map(TicketStatus::name)
+			.toList();
+
+		return PageResponse.from(ticketRepository.findMyTickets(userId, statuses, pageable)
+			.map(MyTicketResponse::from));
 	}
 
 	// 사용자 포인트 정보의 gradeId를 기준으로 현재 ESG 등급을 찾고, 포인트 정보가 없으면 첫 등급을 기본값으로 사용합니다.

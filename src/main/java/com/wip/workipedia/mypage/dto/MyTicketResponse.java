@@ -1,6 +1,6 @@
 package com.wip.workipedia.mypage.dto;
 
-import com.wip.workipedia.ticket.domain.Ticket;
+import com.wip.workipedia.ticket.repository.MyTicketProjection;
 import java.time.LocalDateTime;
 
 public record MyTicketResponse(
@@ -12,14 +12,14 @@ public record MyTicketResponse(
 	LocalDateTime createdAt
 ) {
 
-	public static MyTicketResponse from(Ticket ticket, String assignedDepartmentName) {
+	public static MyTicketResponse from(MyTicketProjection projection) {
 		return new MyTicketResponse(
-			ticket.getTicketId(),
-			ticket.getTitle(),
-			ticket.getAssignedDepartmentId(),
-			assignedDepartmentName,
-			ticket.getStatus().name(),
-			ticket.getCreatedAt()
+			projection.getTicketId(),
+			projection.getTitle(),
+			projection.getAssignedDepartmentId(),
+			projection.getAssignedDepartmentName(),
+			projection.getStatus(),
+			projection.getCreatedAt()
 		);
 	}
 }
