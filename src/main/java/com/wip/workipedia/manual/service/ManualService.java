@@ -29,7 +29,6 @@ public class ManualService {
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
     private final PdfTextExtractor pdfTextExtractor;
-    private final ManualChunkService manualChunkService;
 
     // 상태값중 published만 조회.
     public PageResponse<ManualSummaryResponse> findPublished(Pageable pageable) {
@@ -82,7 +81,6 @@ public class ManualService {
                 actorUserId
         );
         Manual saved = manualRepository.save(manual);
-        manualChunkService.rebuildChunks(saved);
         return ManualDetailResponse.from(saved);
     }
 
@@ -103,7 +101,6 @@ public class ManualService {
                 actorUserId
         );
         Manual saved = manualRepository.save(manual);
-        manualChunkService.rebuildChunks(saved);
         return ManualDetailResponse.from(saved);
     }
 
@@ -121,9 +118,6 @@ public class ManualService {
                 request.sourceUrl(),
                 request.version()
         );
-        if (request.content() != null) {
-            manualChunkService.rebuildChunks(manual);
-        }
         return ManualDetailResponse.from(manual);
     }
 
@@ -143,7 +137,6 @@ public class ManualService {
                 sourceUrl,
                 version
         );
-        manualChunkService.rebuildChunks(manual);
         return ManualDetailResponse.from(manual);
     }
 
@@ -152,7 +145,6 @@ public class ManualService {
         assertSystemAdmin(actorUserId);
         Manual manual = getManual(manualId);
         manual.delete();
-        manualChunkService.deleteChunks(manualId);
     }
 
     private Manual getManual(Long manualId) {
