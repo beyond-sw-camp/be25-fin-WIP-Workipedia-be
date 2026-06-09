@@ -1,57 +1,55 @@
-# ADR 004 - Ticket Routing Strategy
+# ADR 004 - Department Ticket Routing Strategy
 
 > 문서 유형: ADR
-> 상태: Draft
-> 정본 위치: `docs/003-adr/004-ticket-routing-strategy.md`
-> 관련 문서: `docs/001-reference/service-flow.md`, `docs/001-reference/prd.md`, `docs/004-api/api-contract.md`, `docs/005-database/db-migration-guide.md`
-> 버전: v0.1
-> 최종 수정: 2026-05-31
+> 상태: Accepted
+> 정본 위치: `docs/adr/004-ticket-routing-strategy.md`
+> 관련 문서: `docs/reference/service-flow.md`, `docs/dev/domain-guides/ticket-routing-ai.md`, `docs/api/api-contract.md`
+> 버전: v0.2
+> 최종 수정: 2026-06-09
 
 ## Context
 
-Workipedia는 사용자 입력을 `질문`과 `요청`으로 분리한다.
-
-- 질문: 기존 매뉴얼/워키 지식을 찾는 흐름
-- 요청: 실제 업무 처리가 필요한 티켓 발행 흐름
-
-요청 티켓은 담당 부서로 배정되어 처리되어야 한다. 다만 AI가 담당 부서를 확신하지 못하거나, 팀 관리자가 자기 팀 업무가 아니라고 판단하는 경우를 처리할 공통 흐름이 필요하다.
+요청 티켓은 담당 부서로 연결되어야 하지만 AI가 개인 담당자를 직접 배정하면 조직 운영과 권한 경계를 침범한다. 또한 최초 추천 결과만 누적하면 잘못된 추천이 반복될 수 있다.
 
 ## Decision
 
-요청 티켓은 **자동 라우팅 + 공통 접수 큐 fallback** 구조로 처리한다.
+- AI는 부서까지만 추천하고 개인 담당자는 TEAM_ADMIN이 배정한다.
+- SYSTEM_ADMIN이 작성한 부서 R&R과 TEAM_ADMIN이 승인한 최종 처리 사례를 검색 근거로 사용한다.
+- Vector Search로 부서 후보 Top 3를 찾고 Cross-Encoder로 재정렬한다.
+- 1위 점수와 1·2위 점수 차이가 기준을 통과하면 담당 부서 큐로 배정한다.
+- 기준 미달이면 후보와 점수를 기록하고 `COMMON_QUEUE`로 보낸다.
+- 최종 처리 완료와 TEAM_ADMIN 승인이 확인된 사례만 해당 부서의 라우팅 사례로 반영한다.
+- 모델 온라인 학습이나 부서 벡터 직접 이동은 하지 않는다.
+- 부서 R&R 설정은 시스템 구동의 필수 조건이 아니다. 미설정 부서는 승인 사례와 공통 접수 큐로 처리할 수 있지만 cold start 품질이 낮아진다.
 
-기본 원칙:
+Reranker 반환 계약:
 
-- 사용자가 `요청`을 작성하면 티켓이 생성된다.
-- 시스템은 요청 제목/내용/카테고리/관련 문서를 기반으로 담당 부서를 추천한다.
-- 라우팅 신뢰도가 높으면 담당 부서 큐로 자동 배정한다.
-- 라우팅 신뢰도가 낮으면 `COMMON_QUEUE`로 보낸다.
-- `TEAM_ADMIN`이 자기 팀 업무가 아니라고 판단해 이관할 때도 다른 부서로 바로 보내지 않고 `COMMON_QUEUE`로 보낸다.
-- `SYSTEM_ADMIN`은 공통 접수 큐에서 담당 부서를 수동 지정한다.
+```json
+{
+  "recommendedDepartmentId": 2,
+  "topScore": 5.14,
+  "scoreMargin": 1.27,
+  "candidates": [
+    {
+      "candidateId": "department-2",
+      "departmentId": 2,
+      "score": 5.14,
+      "rank": 1
+    }
+  ]
+}
+```
 
-티켓 상태값은 MVP에서 다음 5개로 시작한다.
-
-| 상태 | 의미 |
-|---|---|
-| `RECEIVED` | 티켓이 생성되었고 라우팅 처리 전인 상태 |
-| `COMMON_QUEUE` | 자동 배정 실패 또는 이관으로 공통 접수 큐에 있는 상태 |
-| `ASSIGNED` | 담당 부서 큐에 배정되어 부서원이 처리할 수 있는 상태 |
-| `COMPLETED` | 요청 처리가 완료된 상태 |
+점수 범위는 모델마다 다르므로 `0~1`로 가정하지 않는다.
 
 ## Consequences
 
-- 질문과 요청의 책임이 분리되어 서비스 흐름이 명확해진다.
-- 담당 부서가 애매한 요청도 공통 접수 큐에서 운영자가 정리할 수 있다.
-- 팀 관리자의 이관이 무한 부서 이동으로 이어지는 것을 막을 수 있다.
-- `SYSTEM_ADMIN`에게 공통 접수 큐 관리 책임이 생긴다.
-- API와 DB는 티켓 상태값, 라우팅 점수, 배정 부서, 최초 공식 답변 등록자, 이관 사유를 표현해야 한다.
+- 한 번의 오배정이 영구 학습되지 않고 최종 승인 사례로 교정된다.
+- 신규 부서는 R&R만으로 시작하고 사례가 쌓이면 검색 근거가 강화된다.
+- BE는 최종 배정과 처리 부서, 후보 점수, 승인 이력을 저장해야 한다.
 
-## Discussion Needed
+## Open Questions
 
-- 라우팅 신뢰도 초기 기준을 몇 점으로 둘지 결정이 필요하다.
-  - 현재 발표/문서 초안 기준: 80 이상 자동 배정, 50 이상 관리자 검토, 50 미만 공통 접수 큐
-  - 구현에서는 운영 초기값으로 두고 조정 가능하게 표현하는 것이 안전하다.
-- `RECEIVED` 상태를 실제 DB에 남길지, 생성 직후 바로 `ASSIGNED` 또는 `COMMON_QUEUE`로 전환할지 결정이 필요하다.
-- 최초 공식 답변 등록자를 처리자로 기록하고, 공식 답변 등록 시 처리 완료로 전환한다.
-- 이관 사유를 필수 입력으로 둘지 결정이 필요하다.
-- 반려/취소 상태를 MVP에 넣을지, 발표 이후 후순위로 둘지 결정이 필요하다.
+- Cross-Encoder 모델과 점수 정규화 방식
+- 1위 최소 점수와 1·2위 최소 점수 차이
+- 승인 사례의 보관 수, 시간 감쇠와 중복 제거

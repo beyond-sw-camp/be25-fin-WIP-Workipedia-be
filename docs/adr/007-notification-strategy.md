@@ -2,8 +2,8 @@
 
 > 문서 유형: ADR
 > 상태: Draft
-> 정본 위치: `docs/003-adr/007-notification-strategy.md`
-> 관련 문서: `docs/001-reference/prd.md`, `docs/001-reference/service-flow.md`, `docs/004-api/api-contract.md`
+> 정본 위치: `docs/adr/007-notification-strategy.md`
+> 관련 문서: `docs/reference/prd.md`, `docs/reference/service-flow.md`, `docs/api/api-contract.md`
 > 버전: v0.1
 > 최종 수정: 2026-05-31
 
@@ -33,7 +33,7 @@ MVP 알림은 **DB 저장 + 조회 API 기반 알림함**으로 시작한다.
 - 팀에 신규 티켓 배정
 - 팀원이 티켓 담당자로 배정됨
 - 티켓이 공통 접수 큐로 이동
-- 지식화 후보 승인/반려
+- 지식화 승인/동기화 실패
 
 ## Consequences
 

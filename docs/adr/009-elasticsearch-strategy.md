@@ -1,43 +1,38 @@
 # ADR 009 - Elasticsearch Strategy
 
 > 문서 유형: ADR
-> 상태: Draft
-> 정본 위치: `docs/003-adr/009-elasticsearch-strategy.md`
-> 관련 문서: `docs/003-adr/002-rag-strategy.md`, `docs/001-reference/trd.md`, `docs/010-development/domain-guides/chatbot-rag.md`
-> 버전: v0.1
-> 최종 수정: 2026-06-01
+> 상태: Accepted
+> 정본 위치: `docs/adr/009-elasticsearch-strategy.md`
+> 관련 문서: `docs/adr/002-rag-strategy.md`, `docs/reference/trd.md`, `docs/dev/domain-guides/chatbot-rag.md`
+> 버전: v0.2
+> 최종 수정: 2026-06-09
 
 ## Context
 
-RAG 파이프라인에서 매뉴얼/워키 chunk를 저장하고 유사도 검색을 수행할 Vector Store가 필요하다.
+Workipedia BE는 워키·매뉴얼 등 서비스 데이터의 전문 검색과 검색 통계를 제공해야 한다. 동시에 AI 서버는 RAG와 티켓 라우팅 후보 검색을 위한 독립 Vector Store가 필요하다.
 
-TRD에서는 pgvector / OpenSearch를 후보로 언급했으며, V1 스키마는 `embedding_json` 컬럼을 RDB에 두는 최소 구현으로 시작했다.
-
-팀 논의 결과, 검색 품질과 확장성을 고려해 Elasticsearch를 Vector Store로 채택하기로 했다.
-
-담당: 민정기
+두 저장소의 책임을 섞으면 인덱스 스키마와 장애 범위가 결합되므로 경계를 분리한다.
 
 ## Decision
 
-Vector Store로 **Elasticsearch**를 사용한다.
+- Elasticsearch는 BE의 전문 검색과 BE 소유 검색 기능에 사용한다.
+- ChromaDB는 AI 서버의 RAG·라우팅 Vector Store로 사용한다.
+- Elasticsearch를 AI RAG의 fallback Vector Store로 사용하지 않는다.
+- RDB의 `embedding_json` 컬럼은 현재 migration 호환을 위해 유지하되 신규 AI 검색의 정본으로 사용하지 않는다.
 
-- docker-compose에 Elasticsearch 컨테이너를 추가한다.
-- 매뉴얼/워키 chunk를 Elasticsearch에 인덱싱한다.
-- 유사도 검색은 Elasticsearch의 kNN(k-nearest neighbor) 검색을 사용한다.
-- Spring 애플리케이션에서는 adapter 패턴으로 격리한다 (`rag/adapter/VectorSearchClient`).
-- RDB의 `embedding_json` 컬럼은 fallback 또는 메타데이터 저장 목적으로 유지한다.
+```text
+BE: MariaDB → Elasticsearch
+AI: BE 동기화 이벤트/API → chunking/embedding → ChromaDB
+```
 
 ## Consequences
 
-- RAG 검색 품질이 RDB 기반보다 향상된다.
-- docker-compose에 Elasticsearch 서비스가 추가되어 로컬 환경 요구사항이 늘어난다.
-- 민정기가 Elasticsearch 인덱스 설계와 adapter 구현을 담당한다.
-- 김진혁의 RAG 흐름(`RagAnswerService`)이 `VectorSearchClient` adapter를 통해 Elasticsearch와 연결된다.
-- Elasticsearch 장애 시 RDB 기반 fallback 경로를 고려할 수 있다.
+- BE 검색과 AI RAG의 인덱스 수명주기와 장애를 독립적으로 관리할 수 있다.
+- 동일 원문이 두 검색 저장소에 필요한 경우 동기화 계약과 삭제 보상 처리가 필요하다.
+- Elasticsearch 장애는 BE 검색 기능에, ChromaDB 장애는 AI RAG·라우팅에 각각 영향을 준다.
 
 ## Open Questions
 
-- Elasticsearch 버전 확정 필요 (8.x 권장).
-- kNN 인덱스 설정(차원수, similarity 함수) 확정 필요 — 사용할 로컬 임베딩 모델 확정 후 결정.
-- RDB `embedding_json` 컬럼을 MVP 이후 제거할지, fallback으로 유지할지 결정 필요.
-- 로컬 임베딩 모델 확정은 ADR 002 Open Questions 참조.
+- 동일 문서의 BE 검색 색인과 AI Vector Store 동기화 순서
+- 삭제·수정 이벤트 재처리와 정합성 점검 주기
+- RDB `embedding_json` 컬럼의 장기 제거 시점

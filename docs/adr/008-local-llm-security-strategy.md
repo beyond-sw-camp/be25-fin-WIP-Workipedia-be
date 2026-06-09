@@ -1,45 +1,70 @@
-# ADR 008 - Local LLM Security Strategy
+# ADR 008 - Deployment Provider and AI Data Security Strategy
 
 > 문서 유형: ADR
-> 상태: Draft
-> 정본 위치: `docs/003-adr/008-local-llm-security-strategy.md`
-> 관련 문서: `docs/001-reference/constitution.md`, `docs/003-adr/002-rag-strategy.md`, `docs/007-quality/harness-engineering.md`
-> 버전: v0.1
-> 최종 수정: 2026-05-31
+> 상태: Accepted
+> 정본 위치: `docs/adr/008-local-llm-security-strategy.md`
+> 관련 문서: `docs/adr/002-rag-strategy.md`, `docs/reference/trd.md`, `docs/adr/013-object-storage-strategy.md`
+> 버전: v0.3
+> 최종 수정: 2026-06-09
 
 ## Context
 
-Workipedia는 사내 문서, 워키 지식, 요청 티켓을 활용해 답변을 생성한다.
-이 데이터에는 회사 내부 규정, 업무 절차, 사용자 질문, 티켓 내용이 포함된다.
-
-외부 LLM API를 사용할 경우 사내 데이터가 외부로 전송될 수 있다는 우려가 있다.
-팀은 로컬 LLM/로컬 임베딩 모델을 활용해 보안성과 시연 완성도를 함께 확보하고자 한다.
+고객사마다 보안 규제, 내부망 구성, 사용 가능한 AI 인프라가 다르다. 어떤 고객사는 외부 API를 허용할 수 있지만 금융·방산 고객사는 로컬 모델과 내부 저장소가 필요할 수 있다.
 
 ## Decision
 
-MVP는 **local LLM/embedding 우선, 외부 API 의존 최소화** 전략으로 진행한다.
+- 고객사별로 Workipedia를 별도 배포한다.
+- 하나의 실행 서버에서 tenant별 provider를 동적으로 바꾸지 않는다.
+- LLM과 Embedding은 공통 인터페이스 뒤에 로컬/클라우드 구현체를 둔다.
+- Object Storage는 `StoragePort` 뒤에 R2/S3/MinIO 구현체를 둔다.
+- provider 종류, 모델명, 내부 주소와 자격 증명은 배포 설정과 Secret으로 관리하며 관리자 화면에 노출하지 않는다.
+- 민감정보는 DB 저장과 모델·Tool 호출 전에 마스킹하고 원문은 보관하지 않는다.
+- IAM/EAM 연동을 전제로 하지 않으며 Workipedia의 인증·권한 정책을 적용한다.
+- 운영 환경에 mock 응답을 두지 않는다.
 
-기본 원칙:
+```text
+LlmProvider
+├─ LocalLlmProvider
+└─ CloudLlmProvider
 
-- 임베딩은 가능한 로컬 모델 또는 로컬 스크립트로 생성한다.
-- 답변 생성은 로컬 LLM 또는 검색 결과 기반 template 응답으로 시작한다.
-- 외부 API 키와 외부 LLM 호출은 기본 흐름에 넣지 않는다.
-- 사용자의 질문과 티켓 내용은 저장 전 개인정보 마스킹을 거친다.
-- 챗봇 답변은 반드시 매뉴얼/워키 출처를 포함한다.
-- 근거가 부족하면 답변을 생성하지 않고 요청 티켓 전환을 안내한다.
+EmbeddingProvider
+├─ LocalEmbeddingProvider
+└─ CloudEmbeddingProvider
+
+StoragePort
+├─ R2StorageAdapter
+├─ S3StorageAdapter
+└─ MinioStorageAdapter
+```
+
+모든 구현체는 동일한 요청/응답 계약, timeout, 오류 타입을 제공해야 한다.
+
+### 고객사별 배포 예시
+
+| 배포 유형 | LLM/Embedding | Object Storage |
+|---|---|---|
+| 클라우드형 | Cloud provider 또는 관리형 모델 | R2 또는 S3 |
+| 온프레미스형 | 고객사 내부 Local provider | 내부망 MinIO |
+
+provider 선택은 고객사별 배포 프로파일에서 고정한다. 하나의 서버에서 tenant별로 런타임 전환하지 않으며, 저장소의 업로드·다운로드·삭제 계약과 보안 세부사항은 ADR 013을 따른다.
+
+## Data Security Rules
+
+- 주민등록번호, 계좌, 연락처 등 민감정보는 탐지 즉시 마스킹한다.
+- 마스킹 해제 기능은 관리자 옵션으로 제공하지 않는다.
+- 로그와 감사 이력에도 마스킹된 값만 남긴다.
+- 허용된 Tool과 파라미터만 AI에 노출한다.
+- DB Query Tool의 SQL 원문과 접속정보는 개발자가 관리하며 LLM이 SQL을 생성하지 않는다.
 
 ## Consequences
 
-- 사내 문서가 외부 모델로 전송되지 않는다는 점을 발표에서 보안 차별점으로 설명할 수 있다.
-- 로컬 모델 품질이 낮아도 출처 기반 RAG와 fallback template으로 시연 안정성을 확보할 수 있다.
-- 모델 성능보다 개인정보 보호, 출처 추적, 실패 전환이 우선된다.
-- 로컬 환경 세팅 문서와 seed 데이터 관리가 중요해진다.
+- 온프레미스와 클라우드 고객사를 같은 도메인 계약으로 지원할 수 있다.
+- 배포별 인프라 설정과 운영 책임을 명확히 관리해야 한다.
+- AI와 파일 저장소를 독립된 provider 계약으로 교체할 수 있다.
+- 원문 미보관으로 재식별 위험을 낮추지만, 마스킹 품질 검증과 오탐 처리 정책이 필요하다.
 
-## Discussion Needed
+## Open Questions
 
-- 실제 사용할 로컬 임베딩 모델 후보를 확정해야 한다.
-- 실제 사용할 로컬 LLM 후보를 확정해야 한다.
-- 로컬 모델 실행 환경을 팀원 전원이 맞출지, 백엔드 담당자 1명이 시연 환경을 유지할지 결정이 필요하다.
-- 개인정보 마스킹 정규식 범위를 확정해야 한다.
-- 외부 API를 완전히 배제할지, fallback으로만 허용할지 결정이 필요하다.
-- 로컬 모델이 느릴 경우 데모에서 mock fallback을 어떤 조건으로 사용할지 결정이 필요하다.
+- 민감정보 탐지 규칙과 테스트 데이터셋
+- 고객사별 provider 장애·timeout 기준
+- 보안 검토를 통과한 DB Query Tool 배포 절차
