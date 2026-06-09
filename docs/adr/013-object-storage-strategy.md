@@ -1,7 +1,7 @@
 # ADR 013 - Object Storage Provider Strategy
 
-> 상태: Accepted  
-> 결정일: 2026-06-09  
+> 상태: Accepted
+> 결정일: 2026-06-09
 > 관련 구현: `StoragePort`, `StorageConfig`, `R2StorageAdapter`, `MinioStorageAdapter`, `S3StorageAdapter`
 
 ## Context
