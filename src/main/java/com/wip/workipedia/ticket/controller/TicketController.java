@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,8 +32,10 @@ public class TicketController {
 
 	// 티켓 생성
 	@PostMapping
-	public ResponseEntity<TicketResponse> create(@Valid @RequestBody CreateTicketRequest request) {
-		return ResponseEntity.status(HttpStatus.CREATED).body(ticketService.create(request));
+	public ResponseEntity<TicketResponse> create(
+			@AuthenticationPrincipal Long userId,
+			@Valid @RequestBody CreateTicketRequest request) {
+		return ResponseEntity.status(HttpStatus.CREATED).body(ticketService.create(userId, request));
 	}
 
 	// 티켓 목록 조회(부서별, 상태별 필터링)

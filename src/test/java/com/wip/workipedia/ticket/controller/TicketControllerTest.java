@@ -40,10 +40,8 @@ class TicketControllerTest {
 				.contentType(MediaType.APPLICATION_JSON)
 					.content("""
 						{
-						  "questionId": null,
 						  "sourceChatbotMessageId": null,
 						  "type": "REQUEST",
-						  "categoryId": null,
 						  "priority": "HIGH",
 						  "title": "VPN 접속 오류 처리 요청",
 						  "content": "VPN 접속 오류 처리를 요청합니다."

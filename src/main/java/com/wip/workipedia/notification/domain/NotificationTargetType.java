@@ -5,5 +5,5 @@ public enum NotificationTargetType {
     WORKI_QUESTION,
     WORKI_ANSWER,
     TICKET,
-    KNOWLEDGE_CANDIDATE
+    KNOWLEDGE_DATA
 }

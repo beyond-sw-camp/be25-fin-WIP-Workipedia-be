@@ -23,26 +23,22 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class TicketService {
-	private static final Long SKELETON_REQUESTER_ID = 1L;
-
 	private final TicketRepository ticketRepository;
 	private final TicketRoutingService ticketRoutingService;
 	private final UserRepository userRepository;
 
-	public TicketResponse create(CreateTicketRequest request) {
+	public TicketResponse create(Long requesterId, CreateTicketRequest request) {
 
 		RoutingResult routingResult = ticketRoutingService.route(request);
 
-		return saveTicket(request, routingResult);
+		return saveTicket(requesterId, request, routingResult);
 	}
 
 	@Transactional
-	public TicketResponse saveTicket(CreateTicketRequest request, RoutingResult routingResult) {
+	public TicketResponse saveTicket(Long requesterId, CreateTicketRequest request, RoutingResult routingResult) {
 		Ticket ticket = Ticket.create(
-				SKELETON_REQUESTER_ID,
-				request.questionId(),
+				requesterId,
 				request.sourceChatbotMessageId(),
-				request.categoryId(),
 				defaultPriority(request.priority()),
 				request.title(),
 				request.content());
