@@ -35,7 +35,7 @@ spring:
             enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:true}
 
 storage:
-  provider: r2
+  provider: ${STORAGE_PROVIDER}
   bucket: ${STORAGE_BUCKET}
   public-url: ${STORAGE_PUBLIC_BASE_URL}
   r2:
