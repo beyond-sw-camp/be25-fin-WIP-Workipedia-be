@@ -127,6 +127,20 @@ public class MyPageService {
 		return getMyTicketDetail(userId, ticketId);
 	}
 
+	// 로그인 사용자가 발행한 티켓을 삭제 처리합니다.
+	@Transactional
+	public void deleteMyTicket(Long userId, Long ticketId) {
+		Ticket ticket = ticketRepository.findByTicketIdAndRequesterIdAndDeletedAtIsNull(ticketId, userId)
+			.orElseThrow(() -> new CustomException(ErrorType.TICKET_NOT_FOUND));
+		TicketTimeStatus ticketTimeStatus = calculateTicketTimeStatus(ticket.getCreatedAt());
+
+		if (!isEditable(ticket.getStatus().name(), ticketTimeStatus.expired())) {
+			throw new CustomException(ErrorType.CONFLICT, "삭제할 수 없는 티켓입니다.");
+		}
+
+		ticket.delete();
+	}
+
 	private MyTicketResponse toMyTicketResponse(MyPageTicketProjection projection) {
 		TicketTimeStatus ticketTimeStatus = calculateTicketTimeStatus(projection.getCreatedAt());
 

@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -87,5 +88,16 @@ public class MyPageController {
 		MyTicketDetailResponse myTicketDetailResponse = myPageService.updateMyTicket(userId, ticketId, request);
 
 		return ResponseEntity.ok(myTicketDetailResponse);
+	}
+
+	// 내 발행 티켓 삭제
+	@DeleteMapping("/tickets/{ticketId}")
+	public ResponseEntity<Void> deleteMyTicket(
+		@AuthenticationPrincipal Long userId,
+		@PathVariable Long ticketId
+	) {
+		myPageService.deleteMyTicket(userId, ticketId);
+
+		return ResponseEntity.noContent().build();
 	}
 }

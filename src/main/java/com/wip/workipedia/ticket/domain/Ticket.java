@@ -115,6 +115,13 @@ public class Ticket {
 		touch();
 	}
 
+	public void delete() {
+		this.status = TicketStatus.DELETED;
+		this.deletedAt = LocalDateTime.now();
+		this.isDeleted = "Y";
+		touch();
+	}
+
 	private void touch() {
 		this.updatedAt = LocalDateTime.now();
 	}
