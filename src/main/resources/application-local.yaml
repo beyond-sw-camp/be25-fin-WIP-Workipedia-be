@@ -36,12 +36,16 @@ spring:
 
 storage:
   provider: r2
-  bucket: ${R2_BUCKET}
-  public-url: ${R2_PUBLIC_BASE_URL}
+  bucket: ${STORAGE_BUCKET}
+  public-url: ${STORAGE_PUBLIC_BASE_URL}
   r2:
     access-key: ${R2_ACCESS_KEY}
     secret-key: ${R2_SECRET_KEY}
     account-id: ${R2_ACCOUNT_ID}
+  minio:
+    access-key: ${MINIO_ACCESS_KEY}
+    secret-key: ${MINIO_SECRET_KEY}
+    endpoint: ${MINIO_ENDPOINT}
 
 app:
   jwt:
