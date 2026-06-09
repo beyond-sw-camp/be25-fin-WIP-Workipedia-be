@@ -6,6 +6,8 @@ import com.wip.workipedia.worki.dto.AnswerCreateRequest;
 import com.wip.workipedia.worki.dto.AnswerResponse;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
+import com.wip.workipedia.user.domain.User;
+import com.wip.workipedia.user.repository.UserRepository;
 import com.wip.workipedia.worki.repository.WorkiAnswerRepository;
 import com.wip.workipedia.worki.repository.WorkiQuestionRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ public class WorkiAnswerService {
 
     private final WorkiAnswerRepository answerRepository;
     private final WorkiQuestionRepository questionRepository;
+    private final UserRepository userRepository;
 
     public AnswerResponse createAnswer(Long actorUserId, Long questionId, AnswerCreateRequest request) {
         WorkiQuestion question = getQuestionOrThrow(questionId);
@@ -28,7 +31,8 @@ public class WorkiAnswerService {
         WorkiAnswer answer = answerRepository.save(
                 WorkiAnswer.create(questionId, actorUserId, request.content()));
         question.markInProgress();
-        return AnswerResponse.from(answer);
+        User author = userRepository.findById(actorUserId).orElse(null);
+        return AnswerResponse.of(answer, author);
     }
 
     public AnswerResponse acceptAnswer(Long actorUserId, Long answerId) {
@@ -46,7 +50,8 @@ public class WorkiAnswerService {
 
         answer.accept();
         question.acceptAnswer(answer.getAnswerId());
-        return AnswerResponse.from(answer);
+        User author = userRepository.findById(answer.getAuthorId()).orElse(null);
+        return AnswerResponse.of(answer, author);
     }
 
     private WorkiQuestion getQuestionOrThrow(Long questionId) {
