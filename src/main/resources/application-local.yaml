@@ -34,12 +34,14 @@ spring:
           starttls:
             enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:true}
 
-r2:
-  access-key: ${R2_ACCESS_KEY}
-  secret-key: ${R2_SECRET_KEY}
-  account-id: ${R2_ACCOUNT_ID}
+storage:
+  provider: r2
   bucket: ${R2_BUCKET}
   public-url: ${R2_PUBLIC_BASE_URL}
+  r2:
+    access-key: ${R2_ACCESS_KEY}
+    secret-key: ${R2_SECRET_KEY}
+    account-id: ${R2_ACCOUNT_ID}
 
 app:
   jwt:
