@@ -1,7 +1,7 @@
 # WBS - 김진혁
 
 > 관련 문서: `docs/planning/wbs.md`
-> 최종 수정: 2026-06-08
+> 최종 수정: 2026-06-09
 
 ## 책임 범위
 
@@ -10,8 +10,8 @@
 | 티켓 | 요청 티켓 생성, 조회, 상태 전이, 라우팅 신뢰도, 자동 배정/공통 접수 큐, TEAM_ADMIN 이관 요청, 공식 답변 |
 | 챗봇 응답 | local RAG, 출처 포함 답변, no-answer 정책, 워키/요청 티켓 전환 |
 | Flash Chat | WebSocket/STOMP, Redis TTL 메시지 저장, 메시지/삭제 이벤트 브로드캐스트, 관리자 정책 |
-| 사진 첨부 | 티켓/요청용 multipart upload API, 첨부 조회 API |
-| 지식화 | 처리 완료 티켓 → 지식화 후보 등록 |
+| 사진 첨부 | StoragePort 기반 R2/S3/MinIO 추상화, presigned upload/download, 첨부 메타데이터 API |
+| 지식화 | 처리 완료 티켓 → TEAM_ADMIN 승인 지식 등록·동기화 |
 | CI/CD | 6/22~ CI/CD 파이프라인 구성, 배포 환경 |
 
 ## 챗봇 역할 분리
@@ -26,7 +26,7 @@
 | 마일스톤 | 기간 | 목표 |
 |---|---|---|
 | M1 | 6/6 ~ 6/14 | 티켓 CRUD 완료 확인, local RAG skeleton, 챗봇 응답 경계 동작 |
-| M2 | 6/15 ~ 6/21 | 챗봇-티켓 전환, 지식화 후보, local embedding 검색 |
+| M2 | 6/15 ~ 6/21 | A→B→C→D 전환, 승인 지식 동기화, ChromaDB 검색 |
 | M3 | 6/22 ~ 6/24 | CI/CD 파이프라인, 배포 환경 구성 |
 | M4 | 6/25 ~ 6/29 | 티켓/챗봇/RAG 버그 수정, README 작성 |
 | M5 | 6/30 ~ 7/2 | README 최종 정리 |
@@ -46,24 +46,26 @@
 - [x] 티켓 생성/조회가 동작한다
 - [x] 티켓 상태 변경이 동작한다
 - [x] 담당자 배정이 동작한다
-- [ ] 티켓 중요도(priority: LOW/MEDIUM/HIGH/CRITICAL)가 저장된다
-- [ ] 부서별 최근 30일 처리 건수 기준 담당자 추천 TOP 3가 반환된다
+- [ ] 티켓 중요도(priority: MEDIUM/HIGH)가 저장된다
+- [ ] 부서 R&R·승인 사례 기반 후보 부서 Top 3와 reranker 점수가 반환된다
 - [ ] TEAM_ADMIN의 티켓 이관 요청이 동작한다
 - [ ] 이관 요청된 티켓이 공통 접수 큐로 이동한다
 - [ ] 라우팅 신뢰도 산출이 동작한다
 - [ ] 신뢰도 높은 요청은 담당 부서에 자동 배정된다
 - [ ] 신뢰도 낮은 요청은 공통 접수 큐로 이동한다
-- [ ] 처리 완료 티켓의 지식화 후보 등록이 동작한다
-- [ ] 사진 첨부 multipart 업로드가 동작한다
+- [ ] 처리 완료 티켓의 TEAM_ADMIN 지식화 승인과 동기화가 동작한다
+- [x] Object Storage provider를 R2/S3/MinIO로 교체할 수 있다
+- [x] presigned upload/download와 서버 직접 업로드가 동일한 `StoragePort` 계약으로 동작한다
+- [ ] 사진 첨부 메타데이터 등록이 동작한다
 - [ ] 첨부 파일 조회 API가 동작한다
 
 ### 챗봇 / RAG
-- [ ] local embedding 기반 검색이 동작한다
-- [ ] local RAG 실패 시 mock fallback이 동작한다
+- [ ] 고객사별 Embedding provider와 ChromaDB 기반 검색이 동작한다
+- [ ] RAG 실패 시 구조화된 상태로 Tool·해결 티켓 RAG·티켓 생성 순서로 전환한다
 - [ ] 챗봇 답변에 출처가 포함된다
 - [ ] 근거 부족 시 워키/요청 티켓 전환 액션이 제공된다
 - [ ] references 저장이 동작한다
-- [ ] QLoRA는 지식 학습이 아니라 행동 패턴 학습 용도로만 사용한다
+- [ ] QLoRA와 LangGraph 없이 RAG와 명시적 오케스트레이션을 사용한다
 - [ ] APPROVED 지식 데이터 기반 파인튜닝 트리거 인터페이스를 정의한다
 
 ### Flash Chat

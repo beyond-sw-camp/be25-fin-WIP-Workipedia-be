@@ -2,10 +2,10 @@
 
 > 문서 유형: DB Migration Guide
 > 상태: Draft
-> 정본 위치: `docs/005-database/db-migration-guide.md`
-> 관련 문서: `docs/001-reference/trd.md`, `docs/004-api/api-contract.md`
+> 정본 위치: `docs/dev/db-migration-guide.md`
+> 관련 문서: `docs/reference/trd.md`, `docs/api/api-contract.md`
 > 버전: v0.4
-> 최종 수정: 2026-05-31
+> 최종 수정: 2026-06-09
 
 ## 1. 목적
 
@@ -138,15 +138,19 @@ is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N'))
 | `COMMON_QUEUE` | 공통 접수 큐 이동 |
 | `NEED_MORE_INFO` | 사용자 추가 정보 필요 |
 
-### knowledge_candidates.status
+### knowledge_data
+
+- V15 기준 처리 완료 티켓에서 TEAM_ADMIN이 승인한 지식 데이터를 저장한다.
+- `ticket_id`는 UNIQUE이며 티켓당 하나의 승인 지식을 가진다.
+- Vector Store 동기화 상태(`PENDING`, `SYNCED`, `FAILED`) 컬럼은 후속 migration에서 추가할 계획이다.
+
+### ai_tools.approval_status
 
 | 값 | 의미 |
 |---|---|
-| `DRAFT` | 초안 |
-| `REVIEW_REQUESTED` | 팀 관리자 검수 요청 |
-| `APPROVED` | 승인 |
-| `REJECTED` | 반려 |
-| `PUBLISHED` | 워키 반영 완료 |
+| `DRAFT` | 작성 중이며 AI에 노출하지 않음 |
+| `APPROVED` | 개발·보안 검증 완료 |
+| `REJECTED` | 사용 불가 |
 
 ### notifications.type
 
@@ -172,8 +176,8 @@ is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N'))
 | `TICKET_TRANSFER_REQUEST` | TEAM_ADMIN의 티켓 이관 요청 |
 | `TICKET_ROUTE_OVERRIDE` | 자동 라우팅 결과 수동 변경 |
 | `COMMON_QUEUE_ASSIGN` | 공통 접수 큐 티켓 부서 배정 |
-| `KNOWLEDGE_REVIEW` | 지식화 후보 검수 |
-| `KNOWLEDGE_PUBLISH` | 지식화 후보 워키 반영 |
+| `KNOWLEDGE_REVIEW` | 지식화 검수·승인 |
+| `KNOWLEDGE_PUBLISH` | 승인 지식 RAG 반영 |
 
 ## 9. 담당자별 주의사항
 
