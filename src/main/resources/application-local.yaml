@@ -46,6 +46,10 @@ storage:
     access-key: ${MINIO_ACCESS_KEY}
     secret-key: ${MINIO_SECRET_KEY}
     endpoint: ${MINIO_ENDPOINT}
+  s3:
+    access-key: ${AWS_ACCESS_KEY}
+    secret-key: ${AWS_SECRET_KEY}
+    region: ${AWS_REGION}
 
 app:
   jwt:

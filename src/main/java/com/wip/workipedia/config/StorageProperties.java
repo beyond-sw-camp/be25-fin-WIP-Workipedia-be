@@ -8,7 +8,8 @@ public record StorageProperties(
     String bucket,
     String publicUrl,
     R2Properties r2,
-    MinioProperties minio
+    MinioProperties minio,
+    S3Properties s3
 ) {
     public record R2Properties(
         String accessKey,
@@ -20,5 +21,11 @@ public record StorageProperties(
         String accessKey,
         String secretKey,
         String endpoint
+    ) {}
+
+    public record S3Properties(
+        String accessKey,
+        String secretKey,
+        String region
     ) {}
 }
