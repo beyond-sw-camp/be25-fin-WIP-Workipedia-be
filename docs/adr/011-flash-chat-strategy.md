@@ -1,11 +1,11 @@
 # ADR 011 - Flash Chat Strategy
 
 > 문서 유형: ADR
-> 상태: Draft
+> 상태: Accepted
 > 정본 위치: `docs/adr/011-flash-chat-strategy.md`
 > 관련 문서: `docs/reference/prd.md`, `docs/reference/trd.md`, `docs/api/api-contract.md`, `docs/planning/member-wbs/min-jungki.md`
-> 버전: v0.1
-> 최종 수정: 2026-06-04
+> 버전: v0.2
+> 최종 수정: 2026-06-08
 
 ## Context
 
@@ -21,15 +21,18 @@ Flash Chat은 **Spring WebSocket + STOMP + Redis TTL**로 구현한다.
 |---|---|
 | 채널 | 전사 단일 공개 채널 |
 | 실시간 통신 | Spring WebSocket + STOMP |
+| 연결 endpoint | `/ws/flash-chat` (SockJS), `/ws/flash-chat-native` |
 | 구독 topic | `/topic/flash-chat` |
 | 메시지 전송 | `/app/flash-chat/send` |
-| 반응 전송 | `/app/flash-chat/react` |
 | 활성 메시지 조회 | `GET /flash-chat/messages` |
 | 저장소 | Redis |
 | 기본 TTL | 600초 |
+| 기본 전송 쿨다운 | 0초(비활성) |
 | 영구 저장 | 하지 않음 |
 
-SYSTEM_ADMIN은 메시지 TTL, 전송 쿨다운, 금지어, 강제 삭제를 관리한다. 강제 삭제와 설정 변경은 `admin_logs`에 기록한다.
+SYSTEM_ADMIN은 `flash_chat_policy` 단일 행으로 메시지 TTL, 전송 쿨다운, 금지어를 관리하고 메시지를 강제 삭제할 수 있다. 강제 삭제와 설정 변경은 `admin_logs`에 기록하며, 강제 삭제 이벤트는 `/topic/flash-chat`으로 브로드캐스트한다.
+
+좋아요 반응(`/app/flash-chat/react`)과 사용자별 알림 설정은 MVP 이후 범위로 둔다.
 
 ## Consequences
 

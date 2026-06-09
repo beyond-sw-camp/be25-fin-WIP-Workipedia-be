@@ -1,7 +1,7 @@
 # WBS - 김진혁
 
 > 관련 문서: `docs/planning/wbs.md`
-> 최종 수정: 2026-06-04
+> 최종 수정: 2026-06-08
 
 ## 책임 범위
 
@@ -9,7 +9,7 @@
 |---|---|
 | 티켓 | 요청 티켓 생성, 조회, 상태 전이, 라우팅 신뢰도, 자동 배정/공통 접수 큐, TEAM_ADMIN 이관 요청, 공식 답변 |
 | 챗봇 응답 | local RAG, 출처 포함 답변, no-answer 정책, 워키/요청 티켓 전환 |
-| Flash Chat | WebSocket/STOMP, Redis TTL 메시지 저장, 메시지/반응 브로드캐스트 |
+| Flash Chat | WebSocket/STOMP, Redis TTL 메시지 저장, 메시지/삭제 이벤트 브로드캐스트, 관리자 정책 |
 | 사진 첨부 | 티켓/요청용 multipart upload API, 첨부 조회 API |
 | 지식화 | 처리 완료 티켓 → 지식화 후보 등록 |
 | CI/CD | 6/22~ CI/CD 파이프라인 구성, 배포 환경 |
@@ -69,10 +69,12 @@
 ### Flash Chat
 - [ ] `/topic/flash-chat` 구독 브로드캐스트가 동작한다
 - [ ] `/app/flash-chat/send` 메시지 전송이 동작한다
-- [ ] `/app/flash-chat/react` 반응 전송이 동작한다
 - [ ] Redis TTL로 메시지가 자동 만료된다
 - [ ] 최초 진입 시 활성 메시지 목록을 조회할 수 있다
-- [ ] 쿨다운/금지어/강제 삭제 정책을 관리자 설정과 연결한다
+- [ ] TTL/쿨다운/금지어 정책 조회 및 변경이 동작한다
+- [ ] 관리자 강제 삭제와 삭제 이벤트 브로드캐스트가 동작한다
+- [ ] 정책 변경과 강제 삭제가 `admin_logs`에 기록된다
+- [ ] `/app/flash-chat/react` 좋아요 반응은 MVP 이후 구현한다
 
 ### CI/CD
 - [ ] CI/CD 파이프라인 구성 완료
