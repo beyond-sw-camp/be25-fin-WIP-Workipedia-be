@@ -29,6 +29,9 @@ public class StorageService {
 	@Value("${r2.bucket}")
 	private String bucket;
 
+	@Value("${r2.public-url}")
+	private String publicBaseUrl;
+
 	public PresignedUploadResponse createPresignedUploadUrl(PresignedUploadRequest request) {
 		String objectKey = "tickets/replies/" + UUID.randomUUID() + "/" + request.fileName();
 
@@ -44,7 +47,8 @@ public class StorageService {
 			.build();
 
 		String uploadUrl = s3Presigner.presignPutObject(presignRequest).url().toString();
-		return new PresignedUploadResponse(uploadUrl, objectKey);
+		String publicUrl = publicBaseUrl.stripTrailing() + "/" + objectKey;
+		return new PresignedUploadResponse(uploadUrl, objectKey, publicUrl);
 	}
 
 	public PresignedDownloadResponse createPresignedDownloadUrl(String objectKey) {

@@ -23,26 +23,22 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class TicketService {
-	private static final Long SKELETON_REQUESTER_ID = 1L;
-
 	private final TicketRepository ticketRepository;
 	private final TicketRoutingService ticketRoutingService;
 	private final UserRepository userRepository;
 
-	public TicketResponse create(CreateTicketRequest request) {
+	public TicketResponse create(Long requesterId, CreateTicketRequest request) {
 
 		RoutingResult routingResult = ticketRoutingService.route(request);
 
-		return saveTicket(request, routingResult);
+		return saveTicket(requesterId, request, routingResult);
 	}
 
 	@Transactional
-	public TicketResponse saveTicket(CreateTicketRequest request, RoutingResult routingResult) {
+	public TicketResponse saveTicket(Long requesterId, CreateTicketRequest request, RoutingResult routingResult) {
 		Ticket ticket = Ticket.create(
-				SKELETON_REQUESTER_ID,
-				request.questionId(),
+				requesterId,
 				request.sourceChatbotMessageId(),
-				request.categoryId(),
 				defaultPriority(request.priority()),
 				request.title(),
 				request.content());
@@ -55,7 +51,10 @@ public class TicketService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<TicketResponse> findAll(TicketStatus status, Long departmentId, Pageable pageable) {
+	public PageResponse<TicketResponse> findMyTeamTickets(Long requesterId, TicketStatus status, Pageable pageable) {
+		User requester = userRepository.findById(requesterId)
+				.orElseThrow(() -> new CustomException(ErrorType.NOT_FOUND, "사용자를 찾을 수 없습니다. id=" + requesterId));
+		Long departmentId = requester.getDepartment().getDepartmentId();
 		Page<Ticket> tickets = findTickets(status, departmentId, pageable);
 
 		return PageResponse.from(

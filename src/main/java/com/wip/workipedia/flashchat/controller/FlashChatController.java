@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -36,13 +37,16 @@ public class FlashChatController {
 
     @PatchMapping("/admin/flash-chat/policy")
     public ResponseEntity<FlashChatPolicyResponse> updatePolicy(
+            @AuthenticationPrincipal Long adminUserId,
             @Valid @RequestBody FlashChatPolicyRequest request) {
-        return ResponseEntity.ok(flashChatService.updatePolicy(request));
+        return ResponseEntity.ok(flashChatService.updatePolicy(adminUserId, request));
     }
 
     @DeleteMapping("/admin/flash-chat/messages/{messageId}")
-    public ResponseEntity<Void> deleteMessage(@PathVariable String messageId) {
-        flashChatService.deleteMessage(messageId);
+    public ResponseEntity<Void> deleteMessage(
+            @AuthenticationPrincipal Long adminUserId,
+            @PathVariable String messageId) {
+        flashChatService.deleteMessage(adminUserId, messageId);
         return ResponseEntity.noContent().build();
     }
 }
