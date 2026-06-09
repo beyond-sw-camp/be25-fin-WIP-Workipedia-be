@@ -11,7 +11,7 @@ public record ManualCreateRequest(
         @Size(max = 255)
         String title,
         @NotBlank
-        String contenString,
+        String content,
         @NotNull
         ManualStatus status,
         @Size(max = 500)
