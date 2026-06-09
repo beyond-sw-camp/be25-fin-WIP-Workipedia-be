@@ -21,7 +21,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -76,7 +75,7 @@ class FlashChatControllerTest {
                         .with(authentication(auth(1L))))
                 .andExpect(status().isNoContent());
 
-        verify(flashChatService).deleteMessage(isNull(), eq("uuid-1"));
+        verify(flashChatService).deleteMessage(eq(1L), eq("uuid-1"));
     }
 
     @Test

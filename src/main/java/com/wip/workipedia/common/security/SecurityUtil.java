@@ -20,7 +20,11 @@ public final class SecurityUtil {
 			return userId;
 		}
 		if (principal instanceof String userId) {
-			return Long.parseLong(userId);
+			try {
+				return Long.parseLong(userId);
+			} catch (NumberFormatException exception) {
+				throw new CustomException(ErrorType.UNAUTHORIZED);
+			}
 		}
 
 		throw new CustomException(ErrorType.UNAUTHORIZED);
