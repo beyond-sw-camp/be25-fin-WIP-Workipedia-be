@@ -221,19 +221,19 @@ Response:
 
 담당: 김진혁
 
+| Method | Path                                         | 설명                            | 인증       |
+| ------ | -------------------------------------------- | ------------------------------- | ---------- |
+| POST   | `/tickets`                                   | 티켓 생성                       | 필요       |
+| GET    | `/tickets`                                   | 티켓 목록, 상태/부서 필터 조회  | 필요       |
+| GET    | `/tickets/{ticketId}`                        | 티켓 상세                       | 필요       |
+| PATCH  | `/tickets/{ticketId}/status`                 | 티켓 상태 변경                  | 필요       |
+| PATCH  | `/tickets/{ticketId}/assignee`               | 팀원 담당자 배정                | TEAM_ADMIN |
+| POST   | `/tickets/{ticketId}/transfer-requests`      | TEAM_ADMIN 티켓 이관 요청       | TEAM_ADMIN |
+| PATCH  | `/tickets/{ticketId}/refuse`                 | 티켓 반려                       | TEAM_ADMIN |
+| POST   | `/tickets/{ticketId}/answers`                | 담당 부서 공식 답변             | 필요       |
+| POST   | `/admin/team/tickets/{ticketId}/knowledge-data` | 처리 완료 티켓 지식화 승인 및 지식화 데이터 등록 | TEAM_ADMIN |
+| PATCH  | `/admin/team/knowledge-data/{knowledgeDataId}`  | 지식화 데이터 질문/답변 수정                  | TEAM_ADMIN |
 
-| Method | Path                                         | 설명                  | 인증         |
-| ------ | -------------------------------------------- | ------------------- | ---------- |
-| POST   | `/tickets`                                   | 티켓 생성               | 필요         |
-| GET    | `/tickets`                                   | 티켓 목록, 상태/부서 필터 조회  | 필요         |
-| GET    | `/tickets/{ticketId}`                        | 티켓 상세               | 필요         |
-| PATCH  | `/tickets/{ticketId}/status`                 | 티켓 상태 변경            | 필요         |
-| PATCH  | `/tickets/{ticketId}/assignee`               | 팀원 담당자 배정           | TEAM_ADMIN |
-| POST   | `/tickets/{ticketId}/transfer-requests`      | TEAM_ADMIN 티켓 이관 요청 | TEAM_ADMIN |
-| PATCH  | `/tickets/{ticketId}/refuse`                 | 티켓 반려               | TEAM_ADMIN |
-| POST   | `/tickets/{ticketId}/answers`                | 담당 부서 공식 답변         | 필요         |
-| POST   | `/tickets/{ticketId}/knowledge-candidates`   | 처리 완료 티켓 지식화 후보 등록  | 필요         |
-| PATCH  | `/knowledge-candidates/{candidateId}/review` | 지식화 후보 승인/반려        | TEAM_ADMIN |
 
 
 
@@ -299,9 +299,7 @@ Response:
       "routingDecision": "COMMON_QUEUE",
       "routingReasons": [],
       "candidateDepartments": [],
-      "questionId": null,
       "sourceChatbotMessageId": null,
-      "categoryId": null,
       "title": "테스트 티켓 제목",
       "content": "테스트 티켓 내용",
       "assigneeId": null,
@@ -398,14 +396,14 @@ Response:
 }
 ```
 
-### POST `/tickets/{ticketId}/knowledge-candidates`
+### POST `/admin/team/tickets/{ticketId}/knowledge-data`
 
 Request:
 
 ```json
 {
-  "draftTitle": "VPN 접속 오류 처리 절차",
-  "draftContent": "VPN 접속 오류가 발생하면 계정 상태와 보안 프로그램 실행 여부를 먼저 확인한 뒤 IT지원팀에 요청합니다."
+  "title": "VPN 접속 오류 처리 절차",
+  "content": "VPN 접속 오류 발생 시 계정 상태와 보안 프로그램 실행 여부를 먼저 확인한 뒤 IT지원팀에 요청합니다."
 }
 ```
 
@@ -413,20 +411,22 @@ Response:
 
 ```json
 {
-  "candidateId": 1,
+  "knowledgeDataId": 1,
   "ticketId": 1,
-  "status": "REVIEW_REQUESTED"
+  "title": "VPN 접속 오류 처리 절차",
+  "departmentId": 3,
+  "approvedBy": 1
 }
 ```
 
-### PATCH `/knowledge-candidates/{candidateId}/review`
+### PATCH `/admin/team/knowledge-data/{knowledgeDataId}`
 
 Request:
 
 ```json
 {
-  "decision": "APPROVE",
-  "reviewComment": "개인 정보 제거 확인. 워키 반영 승인합니다."
+  "title": "VPN 접속 오류 처리 절차",
+  "content": "VPN 접속 오류 조치 절차를 수정합니다."
 }
 ```
 
@@ -434,9 +434,9 @@ Response:
 
 ```json
 {
-  "candidateId": 1,
-  "status": "PUBLISHED",
-  "publishedWorkiQuestionId": 30
+  "knowledgeDataId": 1,
+  "title": "VPN 접속 오류 처리 절차",
+  "updatedAt": "2026-06-09T10:30:00"
 }
 ```
 
@@ -617,10 +617,10 @@ Response:
 | ------ | -------------------------------------------------------- | ------------------------- | ---------- |
 | GET    | `/admin/team/dashboard/knowledge-trend`                  | 월별 지식화 승인 건수 추이 조회        | TEAM_ADMIN |
 | GET    | `/admin/team/dashboard/chatbot-ticket-trend`             | 월별 AI 챗봇 배정 티켓 건수 추이 조회   | TEAM_ADMIN |
-| GET    | `/admin/team/knowledge-candidates`                       | 처리 완료 티켓 기반 지식화 후보 목록 조회  | TEAM_ADMIN |
-| PATCH  | `/admin/team/knowledge-candidates/{candidateId}`         | 지식화 후보 질문/답변 수정           | TEAM_ADMIN |
-| POST   | `/admin/team/knowledge-candidates/{candidateId}/approve` | 지식화 후보 승인 및 워키 게시판 등록     | TEAM_ADMIN |
-| DELETE | `/admin/team/knowledge-candidates/{candidateId}`         | 지식화 후보 반려 및 삭제            | TEAM_ADMIN |
+| GET    | `/admin/team/tickets?status=COMPLETED`                   | 처리 완료 티켓 기반 지식화 후보 목록 조회 | TEAM_ADMIN |
+| GET    | `/admin/team/knowledge-data`                             | 승인된 지식화 데이터 목록 조회       | TEAM_ADMIN |
+| PATCH  | `/admin/team/knowledge-data/{knowledgeDataId}`           | 지식화 데이터 질문/답변 수정         | TEAM_ADMIN |
+| DELETE | `/admin/team/knowledge-data/{knowledgeDataId}`           | 지식화 데이터 삭제                 | TEAM_ADMIN |
 | GET    | `/admin/team/tickets/summary`                            | 우리 부서 티켓 요약 정보 조회         | TEAM_ADMIN |
 | GET    | `/admin/team/tickets`                                    | 우리 부서 배정 티켓 목록 조회         | TEAM_ADMIN |
 | GET    | `/admin/team/tickets/{ticketId}`                         | 우리 부서 티켓 상세 조회            | TEAM_ADMIN |
@@ -712,4 +712,3 @@ Request:
 | 챗봇 세션 구조                         | 세션 기반 확정, 이슬이와 최종 합의 필요 | 이슬이, 김진혁  |
 | Flash Chat 최대 활성 메시지 수           | 미정                      | 김진혁, 김가영  |
 | 이미지 저장소                          | 로컬 파일시스템 또는 S3          | 김진혁, 팀 전체 |
-

@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import com.wip.workipedia.common.exception.CustomException;
+import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.worki.domain.QuestionStatus;
 import com.wip.workipedia.worki.domain.WorkiAnswer;
 import com.wip.workipedia.worki.domain.WorkiQuestion;
@@ -12,8 +14,6 @@ import com.wip.workipedia.worki.dto.QuestionCreateRequest;
 import com.wip.workipedia.worki.dto.QuestionDetailResponse;
 import com.wip.workipedia.worki.dto.QuestionResponse;
 import com.wip.workipedia.worki.dto.QuestionUpdateRequest;
-import com.wip.workipedia.common.exception.CustomException;
-import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.worki.repository.WorkiAnswerRepository;
 import com.wip.workipedia.worki.repository.WorkiQuestionRepository;
 import java.util.List;
@@ -37,86 +37,97 @@ class WorkiQuestionServiceTest {
     @InjectMocks
     private WorkiQuestionService questionService;
 
-    private static final Long AUTHOR_ID = 1L;
-    private static final Long OTHER_ID = 2L;
-
     @Test
-    @DisplayName("질문 등록 시 상태는 WAITING이다")
+    @DisplayName("create question sets WAITING status")
     void create_setsWaitingStatus() {
+        Long authorId = 1001L;
         when(questionRepository.save(any(WorkiQuestion.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         QuestionResponse response = questionService.create(
-                AUTHOR_ID, new QuestionCreateRequest("제목", "내용", null));
+                authorId, new QuestionCreateRequest("title", "content", null));
 
         assertThat(response.status()).isEqualTo(QuestionStatus.WAITING);
-        assertThat(response.authorId()).isEqualTo(AUTHOR_ID);
+        assertThat(response.authorId()).isEqualTo(authorId);
     }
 
     @Test
-    @DisplayName("WAITING 상태에서 작성자 본인은 질문을 수정할 수 있다")
+    @DisplayName("author can update WAITING question")
     void update_byAuthorInWaiting_succeeds() {
-        WorkiQuestion question = WorkiQuestion.create(AUTHOR_ID, "원래제목", "원래내용", null);
-        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(10L))
+        Long authorId = 1001L;
+        Long questionId = 1010L;
+        WorkiQuestion question = WorkiQuestion.create(authorId, "old title", "old content", null);
+        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(questionId))
                 .thenReturn(Optional.of(question));
 
-        questionService.update(AUTHOR_ID, 10L, new QuestionUpdateRequest("새제목", "새내용"));
+        questionService.update(authorId, questionId, new QuestionUpdateRequest("new title", "new content"));
 
-        assertThat(question.getTitle()).isEqualTo("새제목");
-        assertThat(question.getContent()).isEqualTo("새내용");
+        assertThat(question.getTitle()).isEqualTo("new title");
+        assertThat(question.getContent()).isEqualTo("new content");
     }
 
     @Test
-    @DisplayName("작성자가 아니면 질문 수정은 거부된다")
+    @DisplayName("non-author cannot update question")
     void update_byNonAuthor_throwsAccessDenied() {
-        WorkiQuestion question = WorkiQuestion.create(AUTHOR_ID, "제목", "내용", null);
-        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(10L))
+        Long authorId = 1001L;
+        Long otherUserId = 1002L;
+        Long questionId = 1010L;
+        WorkiQuestion question = WorkiQuestion.create(authorId, "title", "content", null);
+        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(questionId))
                 .thenReturn(Optional.of(question));
 
         assertThatThrownBy(() ->
-                questionService.update(OTHER_ID, 10L, new QuestionUpdateRequest("새제목", "새내용")))
+                questionService.update(otherUserId, questionId, new QuestionUpdateRequest("new title", "new content")))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorType").isEqualTo(ErrorType.WORKI_FORBIDDEN);
     }
 
     @Test
-    @DisplayName("WAITING 상태가 아니면 질문 수정은 거부된다")
+    @DisplayName("non-WAITING question cannot be updated")
     void update_whenNotWaiting_throwsPolicyViolation() {
-        WorkiQuestion question = WorkiQuestion.create(AUTHOR_ID, "제목", "내용", null);
+        Long authorId = 1001L;
+        Long questionId = 1010L;
+        WorkiQuestion question = WorkiQuestion.create(authorId, "title", "content", null);
         question.markInProgress();
-        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(10L))
+        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(questionId))
                 .thenReturn(Optional.of(question));
 
         assertThatThrownBy(() ->
-                questionService.update(AUTHOR_ID, 10L, new QuestionUpdateRequest("새제목", "새내용")))
+                questionService.update(authorId, questionId, new QuestionUpdateRequest("new title", "new content")))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorType").isEqualTo(ErrorType.WORKI_POLICY_VIOLATION);
     }
 
     @Test
-    @DisplayName("존재하지 않는 질문 수정은 404다")
+    @DisplayName("missing question update returns not found")
     void update_whenQuestionMissing_throwsNotFound() {
-        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(99L))
+        Long authorId = 1001L;
+        Long missingQuestionId = 1099L;
+        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(missingQuestionId))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() ->
-                questionService.update(AUTHOR_ID, 99L, new QuestionUpdateRequest("새제목", "새내용")))
+                questionService.update(authorId, missingQuestionId, new QuestionUpdateRequest("new title", "new content")))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorType").isEqualTo(ErrorType.WORKI_NOT_FOUND);
     }
 
     @Test
-    @DisplayName("질문 상세 조회 시 조회수가 증가하고 답변이 함께 반환된다")
+    @DisplayName("detail increments view count and returns answers")
     void getDetail_incrementsViewCountAndReturnsAnswers() {
-        WorkiQuestion question = WorkiQuestion.create(AUTHOR_ID, "제목", "내용", null);
-        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(10L))
+        Long authorId = 1001L;
+        Long answererId = 1002L;
+        Long questionId = 1010L;
+        WorkiQuestion question = WorkiQuestion.create(authorId, "title", "content", null);
+        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(questionId))
                 .thenReturn(Optional.of(question));
-        when(answerRepository.findByQuestionIdAndDeletedAtIsNullOrderByCreatedAtAsc(10L))
-                .thenReturn(List.of(WorkiAnswer.create(10L, OTHER_ID, "답변")));
+        when(answerRepository.findByQuestionIdAndDeletedAtIsNullOrderByCreatedAtAsc(questionId))
+                .thenReturn(List.of(WorkiAnswer.create(questionId, answererId, "answer")));
 
-        QuestionDetailResponse response = questionService.getDetail(10L);
+        QuestionDetailResponse response = questionService.getDetail(questionId);
 
-        assertThat(question.getViewCount()).isEqualTo(1L);
+        long expectedViewCount = 1L;
+        assertThat(question.getViewCount()).isEqualTo(expectedViewCount);
         assertThat(response.answers()).hasSize(1);
     }
 }

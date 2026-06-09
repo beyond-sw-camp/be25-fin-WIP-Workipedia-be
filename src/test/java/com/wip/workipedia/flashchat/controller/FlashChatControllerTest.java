@@ -15,12 +15,16 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -67,18 +71,20 @@ class FlashChatControllerTest {
 
     @Test
     void deleteMessage_강제삭제_성공() throws Exception {
-        mockMvc.perform(delete("/api/v1/admin/flash-chat/messages/uuid-1"))
+        mockMvc.perform(delete("/api/v1/admin/flash-chat/messages/uuid-1")
+                        .with(authentication(auth(1L))))
                 .andExpect(status().isNoContent());
 
-        verify(flashChatService).deleteMessage("uuid-1");
+        verify(flashChatService).deleteMessage(eq(1L), eq("uuid-1"));
     }
 
     @Test
     void updatePolicy_정책_변경() throws Exception {
-        given(flashChatService.updatePolicy(any()))
+        given(flashChatService.updatePolicy(nullable(Long.class), any()))
                 .willReturn(new FlashChatPolicyResponse(300, 5, List.of("욕설")));
 
         mockMvc.perform(patch("/api/v1/admin/flash-chat/policy")
+                        .with(authentication(auth(1L)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -89,5 +95,9 @@ class FlashChatControllerTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.messageTtlSeconds").value(300));
+    }
+
+    private UsernamePasswordAuthenticationToken auth(Long userId) {
+        return new UsernamePasswordAuthenticationToken(userId, null, List.of());
     }
 }

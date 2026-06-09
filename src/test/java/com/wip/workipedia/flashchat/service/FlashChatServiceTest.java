@@ -6,6 +6,8 @@ import com.wip.workipedia.flashchat.dto.FlashChatMessageBroadcast;
 import com.wip.workipedia.flashchat.dto.SendMessageRequest;
 import com.wip.workipedia.flashchat.repository.AdminLogRepository;
 import com.wip.workipedia.flashchat.repository.FlashChatPolicyRepository;
+import com.wip.workipedia.user.domain.User;
+import com.wip.workipedia.user.repository.UserRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +35,8 @@ class FlashChatServiceTest {
     @Mock SimpMessagingTemplate messagingTemplate;
     @Mock FlashChatPolicyRepository policyRepository;
     @Mock AdminLogRepository adminLogRepository;
+    @Mock UserRepository userRepository;
+    @Mock User user;
     @Mock HashOperations<String, Object, Object> hashOps;
     @Mock ZSetOperations<String, String> zSetOps;
     @Mock ValueOperations<String, String> valueOps;
@@ -49,6 +53,8 @@ class FlashChatServiceTest {
         lenient().when(stringRedisTemplate.opsForHash()).thenReturn(hashOps);
         lenient().when(stringRedisTemplate.opsForZSet()).thenReturn(zSetOps);
         lenient().when(stringRedisTemplate.opsForValue()).thenReturn(valueOps);
+        lenient().when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        lenient().when(user.getNickname()).thenReturn("노잇0001");
     }
 
     @Test
@@ -56,7 +62,7 @@ class FlashChatServiceTest {
         given(stringRedisTemplate.hasKey(anyString())).willReturn(false);
 
         SendMessageRequest request = new SendMessageRequest("연차 반차 차이가 뭐예요?", null);
-        FlashChatMessageBroadcast result = flashChatService.sendMessage(request);
+        FlashChatMessageBroadcast result = flashChatService.sendMessage(1L, request);
 
         assertThat(result.type()).isEqualTo("MESSAGE");
         assertThat(result.content()).isEqualTo("연차 반차 차이가 뭐예요?");
@@ -72,7 +78,7 @@ class FlashChatServiceTest {
 
         SendMessageRequest request = new SendMessageRequest("질문입니다", null);
 
-        assertThatThrownBy(() -> flashChatService.sendMessage(request))
+        assertThatThrownBy(() -> flashChatService.sendMessage(1L, request))
                 .isInstanceOf(com.wip.workipedia.common.exception.CustomException.class);
     }
 
@@ -86,7 +92,7 @@ class FlashChatServiceTest {
 
         SendMessageRequest request = new SendMessageRequest("여기 욕설 있음", null);
 
-        assertThatThrownBy(() -> flashChatService.sendMessage(request))
+        assertThatThrownBy(() -> flashChatService.sendMessage(1L, request))
                 .isInstanceOf(com.wip.workipedia.common.exception.CustomException.class);
     }
 
@@ -95,7 +101,7 @@ class FlashChatServiceTest {
         String messageId = "test-uuid-1234";
         given(stringRedisTemplate.hasKey("flash-chat:msg:" + messageId)).willReturn(true);
 
-        flashChatService.deleteMessage(messageId);
+        flashChatService.deleteMessage(1L, messageId);
 
         verify(stringRedisTemplate).delete("flash-chat:msg:" + messageId);
         verify(zSetOps).remove("flash-chat:messages", messageId);
@@ -107,7 +113,7 @@ class FlashChatServiceTest {
     void deleteMessage_없는_메시지_예외() {
         given(stringRedisTemplate.hasKey(anyString())).willReturn(false);
 
-        assertThatThrownBy(() -> flashChatService.deleteMessage("nonexistent"))
+        assertThatThrownBy(() -> flashChatService.deleteMessage(1L, "nonexistent"))
                 .isInstanceOf(com.wip.workipedia.common.exception.CustomException.class);
     }
 

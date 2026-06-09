@@ -12,10 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class EsgService {
 
-	private static final Long SKELETON_USER_ID = 1L;
-
-	public EsgResponse getMyEsg() {
-		return new EsgResponse(SKELETON_USER_ID, 0, null, null, null, null);
+	public EsgResponse getMyEsg(Long userId) {
+		return new EsgResponse(userId, 0, null, null, null, null);
 	}
 
 	public EsgLeaderboardPageResponse getLeaderBoardEsg() {
