@@ -43,6 +43,12 @@ public class Manual extends BaseTimeEntity {
     @Column(name = "source_url", length = 500)
     private String sourceUrl;
 
+    @Column(name = "file_key", length = 500)
+    private String fileKey;
+
+    @Column(name = "file_url", length = 500)
+    private String fileUrl;
+
     @Column(name = "version", length = 50)
     private String version;
 
@@ -87,6 +93,12 @@ public class Manual extends BaseTimeEntity {
             this.version = version;
         }
         touchModifiedSource(ModifiedSource.ADMIN);
+    }
+
+    // R2에 업로드된 원본 PDF를 매뉴얼에 연결한다.
+    public void attachFile(String fileKey, String fileUrl) {
+        this.fileKey = fileKey;
+        this.fileUrl = fileUrl;
     }
 
     public void delete() {
