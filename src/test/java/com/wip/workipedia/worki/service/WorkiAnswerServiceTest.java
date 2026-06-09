@@ -8,13 +8,13 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.wip.workipedia.common.exception.CustomException;
+import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.worki.domain.QuestionStatus;
 import com.wip.workipedia.worki.domain.WorkiAnswer;
 import com.wip.workipedia.worki.domain.WorkiQuestion;
 import com.wip.workipedia.worki.dto.AnswerCreateRequest;
 import com.wip.workipedia.worki.dto.AnswerResponse;
-import com.wip.workipedia.common.exception.CustomException;
-import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.worki.repository.WorkiAnswerRepository;
 import com.wip.workipedia.worki.repository.WorkiQuestionRepository;
 import java.util.Optional;
@@ -37,62 +37,70 @@ class WorkiAnswerServiceTest {
     @InjectMocks
     private WorkiAnswerService answerService;
 
-    private static final Long AUTHOR_ID = 1L;
-    private static final Long ANSWERER_ID = 2L;
-    private static final Long QUESTION_ID = 10L;
-
     @Test
-    @DisplayName("WAITING 질문에 답변을 등록하면 질문 상태가 IN_PROGRESS로 전이된다")
+    @DisplayName("answering WAITING question marks it IN_PROGRESS")
     void createAnswer_onWaitingQuestion_marksInProgress() {
-        WorkiQuestion question = WorkiQuestion.create(AUTHOR_ID, "제목", "내용", null);
-        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(QUESTION_ID))
+        Long authorId = 1001L;
+        Long answererId = 1002L;
+        Long questionId = 1010L;
+        WorkiQuestion question = WorkiQuestion.create(authorId, "title", "content", null);
+        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(questionId))
                 .thenReturn(Optional.of(question));
         when(answerRepository.save(any(WorkiAnswer.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        answerService.createAnswer(ANSWERER_ID, QUESTION_ID, new AnswerCreateRequest("답변 내용"));
+        answerService.createAnswer(answererId, questionId, new AnswerCreateRequest("answer content"));
 
         assertThat(question.getStatus()).isEqualTo(QuestionStatus.IN_PROGRESS);
     }
 
     @Test
-    @DisplayName("채택된 답변이 있는 질문에는 추가 답변을 등록할 수 없다")
+    @DisplayName("answered question cannot receive another answer")
     void createAnswer_onAnsweredQuestion_throwsPolicyViolation() {
-        WorkiQuestion question = WorkiQuestion.create(AUTHOR_ID, "제목", "내용", null);
+        Long authorId = 1001L;
+        Long answererId = 1002L;
+        Long questionId = 1010L;
+        WorkiQuestion question = WorkiQuestion.create(authorId, "title", "content", null);
         question.markAnswered();
-        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(QUESTION_ID))
+        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(questionId))
                 .thenReturn(Optional.of(question));
 
         assertThatThrownBy(() ->
-                answerService.createAnswer(ANSWERER_ID, QUESTION_ID, new AnswerCreateRequest("답변")))
+                answerService.createAnswer(answererId, questionId, new AnswerCreateRequest("answer")))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorType").isEqualTo(ErrorType.WORKI_POLICY_VIOLATION);
         verify(answerRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("존재하지 않는 질문에 답변 등록은 404다")
+    @DisplayName("missing question answer returns not found")
     void createAnswer_whenQuestionMissing_throwsNotFound() {
-        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(QUESTION_ID))
+        Long answererId = 1002L;
+        Long missingQuestionId = 1099L;
+        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(missingQuestionId))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() ->
-                answerService.createAnswer(ANSWERER_ID, QUESTION_ID, new AnswerCreateRequest("답변")))
+                answerService.createAnswer(answererId, missingQuestionId, new AnswerCreateRequest("answer")))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorType").isEqualTo(ErrorType.WORKI_NOT_FOUND);
     }
 
     @Test
-    @DisplayName("질문 작성자가 답변을 채택하면 답변이 채택되고 질문은 ANSWERED가 된다")
+    @DisplayName("question author can accept answer")
     void acceptAnswer_byQuestionAuthor_succeeds() {
-        WorkiAnswer answer = WorkiAnswer.create(QUESTION_ID, ANSWERER_ID, "답변");
-        WorkiQuestion question = WorkiQuestion.create(AUTHOR_ID, "제목", "내용", null);
-        when(answerRepository.findByAnswerIdAndDeletedAtIsNull(5L))
+        Long authorId = 1001L;
+        Long answererId = 1002L;
+        Long questionId = 1010L;
+        Long answerId = 1050L;
+        WorkiAnswer answer = WorkiAnswer.create(questionId, answererId, "answer");
+        WorkiQuestion question = WorkiQuestion.create(authorId, "title", "content", null);
+        when(answerRepository.findByAnswerIdAndDeletedAtIsNull(answerId))
                 .thenReturn(Optional.of(answer));
-        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(QUESTION_ID))
+        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(questionId))
                 .thenReturn(Optional.of(question));
 
-        AnswerResponse response = answerService.acceptAnswer(AUTHOR_ID, 5L);
+        AnswerResponse response = answerService.acceptAnswer(authorId, answerId);
 
         assertThat(response.accepted()).isTrue();
         assertThat(answer.isAccepted()).isTrue();
@@ -101,43 +109,54 @@ class WorkiAnswerServiceTest {
     }
 
     @Test
-    @DisplayName("질문 작성자가 아니면 답변 채택은 거부된다")
+    @DisplayName("non-author cannot accept answer")
     void acceptAnswer_byNonAuthor_throwsAccessDenied() {
-        WorkiAnswer answer = WorkiAnswer.create(QUESTION_ID, ANSWERER_ID, "답변");
-        WorkiQuestion question = WorkiQuestion.create(AUTHOR_ID, "제목", "내용", null);
+        Long authorId = 1001L;
+        Long otherUserId = 1002L;
+        Long answererId = 1003L;
+        Long questionId = 1010L;
+        Long answerId = 1050L;
+        WorkiAnswer answer = WorkiAnswer.create(questionId, answererId, "answer");
+        WorkiQuestion question = WorkiQuestion.create(authorId, "title", "content", null);
         when(answerRepository.findByAnswerIdAndDeletedAtIsNull(anyLong()))
                 .thenReturn(Optional.of(answer));
-        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(QUESTION_ID))
+        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(questionId))
                 .thenReturn(Optional.of(question));
 
-        assertThatThrownBy(() -> answerService.acceptAnswer(99L, 5L))
+        assertThatThrownBy(() -> answerService.acceptAnswer(otherUserId, answerId))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorType").isEqualTo(ErrorType.WORKI_FORBIDDEN);
     }
 
     @Test
-    @DisplayName("이미 채택된 답변이 있으면 추가 채택은 거부된다")
+    @DisplayName("already answered question cannot accept another answer")
     void acceptAnswer_whenAlreadyAnswered_throwsPolicyViolation() {
-        WorkiAnswer answer = WorkiAnswer.create(QUESTION_ID, ANSWERER_ID, "답변");
-        WorkiQuestion question = WorkiQuestion.create(AUTHOR_ID, "제목", "내용", null);
+        Long authorId = 1001L;
+        Long answererId = 1002L;
+        Long questionId = 1010L;
+        Long answerId = 1050L;
+        WorkiAnswer answer = WorkiAnswer.create(questionId, answererId, "answer");
+        WorkiQuestion question = WorkiQuestion.create(authorId, "title", "content", null);
         question.markAnswered();
         when(answerRepository.findByAnswerIdAndDeletedAtIsNull(anyLong()))
                 .thenReturn(Optional.of(answer));
-        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(QUESTION_ID))
+        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(questionId))
                 .thenReturn(Optional.of(question));
 
-        assertThatThrownBy(() -> answerService.acceptAnswer(AUTHOR_ID, 5L))
+        assertThatThrownBy(() -> answerService.acceptAnswer(authorId, answerId))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorType").isEqualTo(ErrorType.WORKI_POLICY_VIOLATION);
     }
 
     @Test
-    @DisplayName("존재하지 않는 답변 채택은 404다")
+    @DisplayName("missing answer accept returns not found")
     void acceptAnswer_whenAnswerMissing_throwsNotFound() {
-        when(answerRepository.findByAnswerIdAndDeletedAtIsNull(5L))
+        Long authorId = 1001L;
+        Long missingAnswerId = 1099L;
+        when(answerRepository.findByAnswerIdAndDeletedAtIsNull(missingAnswerId))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> answerService.acceptAnswer(AUTHOR_ID, 5L))
+        assertThatThrownBy(() -> answerService.acceptAnswer(authorId, missingAnswerId))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorType").isEqualTo(ErrorType.WORKI_NOT_FOUND);
     }
