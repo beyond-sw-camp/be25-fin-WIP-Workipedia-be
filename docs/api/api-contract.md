@@ -17,11 +17,13 @@
 
 ### 2.1 Base URL
 
-| 환경        | Base URL                       |
+
+| 환경          | Base URL                       |
 | ----------- | ------------------------------ |
 | local       | `http://localhost:8080/api/v1` |
-| dev/staging | 미정                           |
-| production  | 미정                           |
+| dev/staging | 미정                             |
+| production  | 미정                             |
+
 
 ### 2.2 인증
 
@@ -172,24 +174,28 @@ Response:
 
 담당: 김진혁
 
-| Method | Path                                                               | 설명                                             | 인증 |
-| ------ | ------------------------------------------------------------------ | ------------------------------------------------ | ---- |
-| POST   | `/chatbot/sessions`                                                | 챗봇 세션 생성                                   | 필요 |
-| GET    | `/chatbot/sessions`                                                | 내 세션 목록                                     | 필요 |
-| GET    | `/chatbot/sessions/{sessionId}/messages`                           | 세션 메시지 조회                                 | 필요 |
-| POST   | `/chatbot/sessions/{sessionId}/messages`                           | 질문 전송 및 답변 생성                           | 필요 |
-| GET    | `/chatbot/sessions/{sessionId}/messages/{messageId}/worki-support` | 워키 질문 등록 지원 (챗봇 메시지 기반 초안 반환) | 필요 |
+
+| Method | Path                                                               | 설명                            | 인증  |
+| ------ | ------------------------------------------------------------------ | ----------------------------- | --- |
+| POST   | `/chatbot/sessions`                                                | 챗봇 세션 생성                      | 필요  |
+| GET    | `/chatbot/sessions`                                                | 내 세션 목록                       | 필요  |
+| GET    | `/chatbot/sessions/{sessionId}/messages`                           | 세션 메시지 조회                     | 필요  |
+| POST   | `/chatbot/sessions/{sessionId}/messages`                           | 질문 전송 및 답변 생성                 | 필요  |
+| GET    | `/chatbot/sessions/{sessionId}/messages/{messageId}/worki-support` | 워키 질문 등록 지원 (챗봇 메시지 기반 초안 반환) | 필요  |
+
 
 ### AI 운영 API
 
 담당: 김진혁
 
-| Method | Path                    | 설명                                         | 인증         |
-| ------ | ----------------------- | -------------------------------------------- | ------------ |
+
+| Method | Path                    | 설명                            | 인증           |
+| ------ | ----------------------- | ----------------------------- | ------------ |
 | POST   | `/ai/fine-tune/trigger` | APPROVED 지식 데이터 기반 파인튜닝 실행 요청 | SYSTEM_ADMIN |
-| GET    | `/ai/fine-tune/status`  | 파인튜닝 진행 상태 조회                      | SYSTEM_ADMIN |
-| GET    | `/ai/model/current`     | 현재 모델 버전 및 어댑터 정보 조회           | SYSTEM_ADMIN |
-| POST   | `/ai/prompt/update`     | base_system/admin_context 갱신               | SYSTEM_ADMIN |
+| GET    | `/ai/fine-tune/status`  | 파인튜닝 진행 상태 조회                 | SYSTEM_ADMIN |
+| GET    | `/ai/model/current`     | 현재 모델 버전 및 어댑터 정보 조회          | SYSTEM_ADMIN |
+| POST   | `/ai/prompt/update`     | base_system/admin_context 갱신  | SYSTEM_ADMIN |
+
 
 
 
@@ -197,69 +203,299 @@ Response:
 
 담당: 민정기
 
-| Method | Path                                           | 설명                     | 인증 |
-| ------ | ---------------------------------------------- | ------------------------ | ---- |
-| GET    | `/worki/questions`                             | 질문 목록                | 필요 |
-| POST   | `/worki/questions`                             | 질문 등록                | 필요 |
-| GET    | `/worki/questions/{questionId}`                | 질문 상세                | 필요 |
-| PATCH  | `/worki/questions/{questionId}`                | 질문 수정                | 필요 |
-| POST   | `/worki/questions/{questionId}/answers`        | 답변 등록                | 필요 |
-| POST   | `/worki/questions/{questionId}/ticket-answers` | 티켓 공식 답변 워키 등록 | 필요 |
-| PATCH  | `/worki/answers/{answerId}/adopt`              | 답변 채택                | 필요 |
-| PUT    | `/worki/questions/{questionId}/reaction`       | 좋아요/싫어요            | 필요 |
+
+| Method | Path                                    | 설명      | 인증 |
+| ------ | --------------------------------------- | --------- | ---- |
+| GET    | `/worki/questions`                      | 질문 목록 | 필요 |
+| POST   | `/worki/questions`                      | 질문 등록 | 필요 |
+| GET    | `/worki/questions/{questionId}`         | 질문 상세 | 필요 |
+| PATCH  | `/worki/questions/{questionId}`         | 질문 수정 | 필요 |
+| POST   | `/worki/questions/{questionId}/answers` | 답변 등록 | 필요 |
+| POST   | `/worki/answers/{answerId}/accept`      | 답변 채택 | 필요 |
+| POST   | `/worki/questions/{questionId}/like`    | 좋아요    | 필요 |
+| DELETE | `/worki/questions/{questionId}/like`    | 좋아요 취소 | 필요 |
+
 
 
 ## 7. Ticket API
 
 담당: 김진혁
 
-| Method | Path                                         | 설명                            | 인증       |
-| ------ | -------------------------------------------- | ------------------------------- | ---------- |
-| POST   | `/tickets`                                   | 티켓 생성                       | 필요       |
-| GET    | `/tickets`                                   | 티켓 목록, 상태/부서 필터 조회  | 필요       |
-| GET    | `/tickets/{ticketId}`                        | 티켓 상세                       | 필요       |
-| PATCH  | `/tickets/{ticketId}/status`                 | 티켓 상태 변경                  | 필요       |
-| PATCH  | `/tickets/{ticketId}/assignee`               | 팀원 담당자 배정                | TEAM_ADMIN |
-| POST   | `/tickets/{ticketId}/transfer-requests`      | TEAM_ADMIN 티켓 이관 요청       | TEAM_ADMIN |
-| PATCH  | `/tickets/{ticketId}/refuse`                 | 티켓 반려                       | TEAM_ADMIN |
-| POST   | `/tickets/{ticketId}/answers`                | 담당 부서 공식 답변             | 필요       |
-| POST   | `/tickets/{ticketId}/knowledge-candidates`   | 처리 완료 티켓 지식화 후보 등록 | 필요       |
-| PATCH  | `/knowledge-candidates/{candidateId}/review` | 지식화 후보 승인/반려           | TEAM_ADMIN |
+
+| Method | Path                                         | 설명                  | 인증         |
+| ------ | -------------------------------------------- | ------------------- | ---------- |
+| POST   | `/tickets`                                   | 티켓 생성               | 필요         |
+| GET    | `/tickets`                                   | 티켓 목록, 상태/부서 필터 조회  | 필요         |
+| GET    | `/tickets/{ticketId}`                        | 티켓 상세               | 필요         |
+| PATCH  | `/tickets/{ticketId}/status`                 | 티켓 상태 변경            | 필요         |
+| PATCH  | `/tickets/{ticketId}/assignee`               | 팀원 담당자 배정           | TEAM_ADMIN |
+| POST   | `/tickets/{ticketId}/transfer-requests`      | TEAM_ADMIN 티켓 이관 요청 | TEAM_ADMIN |
+| PATCH  | `/tickets/{ticketId}/refuse`                 | 티켓 반려               | TEAM_ADMIN |
+| POST   | `/tickets/{ticketId}/answers`                | 담당 부서 공식 답변         | 필요         |
+| POST   | `/tickets/{ticketId}/knowledge-candidates`   | 처리 완료 티켓 지식화 후보 등록  | 필요         |
+| PATCH  | `/knowledge-candidates/{candidateId}/review` | 지식화 후보 승인/반려        | TEAM_ADMIN |
 
 
+
+신뢰도 낮은 요청 Response:
+
+```json
+{
+  "ticketId": 2,
+  "status": "COMMON_QUEUE",
+  "priority": "MEDIUM",
+  "assignedDepartmentId": null,
+  "assignedDepartmentName": null,
+  "routingConfidenceScore": 63.0,
+  "routingDecision": "COMMON_QUEUE",
+  "candidateDepartments": [
+    {
+      "departmentId": 2,
+      "departmentName": "자산관리팀",
+      "confidenceScore": 63.0
+    },
+    {
+      "departmentId": 6,
+      "departmentName": "정보보안팀",
+      "confidenceScore": 58.0
+    }
+  ]
+}
+```
+
+### GET `/tickets`
+
+티켓 목록을 조회한다. 프론트엔드는 같은 엔드포인트에서 상태별, 부서별 필터를 조합해 사용한다.
+
+Query Parameters:
+
+
+| 이름             | 타입     | 필수  | 설명                                                  |
+| -------------- | ------ | --- | --------------------------------------------------- |
+| `status`       | string | 아니오 | 티켓 상태. 예: `COMMON_QUEUE`, `ASSIGNED`, `IN_PROGRESS` |
+| `departmentId` | number | 아니오 | 담당 부서 ID. `assignedDepartmentId` 기준으로 조회한다.         |
+| `page`         | number | 아니오 | 페이지 번호. 기본값은 `1`이다.                                 |
+| `size`         | number | 아니오 | 페이지 크기. 기본값은 `10`이다.                                |
+
+
+Request 예시:
+
+```http
+GET /api/v1/tickets?status=COMMON_QUEUE&departmentId=1&page=1&size=10
+```
+
+Response:
+
+```json
+{
+  "content": [
+    {
+      "ticketId": 5,
+      "status": "COMMON_QUEUE",
+      "priority": "MEDIUM",
+      "assignedDepartmentId": null,
+      "assignedDepartmentName": null,
+      "routingConfidenceScore": null,
+      "routingDecision": "COMMON_QUEUE",
+      "routingReasons": [],
+      "candidateDepartments": [],
+      "questionId": null,
+      "sourceChatbotMessageId": null,
+      "categoryId": null,
+      "title": "테스트 티켓 제목",
+      "content": "테스트 티켓 내용",
+      "assigneeId": null,
+      "createdAt": "2026-06-04T17:01:49",
+      "updatedAt": "2026-06-04T17:01:49"
+    }
+  ],
+  "pageInfo": {
+    "page": 1,
+    "size": 10,
+    "totalElements": 1,
+    "totalPages": 1,
+    "hasNext": false,
+    "hasPrevious": false
+  }
+}
+```
+
+비고:
+
+- `departmentId`는 조회 필터이며, 부서 배정/재배정 동작을 의미하지 않는다.
+- 공통 접수 큐의 부서 재배정은 `PATCH /admin/common-queue/tickets/{ticketId}/department`를 사용한다.
+
+### PATCH `/tickets/{ticketId}/assignee`
+
+Request:
+
+```json
+{
+  "assigneeId": 12,
+  "memo": "VPN 계정 확인 후 처리 부탁드립니다."
+}
+```
+
+Response:
+
+```json
+{
+  "ticketId": 1,
+  "status": "IN_PROGRESS",
+  "priority": "MEDIUM",
+  "assigneeId": 12,
+  "assigneeNickname": "노잇4821"
+}
+```
+
+### POST `/tickets/{ticketId}/transfer-requests`
+
+Request:
+
+```json
+{
+  "suggestedDepartmentId": 2,
+  "reason": "법무 검토가 필요한 문의입니다."
+}
+```
+
+Response:
+
+```json
+{
+  "requestId": 1,
+  "ticketId": 1,
+  "transferStatus": "REQUESTED",
+  "ticketStatus": "COMMON_QUEUE",
+  "fromDepartmentId": 5,
+  "fromDepartmentName": "경영지원팀",
+  "suggestedDepartmentId": 2,
+  "suggestedDepartmentName": "법무팀"
+}
+```
+
+이관 요청 시 티켓은 다른 부서로 직접 이동하지 않고 공통 접수 큐로 이동한다. 이후 `SYSTEM_ADMIN`이 공통 접수 큐에서 담당 부서를 재배정한다.
+
+### PATCH `/admin/common-queue/tickets/{ticketId}/department`
+
+Request:
+
+```json
+{
+  "departmentId": 2,
+  "comment": "이관 사유 확인 후 법무팀으로 재배정합니다."
+}
+```
+
+Response:
+
+```json
+{
+  "ticketId": 1,
+  "status": "ASSIGNED",
+  "assignedDepartmentId": 2,
+  "assignedDepartmentName": "법무팀"
+}
+```
+
+### POST `/tickets/{ticketId}/knowledge-candidates`
+
+Request:
+
+```json
+{
+  "draftTitle": "VPN 접속 오류 처리 절차",
+  "draftContent": "VPN 접속 오류가 발생하면 계정 상태와 보안 프로그램 실행 여부를 먼저 확인한 뒤 IT지원팀에 요청합니다."
+}
+```
+
+Response:
+
+```json
+{
+  "candidateId": 1,
+  "ticketId": 1,
+  "status": "REVIEW_REQUESTED"
+}
+```
+
+### PATCH `/knowledge-candidates/{candidateId}/review`
+
+Request:
+
+```json
+{
+  "decision": "APPROVE",
+  "reviewComment": "개인 정보 제거 확인. 워키 반영 승인합니다."
+}
+```
+
+Response:
+
+```json
+{
+  "candidateId": 1,
+  "status": "PUBLISHED",
+  "publishedWorkiQuestionId": 30
+}
+```
 
 ### Attachment API
 
 담당: 김진혁
 
-| Method | Path                          | 설명                               | 인증 |
-| ------ | ----------------------------- | ---------------------------------- | ---- |
-| POST   | `/attachments`                | 이미지 업로드, `attachmentId` 반환 | 필요 |
-| GET    | `/attachments/{attachmentId}` | 이미지 조회                        | 필요 |
+
+| Method | Path                          | 설명                         | 인증  |
+| ------ | ----------------------------- | -------------------------- | --- |
+| POST   | `/attachments`                | 이미지 업로드, `attachmentId` 반환 | 필요  |
+| GET    | `/attachments/{attachmentId}` | 이미지 조회                     | 필요  |
 
 
+
+
+| Field        | Type   | 설명                                         |
+| ------------ | ------ | ------------------------------------------ |
+| `file`       | file   | 이미지 파일                                     |
+| `targetType` | string | `TICKET` 등 첨부 대상                           |
+| `targetId`   | number | 이미 생성된 대상에 연결할 때 사용. 티켓 생성 전 업로드 시 null 가능 |
+
+
+Response:
+
+```json
+{
+  "attachmentId": 1,
+  "contentType": "image/png",
+  "fileSize": 123456,
+  "url": "/attachments/1"
+}
+```
 
 ## 8. FAQ API
 
 담당: 민정기
 
-| Method | Path                   | 설명             | 인증 |
-| ------ | ---------------------- | ---------------- | ---- |
-| GET    | `/faq/worki/popular`   | 인기 워키        | 필요 |
-| GET    | `/faq/manuals/popular` | 인기 매뉴얼      | 필요 |
-| GET    | `/faq/manuals/recent`  | 최근 등록 매뉴얼 | 필요 |
+
+| Method | Path                   | 설명        | 인증  |
+| ------ | ---------------------- | --------- | --- |
+| GET    | `/faq/worki/popular`   | 인기 워키     | 필요  |
+| GET    | `/faq/manuals/popular` | 인기 매뉴얼    | 필요  |
+| GET    | `/faq/manuals/recent`  | 최근 등록 매뉴얼 | 필요  |
+
 
 ## 9. Notification API
 
 담당: 민정기
 
-| Method | Path                                   | 설명             | 인증 |
-| ------ | -------------------------------------- | ---------------- | ---- |
-| GET    | `/notifications`                       | 알림 목록        | 필요 |
-| GET    | `/notifications/unread-count`          | 미읽은 알림 갯수 | 필요 |
-| PATCH  | `/notifications/{notificationId}/read` | 개별 읽음        | 필요 |
-| PATCH  | `/notifications/read-all`              | 모두 읽음        | 필요 |
-| DELETE | `/notifications/{notificationId}`      | 알림 삭제        | 필요 |
+
+| Method | Path                                   | 설명        | 인증  |
+| ------ | -------------------------------------- | --------- | --- |
+| GET    | `/notifications`                       | 알림 목록     | 필요  |
+| GET    | `/notifications/unread-count`          | 미읽은 알림 갯수 | 필요  |
+| PATCH  | `/notifications/{notificationId}/read` | 개별 읽음     | 필요  |
+| PATCH  | `/notifications/read-all`              | 모두 읽음     | 필요  |
+| DELETE | `/notifications/{notificationId}`      | 알림 삭제     | 필요  |
+
 
 > Phase 2: `GET /notifications/stream` (SSE 실시간 알림) — MVP는 DB 저장 + 조회 API 기반으로 시작 (ADR 007)
 
@@ -338,27 +574,45 @@ Payload:
 
 담당: 김가영
 
-| Method | Path                      | 설명                  | 인증 |
-| ------ | ------------------------- | --------------------- | ---- |
-| GET    | `/points/me`              | 내 포인트             | 필요 |
-| GET    | `/points/histories`       | 포인트 변동 이력 전체 | 필요 |
+
+| Method | Path                | 설명           | 인증  |
+| ------ | ------------------- | ------------ | --- |
+| GET    | `/points/me`        | 내 포인트        | 필요  |
+| GET    | `/points/histories` | 포인트 변동 이력 전체 | 필요  |
 
 
 ## 11. ESG Metrics API
 
 담당: 김가영
 
-| Method | Path                 | 설명                 | 인증                     |
-| ------ | -------------------- | -------------------- | ------------------------ |
-| GET    | `/esg/metrics/me`    | 내 ESG/기여 지표     | 필요                     |
+
+| Method | Path                 | 설명            | 인증                       |
+| ------ | -------------------- | ------------- | ------------------------ |
+| GET    | `/esg/metrics/me`    | 내 ESG/기여 지표   | 필요                       |
 | GET    | `/admin/esg/metrics` | 관리자 ESG 운영 지표 | TEAM_ADMIN, SYSTEM_ADMIN |
 
+
+Response:
+
+```json
+{
+  "knowledgeShareCount": 12,
+  "acceptedAnswerCount": 4,
+  "estimatedSavedMinutes": 60,
+  "esgScore": 320,
+  "gradeName": "SILVER",
+  "sourceBackedAnswerRate": 0.85,
+  "ticketCompletionRate": 0.72
+}
+```
 
 ## 12. Admin API
 
 담당: 김가영
 
 팀 관리자 대시보드 
+
+
 | Method | Path                                                     | 설명                        | 인증         |
 | ------ | -------------------------------------------------------- | ------------------------- | ---------- |
 | GET    | `/admin/team/dashboard/knowledge-trend`                  | 월별 지식화 승인 건수 추이 조회        | TEAM_ADMIN |
@@ -372,7 +626,10 @@ Payload:
 | GET    | `/admin/team/tickets/{ticketId}`                         | 우리 부서 티켓 상세 조회            | TEAM_ADMIN |
 | POST   | `/admin/team/tickets/{ticketId}/transfer`                | 티켓 이관 사유 입력 후 공통 접수 큐로 이동 | TEAM_ADMIN |
 
+
 전체 관리자 대시보드
+
+
 | Method | Path                                                | 설명                 | 인증           |
 | ------ | --------------------------------------------------- | ------------------ | ------------ |
 | GET    | `/admin/dashboard/auto-routing-rate`                | 월별 챗봇 자동 배정률 추이 조회 | SYSTEM_ADMIN |
@@ -382,7 +639,10 @@ Payload:
 | GET    | `/admin/common-queue/tickets`                       | 공통 접수 큐 목록 조회      | SYSTEM_ADMIN |
 | PATCH  | `/admin/common-queue/tickets/{ticketId}/department` | 공통 접수 큐 티켓 부서 배정   | SYSTEM_ADMIN |
 
+
 관리자 설정
+
+
 | Method | Path                                       | 설명                            | 인증           |
 | ------ | ------------------------------------------ | ----------------------------- | ------------ |
 | GET    | `/admin/settings/summary`                  | 전체 사용자 수, 당일 로그인 수, 총 문서 수 조회 | SYSTEM_ADMIN |
@@ -438,17 +698,18 @@ Request:
 - 삭제 결과를 `/topic/flash-chat`에 `DELETE` 이벤트로 브로드캐스트한다.
 - 강제 삭제는 `FLASH_CHAT_MESSAGE_DELETE` action type으로 `admin_logs`에 기록한다.
 
-
 ## 13. 미정 항목
 
-| 항목                                   | 상태                                    | 결정 필요자     |
-| -------------------------------------- | --------------------------------------- | --------------- |
-| Refresh Token 저장소                   | Redis 확정                              | 이슬이          |
-| SYSTEM_ADMIN 담당 조직                 | 기본: 경영지원팀, 회사별 조정 가능      | 김가영, 팀 전체 |
-| 티켓 자동 배정 점수 가중치             | 초안 확정 필요                          | 김진혁          |
-| 로컬 임베딩 모델                       | 미정                                    | 김진혁, 팀 전체 |
-| Elasticsearch 인덱스 차원수/similarity | 미정 (임베딩 모델 확정 후 결정)         | 민정기, 김진혁  |
-| 알림 구현 방식                         | SSE 우선, 폴링 fallback                 | 이슬이, 황희수 |
+
+| 항목                               | 상태                      | 결정 필요자    |
+| -------------------------------- | ----------------------- | --------- |
+| Refresh Token 저장소                | Redis 확정                | 이슬이       |
+| SYSTEM_ADMIN 담당 조직               | 기본: 경영지원팀, 회사별 조정 가능    | 김가영, 팀 전체 |
+| 티켓 자동 배정 점수 가중치                  | 초안 확정 필요                | 김진혁       |
+| 로컬 임베딩 모델                        | 미정                      | 김진혁, 팀 전체 |
+| Elasticsearch 인덱스 차원수/similarity | 미정 (임베딩 모델 확정 후 결정)     | 민정기, 김진혁  |
+| 알림 구현 방식                         | SSE 우선, 폴링 fallback     | 이슬이, 황희수  |
 | 챗봇 세션 구조                         | 세션 기반 확정, 이슬이와 최종 합의 필요 | 이슬이, 김진혁  |
-| Flash Chat 최대 활성 메시지 수         | 미정                                    | 김진혁, 김가영  |
-| 이미지 저장소                          | 로컬 파일시스템 또는 S3                 | 김진혁, 팀 전체 |
+| Flash Chat 최대 활성 메시지 수           | 미정                      | 김진혁, 김가영  |
+| 이미지 저장소                          | 로컬 파일시스템 또는 S3          | 김진혁, 팀 전체 |
+
