@@ -223,8 +223,8 @@ Response:
 | POST   | `/tickets/{ticketId}/transfer-requests`      | TEAM_ADMIN 티켓 이관 요청       | TEAM_ADMIN |
 | PATCH  | `/tickets/{ticketId}/refuse`                 | 티켓 반려                       | TEAM_ADMIN |
 | POST   | `/tickets/{ticketId}/answers`                | 담당 부서 공식 답변             | 필요       |
-| POST   | `/tickets/{ticketId}/knowledge-candidates`   | 처리 완료 티켓 지식화 후보 등록 | 필요       |
-| PATCH  | `/knowledge-candidates/{candidateId}/review` | 지식화 후보 승인/반려           | TEAM_ADMIN |
+| POST   | `/admin/team/tickets/{ticketId}/knowledge-data` | 처리 완료 티켓 지식화 승인 및 지식화 데이터 등록 | TEAM_ADMIN |
+| PATCH  | `/admin/team/knowledge-data/{knowledgeDataId}`  | 지식화 데이터 질문/답변 수정                  | TEAM_ADMIN |
 
 
 
@@ -363,10 +363,10 @@ Payload:
 | ------ | -------------------------------------------------------- | ------------------------- | ---------- |
 | GET    | `/admin/team/dashboard/knowledge-trend`                  | 월별 지식화 승인 건수 추이 조회        | TEAM_ADMIN |
 | GET    | `/admin/team/dashboard/chatbot-ticket-trend`             | 월별 AI 챗봇 배정 티켓 건수 추이 조회   | TEAM_ADMIN |
-| GET    | `/admin/team/knowledge-candidates`                       | 처리 완료 티켓 기반 지식화 후보 목록 조회  | TEAM_ADMIN |
-| PATCH  | `/admin/team/knowledge-candidates/{candidateId}`         | 지식화 후보 질문/답변 수정           | TEAM_ADMIN |
-| POST   | `/admin/team/knowledge-candidates/{candidateId}/approve` | 지식화 후보 승인 및 워키 게시판 등록     | TEAM_ADMIN |
-| DELETE | `/admin/team/knowledge-candidates/{candidateId}`         | 지식화 후보 반려 및 삭제            | TEAM_ADMIN |
+| GET    | `/admin/team/tickets?status=COMPLETED`                   | 처리 완료 티켓 기반 지식화 후보 목록 조회 | TEAM_ADMIN |
+| GET    | `/admin/team/knowledge-data`                             | 승인된 지식화 데이터 목록 조회       | TEAM_ADMIN |
+| PATCH  | `/admin/team/knowledge-data/{knowledgeDataId}`           | 지식화 데이터 질문/답변 수정         | TEAM_ADMIN |
+| DELETE | `/admin/team/knowledge-data/{knowledgeDataId}`           | 지식화 데이터 삭제                 | TEAM_ADMIN |
 | GET    | `/admin/team/tickets/summary`                            | 우리 부서 티켓 요약 정보 조회         | TEAM_ADMIN |
 | GET    | `/admin/team/tickets`                                    | 우리 부서 배정 티켓 목록 조회         | TEAM_ADMIN |
 | GET    | `/admin/team/tickets/{ticketId}`                         | 우리 부서 티켓 상세 조회            | TEAM_ADMIN |

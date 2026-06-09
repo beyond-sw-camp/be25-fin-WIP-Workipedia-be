@@ -842,19 +842,7 @@
         "tags": [
           "worki"
         ],
-        "parameters": [
-          {
-            "name": "X-User-Id",
-            "in": "header",
-            "description": "",
-            "required": true,
-            "example": 0,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
+        "parameters": [],
         "requestBody": {
           "content": {
             "application/json": {
@@ -982,17 +970,6 @@
               "type": "integer",
               "format": "int64"
             }
-          },
-          {
-            "name": "X-User-Id",
-            "in": "header",
-            "description": "",
-            "required": true,
-            "example": 0,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
           }
         ],
         "requestBody": {
@@ -1041,17 +1018,6 @@
               "type": "integer",
               "format": "int64"
             }
-          },
-          {
-            "name": "X-User-Id",
-            "in": "header",
-            "description": "",
-            "required": true,
-            "example": 0,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
           }
         ],
         "responses": {
@@ -1074,17 +1040,6 @@
           {
             "name": "questionId",
             "in": "path",
-            "description": "",
-            "required": true,
-            "example": 0,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          },
-          {
-            "name": "X-User-Id",
-            "in": "header",
             "description": "",
             "required": true,
             "example": 0,
@@ -1116,17 +1071,6 @@
           {
             "name": "questionId",
             "in": "path",
-            "description": "",
-            "required": true,
-            "example": 0,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          },
-          {
-            "name": "X-User-Id",
-            "in": "header",
             "description": "",
             "required": true,
             "example": 0,
@@ -1175,17 +1119,6 @@
           {
             "name": "answerId",
             "in": "path",
-            "description": "",
-            "required": true,
-            "example": 0,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          },
-          {
-            "name": "X-User-Id",
-            "in": "header",
             "description": "",
             "required": true,
             "example": 0,
@@ -1327,17 +1260,6 @@
               "type": "integer",
               "default": 20
             }
-          },
-          {
-            "name": "X-User-Id",
-            "in": "header",
-            "description": "",
-            "required": true,
-            "example": 0,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
           }
         ],
         "responses": {
@@ -1365,19 +1287,7 @@
         "tags": [
           "notifications"
         ],
-        "parameters": [
-          {
-            "name": "X-User-Id",
-            "in": "header",
-            "description": "",
-            "required": true,
-            "example": 0,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "OK",
@@ -1414,17 +1324,6 @@
               "type": "integer",
               "format": "int64"
             }
-          },
-          {
-            "name": "X-User-Id",
-            "in": "header",
-            "description": "",
-            "required": true,
-            "example": 0,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
           }
         ],
         "responses": {
@@ -1445,19 +1344,7 @@
         "tags": [
           "notifications"
         ],
-        "parameters": [
-          {
-            "name": "X-User-Id",
-            "in": "header",
-            "description": "",
-            "required": true,
-            "example": 0,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "204": {
             "description": "No Content",
@@ -1480,17 +1367,6 @@
           {
             "name": "notificationId",
             "in": "path",
-            "description": "",
-            "required": true,
-            "example": 0,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          },
-          {
-            "name": "X-User-Id",
-            "in": "header",
             "description": "",
             "required": true,
             "example": 0,
@@ -1721,7 +1597,10 @@
               "example": {
                 "messageTtlSeconds": 600,
                 "sendCooldownSeconds": 5,
-                "bannedWords": ["욕설", "광고"]
+                "bannedWords": [
+                  "욕설",
+                  "광고"
+                ]
               }
             }
           },
@@ -1930,17 +1809,7 @@
           "content"
         ],
         "properties": {
-          "questionId": {
-            "type": "integer",
-            "format": "int64",
-            "nullable": true
-          },
           "sourceChatbotMessageId": {
-            "type": "integer",
-            "format": "int64",
-            "nullable": true
-          },
-          "categoryId": {
             "type": "integer",
             "format": "int64",
             "nullable": true
@@ -2006,17 +1875,7 @@
               "type": "string"
             }
           },
-          "questionId": {
-            "type": "integer",
-            "format": "int64",
-            "nullable": true
-          },
           "sourceChatbotMessageId": {
-            "type": "integer",
-            "format": "int64",
-            "nullable": true
-          },
-          "categoryId": {
             "type": "integer",
             "format": "int64",
             "nullable": true
@@ -2426,13 +2285,33 @@
       "FlashChatMessageResponse": {
         "type": "object",
         "properties": {
-          "messageId": { "type": "string", "format": "uuid" },
-          "userId": { "type": "integer", "format": "int64" },
-          "nickname": { "type": "string" },
-          "content": { "type": "string" },
-          "replyToId": { "type": "string", "format": "uuid", "nullable": true },
-          "createdAt": { "type": "string", "format": "date-time" },
-          "expiresAt": { "type": "string", "format": "date-time" }
+          "messageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nickname": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "replyToId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "FlashChatMessagesResponse": {
@@ -2440,25 +2319,51 @@
         "properties": {
           "messages": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/FlashChatMessageResponse" }
+            "items": {
+              "$ref": "#/components/schemas/FlashChatMessageResponse"
+            }
           }
         }
       },
       "FlashChatPolicyResponse": {
         "type": "object",
         "properties": {
-          "messageTtlSeconds": { "type": "integer" },
-          "sendCooldownSeconds": { "type": "integer" },
-          "bannedWords": { "type": "array", "items": { "type": "string" } }
+          "messageTtlSeconds": {
+            "type": "integer"
+          },
+          "sendCooldownSeconds": {
+            "type": "integer"
+          },
+          "bannedWords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
         }
       },
       "FlashChatPolicyRequest": {
         "type": "object",
-        "required": ["messageTtlSeconds", "sendCooldownSeconds"],
+        "required": [
+          "messageTtlSeconds",
+          "sendCooldownSeconds"
+        ],
         "properties": {
-          "messageTtlSeconds": { "type": "integer", "minimum": 60 },
-          "sendCooldownSeconds": { "type": "integer", "minimum": 0 },
-          "bannedWords": { "type": "array", "items": { "type": "string" }, "nullable": true }
+          "messageTtlSeconds": {
+            "type": "integer",
+            "minimum": 60
+          },
+          "sendCooldownSeconds": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bannedWords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
         }
       }
     },
