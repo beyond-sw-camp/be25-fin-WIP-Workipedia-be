@@ -51,7 +51,10 @@ public class TicketService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<TicketResponse> findAll(TicketStatus status, Long departmentId, Pageable pageable) {
+	public PageResponse<TicketResponse> findMyTeamTickets(Long requesterId, TicketStatus status, Pageable pageable) {
+		User requester = userRepository.findById(requesterId)
+				.orElseThrow(() -> new CustomException(ErrorType.NOT_FOUND, "사용자를 찾을 수 없습니다. id=" + requesterId));
+		Long departmentId = requester.getDepartment().getDepartmentId();
 		Page<Ticket> tickets = findTickets(status, departmentId, pageable);
 
 		return PageResponse.from(
