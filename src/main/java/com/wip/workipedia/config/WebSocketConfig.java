@@ -10,6 +10,10 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.messaging.MessageDeliveryException;
+import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.messaging.simp.stomp.StompCommand;
+import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
@@ -40,7 +44,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     }
 
     @Override
-    public void configureClientInboundChannel(org.springframework.messaging.simp.config.ChannelRegistration registration) {
+    public void configureClientInboundChannel(
+            org.springframework.messaging.simp.config.ChannelRegistration registration) {
         registration.interceptors(new ChannelInterceptor() {
             @Override
             public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -57,6 +62,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         String accessToken = resolveAccessToken(accessor);
         if (accessToken == null || !jwtProvider.isValidAccessToken(accessToken)) {
             return;
+            throw new MessageDeliveryException("Unauthorized: valid JWT token required");
         }
 
         Long userId = jwtProvider.getUserId(accessToken);
