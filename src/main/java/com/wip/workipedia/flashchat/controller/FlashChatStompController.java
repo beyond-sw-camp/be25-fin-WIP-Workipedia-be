@@ -1,7 +1,10 @@
 package com.wip.workipedia.flashchat.controller;
 
+import com.wip.workipedia.common.exception.CustomException;
+import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.flashchat.dto.SendMessageRequest;
 import com.wip.workipedia.flashchat.service.FlashChatService;
+import java.security.Principal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.stereotype.Controller;
@@ -13,7 +16,10 @@ public class FlashChatStompController {
     private final FlashChatService flashChatService;
 
     @MessageMapping("/flash-chat/send")
-    public void send(SendMessageRequest request) {
-        flashChatService.sendMessage(request);
+    public void send(SendMessageRequest request, Principal principal) {
+        if (principal == null) {
+            throw new CustomException(ErrorType.UNAUTHORIZED);
+        }
+        flashChatService.sendMessage(Long.parseLong(principal.getName()), request);
     }
 }
