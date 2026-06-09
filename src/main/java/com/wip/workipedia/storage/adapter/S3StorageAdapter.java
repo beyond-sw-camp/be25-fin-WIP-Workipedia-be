@@ -4,9 +4,11 @@ import com.wip.workipedia.config.StorageProperties;
 import com.wip.workipedia.storage.dto.PresignedDownloadResponse;
 import com.wip.workipedia.storage.dto.PresignedUploadRequest;
 import com.wip.workipedia.storage.dto.PresignedUploadResponse;
+import com.wip.workipedia.storage.dto.StoredObject;
 import com.wip.workipedia.storage.port.StoragePort;
 import java.time.Duration;
 import java.util.UUID;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -66,6 +68,19 @@ public class S3StorageAdapter implements StoragePort {
         String uploadUrl = s3Presigner.presignPutObject(presignRequest).url().toString();
         String publicUrl = buildPublicUrl(objectKey);
         return new PresignedUploadResponse(uploadUrl, objectKey, publicUrl);
+    }
+
+    @Override
+    public StoredObject upload(byte[] content, String keyPrefix, String fileName, String contentType) {
+        String objectKey = keyPrefix + "/" + UUID.randomUUID() + "/" + fileName;
+        PutObjectRequest request = PutObjectRequest.builder()
+            .bucket(bucket)
+            .key(objectKey)
+            .contentType(contentType)
+            .build();
+
+        s3Client.putObject(request, RequestBody.fromBytes(content));
+        return new StoredObject(objectKey, buildPublicUrl(objectKey));
     }
 
     @Override

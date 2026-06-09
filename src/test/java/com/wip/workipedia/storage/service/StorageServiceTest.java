@@ -3,6 +3,7 @@ package com.wip.workipedia.storage.service;
 import com.wip.workipedia.storage.dto.PresignedDownloadResponse;
 import com.wip.workipedia.storage.dto.PresignedUploadRequest;
 import com.wip.workipedia.storage.dto.PresignedUploadResponse;
+import com.wip.workipedia.storage.dto.StoredObject;
 import com.wip.workipedia.storage.port.StoragePort;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,6 +47,23 @@ class StorageServiceTest {
 
         assertThat(result).isEqualTo(expected);
         verify(storagePort).createPresignedDownloadUrl(objectKey);
+    }
+
+    @Test
+    void upload_delegates_to_port() {
+        byte[] content = "pdf-content".getBytes();
+        String keyPrefix = "manuals";
+        String fileName = "guide.pdf";
+        String contentType = "application/pdf";
+        StoredObject expected = new StoredObject(
+            "manuals/uuid/guide.pdf",
+            "https://public.url/manuals/uuid/guide.pdf");
+        given(storagePort.upload(content, keyPrefix, fileName, contentType)).willReturn(expected);
+
+        StoredObject result = storageService.upload(content, keyPrefix, fileName, contentType);
+
+        assertThat(result).isEqualTo(expected);
+        verify(storagePort).upload(content, keyPrefix, fileName, contentType);
     }
 
     @Test
