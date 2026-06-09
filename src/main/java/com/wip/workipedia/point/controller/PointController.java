@@ -7,6 +7,7 @@ import com.wip.workipedia.point.service.PointService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,12 +19,14 @@ public class PointController {
 	private final PointService pointService;
 
 	@GetMapping("/me")
-	public ResponseEntity<MyPointResponse> getMyPoint() {
-		return ResponseEntity.ok(pointService.getMyPoint());
+	public ResponseEntity<MyPointResponse> getMyPoint(@AuthenticationPrincipal Long userId) {
+		return ResponseEntity.ok(pointService.getMyPoint(userId));
 	}
 
 	@GetMapping("/histories")
-	public ResponseEntity<PageResponse<PointHistoryResponse>> getMyPointHistory(Pageable pageable) {
-		return ResponseEntity.ok(pointService.getMyPointHistory(pageable));
+	public ResponseEntity<PageResponse<PointHistoryResponse>> getMyPointHistory(
+			@AuthenticationPrincipal Long userId,
+			Pageable pageable) {
+		return ResponseEntity.ok(pointService.getMyPointHistory(userId, pageable));
 	}
 }

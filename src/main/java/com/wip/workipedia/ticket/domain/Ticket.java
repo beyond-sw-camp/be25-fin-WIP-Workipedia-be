@@ -26,9 +26,7 @@ public class Ticket {
 	@Column(nullable = false)
 	private Long requesterId;
 
-	private Long questionId;
 	private Long sourceChatbotMessageId;
-	private Long categoryId;
 
 	@Column(nullable = false)
 	private String title;
@@ -67,9 +65,7 @@ public class Ticket {
 
 	public static Ticket create(
 		Long requesterId,
-		Long questionId,
 		Long sourceChatbotMessageId,
-		Long categoryId,
 		TicketPriority priority,
 		String title,
 		String content
@@ -78,9 +74,7 @@ public class Ticket {
 
 		Ticket ticket = new Ticket();
 		ticket.requesterId = requesterId;
-		ticket.questionId = questionId;
 		ticket.sourceChatbotMessageId = sourceChatbotMessageId;
-		ticket.categoryId = categoryId;
 		ticket.priority = priority;
 		ticket.title = title;
 		ticket.content = content;

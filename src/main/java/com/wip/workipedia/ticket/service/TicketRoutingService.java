@@ -16,8 +16,6 @@ public class TicketRoutingService {
 		TicketRoutingPrompt prompt = new TicketRoutingPrompt(
 			request.title(),
 			request.content(),
-			request.categoryId(),
-			request.questionId(),
 			request.sourceChatbotMessageId()
 		);
 

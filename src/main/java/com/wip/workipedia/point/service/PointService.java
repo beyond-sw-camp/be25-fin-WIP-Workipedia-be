@@ -13,23 +13,21 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class PointService {
-	private static final Long SKELETON_USER_ID = 1L; // 임시
-
 	private final UserPointRepository userPointRepository;
 	private final PointHistoryRepository pointHistoryRepository;
 
 	@Transactional(readOnly = true)
-	public MyPointResponse getMyPoint() {
-		return userPointRepository.findByUserIdAndDeletedAtIsNull(SKELETON_USER_ID)
+	public MyPointResponse getMyPoint(Long userId) {
+		return userPointRepository.findByUserIdAndDeletedAtIsNull(userId)
 			.map(MyPointResponse::from)
-			.orElseGet(() -> new MyPointResponse(SKELETON_USER_ID, 0L));
+			.orElseGet(() -> new MyPointResponse(userId, 0L));
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<PointHistoryResponse> getMyPointHistory(Pageable pageable) {
+	public PageResponse<PointHistoryResponse> getMyPointHistory(Long userId, Pageable pageable) {
 		return PageResponse.from(
 			pointHistoryRepository
-				.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(SKELETON_USER_ID, pageable)
+				.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(userId, pageable)
 				.map(PointHistoryResponse::from)
 		);
 	}
