@@ -9,6 +9,7 @@ import com.wip.workipedia.mypage.domain.MyTicketStatus;
 import com.wip.workipedia.mypage.dto.MyPageResponse;
 import com.wip.workipedia.mypage.dto.MyTicketDetailResponse;
 import com.wip.workipedia.mypage.dto.MyTicketResponse;
+import com.wip.workipedia.mypage.dto.MyTicketUpdateRequest;
 import com.wip.workipedia.mypage.repository.MyPageTicketProjection;
 import com.wip.workipedia.mypage.repository.MyPageTicketRepository;
 import com.wip.workipedia.mypage.repository.MyTicketDetailProjection;
@@ -16,6 +17,7 @@ import com.wip.workipedia.notification.domain.NotificationSetting;
 import com.wip.workipedia.notification.repository.NotificationSettingRepository;
 import com.wip.workipedia.point.domain.UserPoint;
 import com.wip.workipedia.point.repository.UserPointRepository;
+import com.wip.workipedia.ticket.domain.Ticket;
 import com.wip.workipedia.ticket.domain.TicketStatus;
 import com.wip.workipedia.ticket.repository.TicketRepository;
 import com.wip.workipedia.user.domain.User;
@@ -105,6 +107,26 @@ public class MyPageService {
 	}
 
 	// 티켓 생성 시각 기준 48시간까지의 남은 시간과 만료 여부를 계산해 응답 DTO를 생성합니다.
+	// 로그인 사용자가 발행한 티켓의 제목과 내용을 수정합니다.
+	@Transactional
+	public MyTicketDetailResponse updateMyTicket(
+		Long userId,
+		Long ticketId,
+		MyTicketUpdateRequest request
+	) {
+		Ticket ticket = ticketRepository.findByTicketIdAndRequesterIdAndDeletedAtIsNull(ticketId, userId)
+			.orElseThrow(() -> new CustomException(ErrorType.TICKET_NOT_FOUND));
+		TicketTimeStatus ticketTimeStatus = calculateTicketTimeStatus(ticket.getCreatedAt());
+
+		if (!isEditable(ticket.getStatus().name(), ticketTimeStatus.expired())) {
+			throw new CustomException(ErrorType.CONFLICT, "수정할 수 없는 티켓입니다.");
+		}
+
+		ticket.updateQuestion(request.title(), request.content());
+
+		return getMyTicketDetail(userId, ticketId);
+	}
+
 	private MyTicketResponse toMyTicketResponse(MyPageTicketProjection projection) {
 		TicketTimeStatus ticketTimeStatus = calculateTicketTimeStatus(projection.getCreatedAt());
 

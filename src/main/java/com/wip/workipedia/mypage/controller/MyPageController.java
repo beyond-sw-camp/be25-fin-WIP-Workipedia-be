@@ -5,6 +5,7 @@ import com.wip.workipedia.mypage.domain.MyTicketStatus;
 import com.wip.workipedia.mypage.dto.MyPageResponse;
 import com.wip.workipedia.mypage.dto.MyTicketDetailResponse;
 import com.wip.workipedia.mypage.dto.MyTicketResponse;
+import com.wip.workipedia.mypage.dto.MyTicketUpdateRequest;
 import com.wip.workipedia.mypage.service.MyPageService;
 import com.wip.workipedia.notification.dto.NotificationSettingRequest;
 import com.wip.workipedia.notification.service.NotificationSettingService;
@@ -72,6 +73,18 @@ public class MyPageController {
 		@PathVariable Long ticketId
 	) {
 		MyTicketDetailResponse myTicketDetailResponse = myPageService.getMyTicketDetail(userId, ticketId);
+
+		return ResponseEntity.ok(myTicketDetailResponse);
+	}
+
+	// 내 발행 티켓 수정
+	@PatchMapping("/tickets/{ticketId}")
+	public ResponseEntity<MyTicketDetailResponse> updateMyTicket(
+		@AuthenticationPrincipal Long userId,
+		@PathVariable Long ticketId,
+		@Valid @RequestBody MyTicketUpdateRequest request
+	) {
+		MyTicketDetailResponse myTicketDetailResponse = myPageService.updateMyTicket(userId, ticketId, request);
 
 		return ResponseEntity.ok(myTicketDetailResponse);
 	}

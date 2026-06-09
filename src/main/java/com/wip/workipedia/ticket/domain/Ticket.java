@@ -109,6 +109,12 @@ public class Ticket {
 		touch();
 	}
 
+	public void updateQuestion(String title, String content) {
+		this.title = title;
+		this.content = content;
+		touch();
+	}
+
 	private void touch() {
 		this.updatedAt = LocalDateTime.now();
 	}
