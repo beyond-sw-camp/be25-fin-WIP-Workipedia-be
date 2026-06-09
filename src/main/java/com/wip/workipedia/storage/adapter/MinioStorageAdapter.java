@@ -67,7 +67,7 @@ public class MinioStorageAdapter implements StoragePort {
             .build();
 
         String uploadUrl = s3Presigner.presignPutObject(presignRequest).url().toString();
-        String publicUrl = publicBaseUrl.stripTrailing() + "/" + objectKey;
+        String publicUrl = buildPublicUrl(objectKey);
         return new PresignedUploadResponse(uploadUrl, objectKey, publicUrl);
     }
 
@@ -93,5 +93,12 @@ public class MinioStorageAdapter implements StoragePort {
             .bucket(bucket)
             .key(objectKey)
             .build());
+    }
+
+    private String buildPublicUrl(String objectKey) {
+        String base = publicBaseUrl.endsWith("/")
+            ? publicBaseUrl.substring(0, publicBaseUrl.length() - 1)
+            : publicBaseUrl;
+        return base + "/" + objectKey;
     }
 }
