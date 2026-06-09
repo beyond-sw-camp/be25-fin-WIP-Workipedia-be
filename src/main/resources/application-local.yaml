@@ -39,6 +39,7 @@ r2:
   secret-key: ${R2_SECRET_KEY}
   account-id: ${R2_ACCOUNT_ID}
   bucket: ${R2_BUCKET}
+  public-url: ${R2_PUBLIC_BASE_URL}
 
 app:
   jwt:
