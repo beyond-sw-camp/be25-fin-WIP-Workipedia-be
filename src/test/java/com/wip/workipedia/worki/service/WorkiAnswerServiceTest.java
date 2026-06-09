@@ -15,6 +15,7 @@ import com.wip.workipedia.worki.dto.AnswerCreateRequest;
 import com.wip.workipedia.worki.dto.AnswerResponse;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
+import com.wip.workipedia.user.repository.UserRepository;
 import com.wip.workipedia.worki.repository.WorkiAnswerRepository;
 import com.wip.workipedia.worki.repository.WorkiQuestionRepository;
 import java.util.Optional;
@@ -33,6 +34,9 @@ class WorkiAnswerServiceTest {
 
     @Mock
     private WorkiQuestionRepository questionRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private WorkiAnswerService answerService;
