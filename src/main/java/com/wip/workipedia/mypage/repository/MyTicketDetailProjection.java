@@ -18,4 +18,20 @@ public interface MyTicketDetailProjection {
 	String getStatus();
 
 	LocalDateTime getCreatedAt();
+
+	LocalDateTime getCompletedAt();
+
+	Long getAnswerId();
+
+	String getAnswerContent();
+
+	Long getAnswerAuthorId();
+
+	String getAnswerAuthorNickname();
+
+	Long getAnswerAuthorDepartmentId();
+
+	String getAnswerAuthorDepartmentName();
+
+	LocalDateTime getAnsweredAt();
 }

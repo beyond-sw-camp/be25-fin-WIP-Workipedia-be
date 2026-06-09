@@ -52,10 +52,33 @@ public interface MyPageTicketRepository extends Repository<Ticket, Long> {
                 t.assigned_department_id AS assignedDepartmentId,
                 d.department_name AS assignedDepartmentName,
                 t.status AS status,
-                t.created_at AS createdAt
+                t.created_at AS createdAt,
+                t.completed_at AS completedAt,
+                ta.ticket_answer_id AS answerId,
+                ta.content AS answerContent,
+                ta.author_id AS answerAuthorId,
+                au.nickname AS answerAuthorNickname,
+                au.department_id AS answerAuthorDepartmentId,
+                ad.department_name AS answerAuthorDepartmentName,
+                ta.created_at AS answeredAt
             FROM tickets t
             LEFT JOIN departments d
                 ON t.assigned_department_id = d.department_id
+            LEFT JOIN ticket_answers ta
+                ON ta.ticket_id = t.ticket_id
+                AND ta.deleted_at IS NULL
+                AND ta.ticket_answer_id = (
+                    SELECT latest_ta.ticket_answer_id
+                    FROM ticket_answers latest_ta
+                    WHERE latest_ta.ticket_id = t.ticket_id
+                        AND latest_ta.deleted_at IS NULL
+                    ORDER BY latest_ta.created_at DESC
+                    LIMIT 1
+                )
+            LEFT JOIN users au
+                ON ta.author_id = au.user_id
+            LEFT JOIN departments ad
+                ON au.department_id = ad.department_id
             WHERE t.ticket_id = :ticketId
                 AND t.requester_id = :requesterId
                 AND t.deleted_at IS NULL

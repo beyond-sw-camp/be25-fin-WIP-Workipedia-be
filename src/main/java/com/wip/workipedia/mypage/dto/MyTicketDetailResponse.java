@@ -14,8 +14,21 @@ public record MyTicketDetailResponse(
 	boolean expired,
 	boolean editable,
 	boolean deletable,
-	LocalDateTime createdAt
+	LocalDateTime createdAt,
+	LocalDateTime completedAt,
+	Answer answer
 ) {
+
+	public record Answer(
+		Long answerId,
+		String content,
+		Long authorId,
+		String authorNickname,
+		Long authorDepartmentId,
+		String authorDepartmentName,
+		LocalDateTime answeredAt
+	) {
+	}
 
 	public static MyTicketDetailResponse from(
 		MyTicketDetailProjection projection,
@@ -35,7 +48,25 @@ public record MyTicketDetailResponse(
 			expired,
 			editable,
 			deletable,
-			projection.getCreatedAt()
+			projection.getCreatedAt(),
+			projection.getCompletedAt(),
+			toAnswer(projection)
+		);
+	}
+
+	private static Answer toAnswer(MyTicketDetailProjection projection) {
+		if (projection.getAnswerId() == null) {
+			return null;
+		}
+
+		return new Answer(
+			projection.getAnswerId(),
+			projection.getAnswerContent(),
+			projection.getAnswerAuthorId(),
+			projection.getAnswerAuthorNickname(),
+			projection.getAnswerAuthorDepartmentId(),
+			projection.getAnswerAuthorDepartmentName(),
+			projection.getAnsweredAt()
 		);
 	}
 }
