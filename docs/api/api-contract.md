@@ -83,21 +83,24 @@ Authorization: Bearer <accessToken>
 
 담당: 이슬이
 
-| Method | Path                               | 설명                          | 인증               |
-| ------ | ---------------------------------- | ----------------------------- |------------------|
-| GET    | `/departments`                     | 회원가입 부서 목록 조회       | 불필요              |
-| POST   | `/auth/signup/code`                | 회원가입 인증코드 발송        | 불필요              |
-| POST   | `/auth/signup/code/verify`         | 회원가입 인증코드 확인        | 불필요              |
-| POST   | `/auth/signup`                     | 회원가입                      | 불필요              |
-| POST   | `/auth/login`                      | 로그인                        | 불필요              |
-| POST   | `/auth/token/refresh`              | 토큰 재발급                   | Refresh Token 필요 |
-| POST   | `/auth/logout`                     | 로그아웃                      | Access Token 필요  |
+| Method | Path                               | 설명               | 인증               |
+|--------|------------------------------------|------------------|------------------|
+| GET    | `/departments`                     | 회원가입 부서 목록 조회    | 불필요              |
+| POST   | `/auth/signup/code`                | 회원가입 인증코드 발송     | 불필요              |
+| POST   | `/auth/signup/code/verify`         | 회원가입 인증코드 확인     | 불필요              |
+| POST   | `/auth/signup`                     | 회원가입             | 불필요              |
+| POST   | `/auth/login`                      | 로그인              | 불필요              |
+| POST   | `/auth/token/refresh`              | 토큰 재발급           | Refresh Token 필요 |
+| POST   | `/auth/logout`                     | 로그아웃             | Access Token 필요  |
 | POST   | `/auth/password-reset/code`        | 비밀번호 재설정 인증코드 발송 | 불필요              |
 | POST   | `/auth/password-reset/code/verify` | 비밀번호 재설정 인증코드 확인 | 불필요              |
-| PATCH  | `/auth/password-reset`             | 비밀번호 재설정               | 불필요              |
-| GET    | `/me/profile`                      | 마이페이지 조회               | Access Token 필요  |
-| PATCH  | `/me/notification-settings`        | 알림 설정 변경                | Access Token 필요  |
-| GET    | `/me/tickets`                      | 내 발행 티켓 목록 조회        | Access Token 필요  |
+| PATCH  | `/auth/password-reset`             | 비밀번호 재설정         | 불필요              |
+| GET    | `/me/profile`                      | 마이페이지 조회         | Access Token 필요  |
+| PATCH  | `/me/notification-settings`        | 알림 설정 변경         | Access Token 필요  |
+| GET    | `/me/tickets`                      | 내 발행 티켓 목록 조회    | Access Token 필요  |
+| GET    | `/me/tickets/{ticketId}`           | 내 발행 티켓 상세 조회    | Access Token 필요  |
+| PATCH  | `/me/tickets/{ticketId}`           | 내 발행 티켓 수정       | Access Token 필요  |
+| DELETE | `/me/tickets/{ticketId}`           | 내 발행 티켓 삭제       | Access Token 필요  |
 
 
 
@@ -307,17 +310,23 @@ Response:
   "content": [
     {
       "ticketId": 1,
-      "title": "비밀번호 재설정이 되지 않습니다.",
+      "title": "연차 신청 방법이 궁금해요",
+      "assignedDepartmentId": 1,
+      "assignedDepartmentName": "인사팀",
       "status": "RECEIVED",
-      "statusLabel": "답변 대기",
-      "createdAt": "2026-06-08T09:30:00"
+      "remainingHours": 12,
+      "expired": false,
+      "createdAt": "2026-06-09T10:00:00"
     },
     {
       "ticketId": 2,
-      "title": "사내 매뉴얼 접근 권한 문의",
-      "status": "IN_PROGRESS",
-      "statusLabel": "답변 대기",
-      "createdAt": "2026-06-08T10:15:00"
+      "title": "ERP 시스템 로그인이 안돼요",
+      "assignedDepartmentId": 2,
+      "assignedDepartmentName": "IT팀",
+      "status": "COMMON_QUEUE",
+      "remainingHours": 0,
+      "expired": true,
+      "createdAt": "2026-06-07T10:00:00"
     }
   ],
   "page": 0,
@@ -326,6 +335,32 @@ Response:
   "totalPages": 1,
   "first": true,
   "last": true
+}
+```
+
+### GET `/me/tickets/{ticketId}`
+
+Request Header:
+
+```http
+Authorization: Bearer jwt-access-token
+```
+
+Response:
+
+```json
+{
+  "ticketId": 1,
+  "title": "문의 제목",
+  "content": "문의 내용",
+  "assignedDepartmentId": 2,
+  "assignedDepartmentName": "인사팀",
+  "status": "RECEIVED",
+  "remainingHours": 12,
+  "expired": false,
+  "editable": true,
+  "deletable": true,
+  "createdAt": "2026-06-09T10:00:00"
 }
 ```
 
