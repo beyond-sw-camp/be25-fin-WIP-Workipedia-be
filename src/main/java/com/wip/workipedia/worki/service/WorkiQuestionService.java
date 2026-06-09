@@ -2,6 +2,7 @@ package com.wip.workipedia.worki.service;
 
 import com.wip.workipedia.worki.domain.WorkiAnswer;
 import com.wip.workipedia.worki.domain.WorkiQuestion;
+import com.wip.workipedia.worki.dto.AnswerResponse;
 import com.wip.workipedia.worki.dto.QuestionCreateRequest;
 import com.wip.workipedia.worki.dto.QuestionDetailResponse;
 import com.wip.workipedia.worki.dto.QuestionResponse;
@@ -9,10 +10,17 @@ import com.wip.workipedia.worki.dto.QuestionSummaryResponse;
 import com.wip.workipedia.worki.dto.QuestionUpdateRequest;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
+import com.wip.workipedia.user.domain.User;
+import com.wip.workipedia.user.repository.UserRepository;
 import com.wip.workipedia.worki.event.WorkiQuestionChangedEvent;
 import com.wip.workipedia.worki.repository.WorkiAnswerRepository;
 import com.wip.workipedia.worki.repository.WorkiQuestionRepository;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -27,6 +35,7 @@ public class WorkiQuestionService {
 
     private final WorkiQuestionRepository questionRepository;
     private final WorkiAnswerRepository answerRepository;
+    private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
@@ -57,7 +66,20 @@ public class WorkiQuestionService {
         
         List<WorkiAnswer> answers =
                 answerRepository.findByQuestionIdAndDeletedAtIsNullOrderByCreatedAtAsc(questionId);
-        return QuestionDetailResponse.of(question, answers);
+
+        // 프론트 "부서 · 닉네임" 표시용. 질문 작성자 + 모든 답변 작성자를 한 번에 조회한다(답변마다 개별 조회하면 N+1).
+        // 작성자가 탈퇴 등으로 없으면 null로 내려보내고(상세 조회 자체는 막지 않음), 닉네임/부서명 변환은 DTO가 null-safe하게 처리한다.
+        Set<Long> authorIds = new HashSet<>();
+        authorIds.add(question.getAuthorId());
+        answers.forEach(answer -> authorIds.add(answer.getAuthorId()));
+        Map<Long, User> authorsById = userRepository.findAllById(authorIds).stream()
+                .collect(Collectors.toMap(User::getUserId, Function.identity()));
+
+        List<AnswerResponse> answerResponses = answers.stream()
+                .map(answer -> AnswerResponse.of(answer, authorsById.get(answer.getAuthorId())))
+                .toList();
+        return QuestionDetailResponse.of(
+                question, authorsById.get(question.getAuthorId()), answerResponses);
     }
 
     @Transactional //여기의 경우는 더티체킹이 필요함

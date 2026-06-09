@@ -3,11 +3,13 @@ package com.wip.workipedia.storage.service;
 import com.wip.workipedia.storage.dto.PresignedDownloadResponse;
 import com.wip.workipedia.storage.dto.PresignedUploadRequest;
 import com.wip.workipedia.storage.dto.PresignedUploadResponse;
+import com.wip.workipedia.storage.dto.StoredObject;
 import java.time.Duration;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -49,6 +51,22 @@ public class StorageService {
 		String uploadUrl = s3Presigner.presignPutObject(presignRequest).url().toString();
 		String publicUrl = publicBaseUrl.stripTrailing() + "/" + objectKey;
 		return new PresignedUploadResponse(uploadUrl, objectKey, publicUrl);
+	}
+
+	// 서버가 들고 있는 파일 바이트를 R2에 직접 업로드한다. keyPrefix는 "manuals" 처럼 폴더 역할.
+	public StoredObject upload(byte[] content, String keyPrefix, String fileName, String contentType) {
+		String objectKey = keyPrefix + "/" + UUID.randomUUID() + "/" + fileName;
+
+		PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+			.bucket(bucket)
+			.key(objectKey)
+			.contentType(contentType)
+			.build();
+
+		s3Client.putObject(putObjectRequest, RequestBody.fromBytes(content));
+
+		String publicUrl = publicBaseUrl.stripTrailing() + "/" + objectKey;
+		return new StoredObject(objectKey, publicUrl);
 	}
 
 	public PresignedDownloadResponse createPresignedDownloadUrl(String objectKey) {
