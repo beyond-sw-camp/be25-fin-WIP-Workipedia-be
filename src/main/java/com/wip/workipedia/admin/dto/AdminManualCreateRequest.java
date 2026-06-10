@@ -1,11 +1,11 @@
-package com.wip.workipedia.manual.dto;
+package com.wip.workipedia.admin.dto;
 
 import com.wip.workipedia.manual.domain.ManualStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-public record ManualCreateRequest(
+public record AdminManualCreateRequest(
         Long departmentId,
         @NotBlank
         @Size(max = 255)

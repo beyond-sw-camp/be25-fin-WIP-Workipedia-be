@@ -1,4 +1,4 @@
-package com.wip.workipedia.manual.service;
+package com.wip.workipedia.admin.service;
 
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
@@ -22,27 +22,27 @@ public class PdfTextExtractor {
         try (PDDocument document = Loader.loadPDF(file.getBytes())) {
             String text = new PDFTextStripper().getText(document).trim();
             if (text.isBlank()) {
-                throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF에서 추출된 텍스트가 없습니다.");
+                throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF text is empty.");
             }
             return text;
         } catch (CustomException e) {
             throw e;
         } catch (IOException e) {
-            log.warn("PDF 텍스트 추출 실패 filename={}", file.getOriginalFilename(), e);
-            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF 텍스트 추출에 실패했습니다.");
+            log.warn("Failed to extract PDF text filename={}", file.getOriginalFilename(), e);
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "Failed to extract PDF text.");
         }
     }
 
     private void validate(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF 파일이 필요합니다.");
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF file is required.");
         }
 
         String filename = file.getOriginalFilename();
         boolean hasPdfExtension = filename != null && filename.toLowerCase().endsWith(".pdf");
         boolean hasPdfContentType = PDF_CONTENT_TYPE.equalsIgnoreCase(file.getContentType());
         if (!hasPdfExtension && !hasPdfContentType) {
-            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF 파일만 업로드할 수 있습니다.");
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "Only PDF files can be uploaded.");
         }
     }
 }
