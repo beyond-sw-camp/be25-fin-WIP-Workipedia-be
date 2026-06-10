@@ -14,5 +14,7 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
 
 	boolean existsByDepartmentNameAndDepartmentIdNotAndDeletedAtIsNull(String departmentName, Long departmentId);
 
+	boolean existsByDepartmentIdAndDeletedAtIsNull(Long departmentId);
+
 	Optional<Department> findByDepartmentIdAndDeletedAtIsNull(Long departmentId);
 }
