@@ -67,6 +67,7 @@ public class PointService {
 
 	@Transactional
 	public void earnPoint(Long userId, int amount, String reasonType, String relatedType, Long relatedId) {
+		// 동일 도메인 이벤트가 재처리되어도 포인트가 중복 적립되지 않도록 막는다.
 		if (isDuplicateEarnEvent(reasonType, relatedType, relatedId)) {
 			return;
 		}
@@ -74,6 +75,7 @@ public class PointService {
 	}
 
 	private void earnPointInternal(Long userId, int amount, String reasonType, String relatedType, Long relatedId) {
+		// 일일 적립 한도를 초과하면 잔여 한도만큼만 적립하고, 한도가 없으면 아무 것도 저장하지 않는다.
 		int earnAmount = calculateEarnablePoint(userId, amount);
 		if (earnAmount == 0) {
 			return;
@@ -86,6 +88,7 @@ public class PointService {
 
 	@Transactional
 	public void earnLoginPoint(Long userId) {
+		// 로그인 포인트는 일반 이벤트 멱등성과 별도로 사용자별 하루 1회만 지급한다.
 		if (hasEarnedLoginPointToday(userId)) {
 			return;
 		}
@@ -130,6 +133,7 @@ public class PointService {
 
 	private PointsDailyLimit getOrCreateTodayDailyLimit(Long userId) {
 		LocalDate today = LocalDate.now();
+		// 기존 row에는 쓰기 락을 걸어 같은 사용자의 동시 적립 요청이 일일 한도를 넘지 않게 한다.
 		return pointsDailyLimitRepository.findActiveByUserIdAndPointDateForUpdate(userId, today)
 			.orElseGet(() -> pointsDailyLimitRepository.save(PointsDailyLimit.create(userId, today)));
 	}
@@ -150,6 +154,7 @@ public class PointService {
 	}
 
 	private boolean isDuplicateEarnEvent(String reasonType, String relatedType, Long relatedId) {
+		// 관련 엔티티가 없는 적립은 이벤트 멱등성을 판단할 수 없어 중복 검사 대상에서 제외한다.
 		if (reasonType == null || relatedType == null || relatedId == null) {
 			return false;
 		}
@@ -167,5 +172,18 @@ public class PointService {
 		} catch (ArithmeticException exception) {
 			throw new CustomException(ErrorType.POINT_AMOUNT_OVERFLOW);
 		}
+	}
+
+	@Transactional
+	public void resetAllUserPointsForNewYear() {
+		userPointRepository.findByDeletedAtIsNull()
+				.forEach(userPoint ->
+						resetPoint(
+								userPoint.getUserId(),
+								"YEARLY_RESET",
+								"USER",
+								userPoint.getUserId()
+						)
+				);
 	}
 }
