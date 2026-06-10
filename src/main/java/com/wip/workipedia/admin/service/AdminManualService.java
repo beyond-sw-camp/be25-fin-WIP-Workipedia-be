@@ -76,7 +76,7 @@ public class AdminManualService {
 
     @Transactional
     public ManualDetailResponse createFromPdf(Long actorUserId, Long departmentId, String title,
-            ManualStatus status, String sourceUrl, String version, MultipartFile file) {
+            ManualStatus status, String version, MultipartFile file) {
         assertSystemAdmin(actorUserId);
 
         String content = pdfTextExtractor.extract(file);
@@ -108,7 +108,7 @@ public class AdminManualService {
 
     @Transactional
     public ManualDetailResponse updateFromPdf(Long actorUserId, Long manualId, Long departmentId,
-            String title, ManualStatus status, String sourceUrl, String version, MultipartFile file) {
+            String title, ManualStatus status, String version, MultipartFile file) {
         assertSystemAdmin(actorUserId);
 
         Manual manual = getManual(manualId);
@@ -143,14 +143,13 @@ public class AdminManualService {
         if (departmentId == null) {
             return null;
         }
-        if (!departmentRepository.findByDepartmentIdAndDeletedAtIsNull(departmentId).isPresent()) {
+        if (!departmentRepository.existsByDepartmentIdAndDeletedAtIsNull(departmentId)) {
             throw new CustomException(ErrorType.DEPARTMENT_NOT_FOUND);
         }
         return departmentId;
     }
 
-    private void saveVersion(Manual manual, Long actorUserId, String requestedVersion, String updateReason) {
-        String manualNum = resolveManualNum(manual.getManualId(), requestedVersion);
+    private void saveVersion(Manual manual, Long actorUserId, String manualNum, String updateReason) {
         if (manualVersionRepository.existsByManualManualIdAndManualNumAndDeletedAtIsNull(manual.getManualId(), manualNum)) {
             throw new CustomException(ErrorType.CONFLICT, "Manual version already exists. manualNum=" + manualNum);
         }
