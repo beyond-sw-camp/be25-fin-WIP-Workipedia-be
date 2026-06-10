@@ -47,6 +47,7 @@ public class UserPoint extends BaseTimeEntity {
 	public void earn(long amount) {
 		validatePositiveAmount(amount);
 		this.currentPoint += amount;
+		this.esgScore += amount;
 	}
 
 	public void spend(long amount) {
@@ -60,6 +61,7 @@ public class UserPoint extends BaseTimeEntity {
 	public long reset() {
 		long resetAmount = this.currentPoint;
 		this.currentPoint = 0;
+		this.esgScore = 0;
 		return resetAmount;
 	}
 
