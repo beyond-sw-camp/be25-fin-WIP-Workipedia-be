@@ -10,6 +10,10 @@ import com.wip.workipedia.worki.dto.QuestionSummaryResponse;
 import com.wip.workipedia.worki.dto.QuestionUpdateRequest;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
+import com.wip.workipedia.reaction.domain.ReactionTargetType;
+import com.wip.workipedia.reaction.domain.ReactionType;
+import com.wip.workipedia.reaction.repository.ReactionRepository;
+import com.wip.workipedia.reaction.repository.TargetLikeCount;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.repository.UserRepository;
 import com.wip.workipedia.worki.event.WorkiQuestionChangedEvent;
@@ -36,6 +40,7 @@ public class WorkiQuestionService {
     private final WorkiQuestionRepository questionRepository;
     private final WorkiAnswerRepository answerRepository;
     private final UserRepository userRepository;
+    private final ReactionRepository reactionRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
@@ -50,8 +55,24 @@ public class WorkiQuestionService {
     }
 
     public Page<QuestionSummaryResponse> list(Pageable pageable) {
-        return questionRepository.findByDeletedAtIsNull(pageable)
-                .map(QuestionSummaryResponse::from);
+        Page<WorkiQuestion> page = questionRepository.findByDeletedAtIsNull(pageable);
+
+        // 페이지에 담긴 질문들의 좋아요 수를 한 번에 집계한다(질문마다 COUNT 하면 N+1).
+        Map<Long, Long> likeCounts = loadQuestionLikeCounts(
+                page.getContent().stream().map(WorkiQuestion::getQuestionId).toList());
+
+        return page.map(question ->
+                QuestionSummaryResponse.of(question, likeCounts.getOrDefault(question.getQuestionId(), 0L)));
+    }
+
+    private Map<Long, Long> loadQuestionLikeCounts(List<Long> questionIds) {
+        if (questionIds.isEmpty()) {
+            return Map.of();
+        }
+        return reactionRepository.countLikesByTargetIds(
+                        ReactionTargetType.WORKI_QUESTION, ReactionType.LIKE, questionIds)
+                .stream()
+                .collect(Collectors.toMap(TargetLikeCount::getTargetId, TargetLikeCount::getLikeCount));
     }
 
     // ToDo: 여기부분 부하 줄수 있음. 새로고침 계속 하면 update 해야하니 이부분 수정 방법 찾아야함.
@@ -78,8 +99,13 @@ public class WorkiQuestionService {
         List<AnswerResponse> answerResponses = answers.stream()
                 .map(answer -> AnswerResponse.of(answer, authorsById.get(answer.getAuthorId())))
                 .toList();
+
+        // 좋아요 개수는 reactions에서 COUNT로 집계해 내려준다(별도 컬럼 없이 단일 소스 유지).
+        long likeCount = reactionRepository.countByTargetTypeAndTargetIdAndReactionType(
+                ReactionTargetType.WORKI_QUESTION, questionId, ReactionType.LIKE);
+
         return QuestionDetailResponse.of(
-                question, authorsById.get(question.getAuthorId()), answerResponses);
+                question, authorsById.get(question.getAuthorId()), likeCount, answerResponses);
     }
 
     @Transactional //여기의 경우는 더티체킹이 필요함
