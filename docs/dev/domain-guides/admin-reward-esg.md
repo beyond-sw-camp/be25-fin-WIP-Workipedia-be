@@ -29,7 +29,7 @@
 - ESG 점수 기준 등급 산정
 - 관리자 작업 로그 기준 반영
 - Flash Chat 운영 설정: TTL, 쿨다운, 금지어, 강제 삭제
-- AI 운영 설정: base_system/admin_context, 학습 데이터 유효기간, 파인튜닝 임계값, 상태 조회
+- AI 운영 설정: `custom_prompt`, 부서 R&R, API Tool, 승인된 DB Query Tool, 수기 지식과 동기화 상태
 
 ## API/DB 영향
 
@@ -40,6 +40,8 @@
 - `admin_logs`
 - `flash_chat_policy`
 - `ai_prompt_settings`
+- `ai_tools`
+- `knowledge_data`
 - dashboard summary APIs
 - ESG grade/score APIs
 - Flash Chat admin APIs
@@ -51,8 +53,9 @@
 - `SYSTEM_ADMIN`은 공통 접수 큐와 전체 운영 지표를 본다.
 - `TEAM_ADMIN`은 자기 팀 지표와 지식화 승인 범위를 본다.
 - 민감한 티켓 본문을 전체 대시보드에 직접 노출하지 않는다.
-- Flash Chat 강제 삭제와 AI 설정 변경은 `admin_logs`에 기록한다.
-- `base_system` 변경 시 재학습 영향 안내가 필요하다.
+- Flash Chat 강제 삭제와 AI 설정·Tool 변경은 `admin_logs`에 기록한다.
+- `base_prompt`, provider, DB 접속정보, SQL 원문과 credential은 관리자 화면에서 수정하지 않는다.
+- SYSTEM_ADMIN은 개발자가 승인한 DB Query Tool만 활성화할 수 있다.
 
 ## 완료 기준
 
@@ -61,7 +64,7 @@
 - ESG 점수 기준 등급이 점수 구간에 따라 산정된다.
 - 지식화 전환 건수와 예상 절감 시간이 계산된다.
 - Flash Chat 운영 설정이 조회/수정된다.
-- AI 프롬프트/학습 설정이 조회/수정된다.
+- AI `custom_prompt`, Tool, 수기 지식과 동기화 상태가 조회/수정된다.
 
 ## 논의 필요 사항
 
@@ -70,4 +73,4 @@
 - ESG 절감 시간 산식
 - 관리자 로그 기록 대상 액션
 - Flash Chat 메시지 최대 보존 개수
-- QLoRA 파인튜닝 임계값 기본값
+- AI 운영 지표의 집계 주기와 보존 기간

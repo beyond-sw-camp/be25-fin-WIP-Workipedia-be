@@ -2,10 +2,10 @@
 
 > 문서 유형: API Contract
 > 상태: Draft
-> 정본 위치: `docs/004-api/api-contract.md`
-> 관련 문서: `docs/001-reference/prd.md`, `docs/001-reference/trd.md`, `docs/006-planning/wbs.md`
+> 정본 위치: `docs/api/api-contract.md`
+> 관련 문서: `docs/reference/prd.md`, `docs/reference/trd.md`, `docs/planning/wbs.md`, `docs/adr/013-object-storage-strategy.md`
 > 버전: v0.4
-> 최종 수정: 2026-06-08
+> 최종 수정: 2026-06-09
 
 ## 1. 목적
 
@@ -120,17 +120,24 @@ Authorization: Bearer <accessToken>
 | GET    | `/chatbot/sessions/{sessionId}/messages/{messageId}/worki-support` | 워키 질문 등록 지원 (챗봇 메시지 기반 초안 반환) | 필요  |
 
 
-### AI 운영 API
+### AI 운영 API (계획)
 
 담당: 김진혁
 
 
-| Method | Path                    | 설명                            | 인증           |
-| ------ | ----------------------- | ----------------------------- | ------------ |
-| POST   | `/ai/fine-tune/trigger` | APPROVED 지식 데이터 기반 파인튜닝 실행 요청 | SYSTEM_ADMIN |
-| GET    | `/ai/fine-tune/status`  | 파인튜닝 진행 상태 조회                 | SYSTEM_ADMIN |
-| GET    | `/ai/model/current`     | 현재 모델 버전 및 어댑터 정보 조회          | SYSTEM_ADMIN |
-| POST   | `/ai/prompt/update`     | base_system/admin_context 갱신  | SYSTEM_ADMIN |
+| Method | Path                             | 설명                                      | 인증           |
+| ------ | -------------------------------- | ----------------------------------------- | -------------- |
+| GET    | `/admin/ai-prompt-settings`      | 활성 `custom_prompt` 조회                 | SYSTEM_ADMIN   |
+| PUT    | `/admin/ai-prompt-settings`      | `custom_prompt`과 활성 상태 변경           | SYSTEM_ADMIN   |
+| GET    | `/admin/ai-tools`                | API/DB Query Tool 목록 조회               | SYSTEM_ADMIN   |
+| POST   | `/admin/ai-tools`                | API Tool 등록 또는 개발자 승인 Tool 반영   | SYSTEM_ADMIN   |
+| PATCH  | `/admin/ai-tools/{aiToolId}`     | Tool 설정·승인·활성 상태 변경              | SYSTEM_ADMIN   |
+| POST   | `/admin/ai-tools/{aiToolId}/test`| Tool 테스트 실행                           | SYSTEM_ADMIN   |
+| GET    | `/admin/manual-knowledge`        | 수기 지식과 동기화 상태 조회               | SYSTEM_ADMIN   |
+| POST   | `/admin/manual-knowledge`        | 수기 지식 등록                             | SYSTEM_ADMIN   |
+| POST   | `/admin/manual-knowledge/{id}/sync` | 실패한 ChromaDB 동기화 재시도           | SYSTEM_ADMIN   |
+
+`base_prompt`, provider 설정, credential, DB 접속정보와 SQL 원문은 관리자 API로 변경하지 않는다. 위 API는 아직 Controller가 구현되지 않은 계획 계약이며, V16에는 `ai_tools` 테이블만 반영되어 있다.
 
 
 ## 6. Worki API
@@ -376,19 +383,54 @@ Response:
 
 담당: 김진혁
 
+파일 바이너리는 RDB가 아니라 Object Storage에 저장한다. FE는 provider 종류와 무관하게 presigned URL 흐름을 사용하며, 실제 provider는 배포 설정의 `storage.provider`로 선택한다.
 
-| Method | Path                          | 설명                         | 인증  |
-| ------ | ----------------------------- | -------------------------- | --- |
-| POST   | `/attachments`                | 이미지 업로드, `attachmentId` 반환 | 필요  |
-| GET    | `/attachments/{attachmentId}` | 이미지 조회                     | 필요  |
+#### 현재 구현된 Storage API
+
+| Method | Path | 설명 | 인증 |
+|---|---|---|---|
+| POST | `/api/v1/storage/presigned-upload` | 업로드 URL, `objectKey`, `publicUrl` 발급 | 필요 |
+| GET | `/api/v1/storage/presigned-download?objectKey=...` | 다운로드 URL 발급 | 필요 |
+| DELETE | `/api/v1/storage?objectKey=...` | object 삭제 | 필요 |
+
+Presigned upload request:
+
+```json
+{
+  "fileName": "error-screen.png",
+  "contentType": "image/png"
+}
+```
+
+Presigned upload response:
+
+```json
+{
+  "uploadUrl": "https://object-storage.example.com/...",
+  "objectKey": "tickets/replies/uuid/error-screen.png",
+  "publicUrl": "https://files.example.com/tickets/replies/uuid/error-screen.png"
+}
+```
+
+FE는 `uploadUrl`에 파일을 직접 PUT한 뒤 `objectKey`를 첨부 메타데이터 등록 API에 전달한다.
+
+#### 첨부 메타데이터 API(예정)
+
+| Method | Path                          | 설명                                      | 인증  |
+| ------ | ----------------------------- | ----------------------------------------- | --- |
+| POST   | `/attachments`                | 업로드 완료 object 메타데이터 등록, `attachmentId` 반환 | 필요  |
+| GET    | `/attachments/{attachmentId}` | 첨부 메타데이터와 조회 URL 반환                    | 필요  |
 
 
 
-| Field        | Type   | 설명                                         |
-| ------------ | ------ | ------------------------------------------ |
-| `file`       | file   | 이미지 파일                                     |
-| `targetType` | string | `TICKET` 등 첨부 대상                           |
-| `targetId`   | number | 이미 생성된 대상에 연결할 때 사용. 티켓 생성 전 업로드 시 null 가능 |
+| Field         | Type   | 설명                                         |
+| ------------- | ------ | ------------------------------------------ |
+| `objectKey`   | string | presigned upload API에서 발급받은 object key       |
+| `fileName`    | string | 원본 파일명                                     |
+| `contentType` | string | 허용된 이미지 MIME                               |
+| `fileSize`    | number | 업로드 파일 크기(byte)                            |
+| `targetType`  | string | `TICKET` 등 첨부 대상                           |
+| `targetId`    | number | 이미 생성된 대상에 연결할 때 사용. 티켓 생성 전 업로드 시 null 가능 |
 
 
 Response:
@@ -396,9 +438,11 @@ Response:
 ```json
 {
   "attachmentId": 1,
+  "objectKey": "tickets/replies/uuid/error-screen.png",
+  "fileName": "error-screen.png",
   "contentType": "image/png",
   "fileSize": 123456,
-  "url": "/attachments/1"
+  "downloadUrl": "/attachments/1"
 }
 ```
 
@@ -550,7 +594,7 @@ Response:
 | ------ | ---------------------------------------------- | ------------------------- | ---------- |
 | GET    | `/admin/team/dashboard/knowledge-trend`        | 월별 지식화 승인 건수 추이 조회        | TEAM_ADMIN |
 | GET    | `/admin/team/dashboard/chatbot-ticket-trend`   | 월별 AI 챗봇 배정 티켓 건수 추이 조회   | TEAM_ADMIN |
-| GET    | `/admin/team/tickets?status=COMPLETED`         | 처리 완료 티켓 기반 지식화 후보 목록 조회  | TEAM_ADMIN |
+| GET    | `/admin/team/tickets?status=COMPLETED`         | 지식화 승인 가능한 처리 완료 티켓 목록 조회 | TEAM_ADMIN |
 | GET    | `/admin/team/knowledge-data`                   | 승인된 지식화 데이터 목록 조회         | TEAM_ADMIN |
 | PATCH  | `/admin/team/knowledge-data/{knowledgeDataId}` | 지식화 데이터 질문/답변 수정          | TEAM_ADMIN |
 | DELETE | `/admin/team/knowledge-data/{knowledgeDataId}` | 지식화 데이터 삭제                | TEAM_ADMIN |
@@ -603,7 +647,7 @@ Response:
 ## 13.매뉴얼 (Manual)
 
 매뉴얼은 **본문 직접 입력**과 **PDF 업로드** 두 가지 방식으로 등록/수정할 수 있다.
-PDF 업로드 시 서버가 텍스트를 추출해 본문(`content`)으로 저장하고, **원본 PDF는 R2(오브젝트 스토리지)에 보관**한 뒤 접근 URL(`fileUrl`)을 응답에 담는다.
+PDF 업로드 시 서버가 텍스트를 추출해 본문(`content`)으로 저장하고, **원본 PDF는 설정된 Object Storage(R2/S3/MinIO)에 보관**한 뒤 접근 URL(`fileUrl`)을 응답에 담는다.
 모든 매뉴얼 API는 `SYSTEM_ADMIN` 권한이 필요하다. (권한이 없으면 `403 manual-002`)
 
 
@@ -684,7 +728,7 @@ PDF를 업로드해 매뉴얼을 등록한다. `Content-Type: multipart/form-dat
 
 
 - PDF가 아니거나 추출된 텍스트가 비어 있으면 `400 manual-003`.
-- 추출한 텍스트가 본문(`content`)에 저장되고, 원본 PDF는 R2에 저장되어 `fileUrl`로 반환된다.
+- 추출한 텍스트가 본문(`content`)에 저장되고, 원본 PDF는 선택된 Object Storage에 저장되어 `fileUrl`로 반환된다.
 - Response: `201 Created`, `ManualDetailResponse`.
 
 ### GET `/admin/manuals/{manualId}`
@@ -715,14 +759,14 @@ Request:
 새 PDF를 업로드해 기존 매뉴얼의 본문(`content`)을 교체한다. `Content-Type: multipart/form-data`.
 
 - form field는 `POST /admin/manuals/pdf`와 동일하되 `title` 포함 모든 필드가 선택값이다. (`file`만 필수)
-- 본문 교체와 함께 **R2의 기존 PDF는 새 파일로 교체(이전 파일 삭제)** 된다.
+- 본문 교체와 함께 **Object Storage의 기존 PDF는 새 파일로 교체(이전 파일 삭제)** 된다.
 - Response: `200 OK`, `ManualDetailResponse`.
 
 ### DELETE `/admin/manuals/{manualId}`
 
 매뉴얼을 소프트 삭제한다. (`status`를 `DELETED`로 변경)
 
-- R2에 보관된 원본 PDF가 있으면 함께 삭제한다.
+- Object Storage에 보관된 원본 PDF가 있으면 함께 삭제한다.
 - Response: `204 No Content`.
 
 ### GET `/admin/flash-chat/policy`
@@ -772,6 +816,4 @@ Request:
 | 알림 구현 방식                         | SSE 우선, 폴링 fallback     | 이슬이, 황희수  |
 | 챗봇 세션 구조                         | 세션 기반 확정, 이슬이와 최종 합의 필요 | 이슬이, 김진혁  |
 | Flash Chat 최대 활성 메시지 수           | 미정                      | 김진혁, 김가영  |
-| 이미지 저장소                          | 로컬 파일시스템 또는 S3          | 김진혁, 팀 전체 |
-
-
+| Object Storage orphan object 정리 정책 | 메타데이터 저장 실패·교체 실패 보상 방식 확정 필요 | 김진혁, 팀 전체 |

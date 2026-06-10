@@ -174,6 +174,7 @@ public class AuthService {
 			accessToken,
 			user.getUserId(),
 			user.getDepartment().getDepartmentId(),
+			user.getDepartment().getDepartmentName(),
 			user.getRole().name(),
 			user.getNickname(),
 			user.getStatus().name()

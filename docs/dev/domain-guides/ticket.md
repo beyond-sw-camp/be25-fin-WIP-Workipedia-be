@@ -5,7 +5,7 @@
 > 정본 위치: `docs/dev/domain-guides/ticket.md`
 > 관련 문서: `docs/adr/004-ticket-routing-strategy.md`, `docs/adr/005-role-permission-strategy.md`, `docs/reference/service-flow.md`, `docs/api/api-contract.md`
 > 버전: v0.1
-> 최종 수정: 2026-06-04
+> 최종 수정: 2026-06-09
 
 ## 개발 목표
 
@@ -33,7 +33,7 @@
 - 팀 티켓 큐 조회
 - 공통 접수 큐 조회
 - 티켓 중요도(priority) 저장
-- 부서별 최근 30일 처리 건수 기준 담당자 추천 TOP 3
+- 부서 R&R과 승인 사례 기반 후보 부서 Top 3 검색 및 Cross-Encoder 재정렬
 - 사진 첨부 업로드/조회
 
 ## API/DB 영향
@@ -44,11 +44,14 @@
 - `assigned_department_id`
 - `assignee_id`
 - `routing_confidence_score`
+- reranker `top_score`, `score_margin`, 후보별 `score`, `rank`
 - `transfer_reason`
 - `attachments`
 - ticket create/list/detail/update APIs
 - `GET /tickets?status={status}&departmentId={departmentId}`
 - attachment upload/read APIs
+- `StoragePort` 기반 R2/S3/MinIO Object Storage
+- presigned upload/download API
 
 ## 권한/보안 체크
 
@@ -56,6 +59,7 @@
 - `TEAM_ADMIN`은 자기 팀 티켓만 조회한다.
 - `SYSTEM_ADMIN`은 공통 접수 큐를 관리한다.
 - 팀 관리자의 이관은 다른 부서 직접 이동이 아니라 공통 접수 큐 이동이다.
+- AI는 부서까지만 추천하며 개인 담당자는 `TEAM_ADMIN`이 배정한다.
 
 ## 완료 기준
 
@@ -65,12 +69,14 @@
 - 담당 팀원이 처리 완료 상태로 변경할 수 있다.
 - `status`, `departmentId` 조건으로 티켓 목록을 조회할 수 있다.
 - 티켓 생성 시 중요도와 첨부 파일이 저장된다.
-- TEAM_ADMIN 화면에서 담당자 추천 후보를 확인할 수 있다.
+- 첨부 바이너리는 선택된 Object Storage에 저장되고 DB에는 object key와 파일 메타데이터만 저장된다.
+- provider 변경 시 티켓 도메인 코드는 수정하지 않는다.
+- 라우팅 기준을 통과하지 못하면 후보 부서와 점수를 남기고 공통 접수 큐로 이동한다.
 
 ## 논의 필요 사항
 
 - `RECEIVED` 상태를 DB에 실제로 남길지
-- 라우팅 점수 초기 기준
+- Cross-Encoder 1위 최소 점수와 1·2위 최소 점수 차이
 - 담당자 변경 허용 여부
 - 반려/취소 상태를 MVP에 넣을지 여부
-- 이미지 저장소를 로컬 파일시스템으로 시작할지 S3로 갈지
+- 업로드 완료 후 첨부 메타데이터 등록 실패 시 orphan object 정리 방식
