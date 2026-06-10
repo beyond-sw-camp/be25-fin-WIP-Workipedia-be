@@ -61,6 +61,8 @@ public class AuthService {
 		String refreshToken = jwtProvider.createRefreshToken(user);
 		refreshTokenService.save(user.getUserId(), refreshToken);
 		user.updateLastLoginAt();
+		// 로그인 성공 후 로그인 포인트 적립을 처리합니다.
+		// 실제 중복 지급 여부와 일일 적립 한도는 PointService에서 검증합니다.
 		pointService.earnLoginPoint(user.getUserId());
 
 		return new LoginResult(
