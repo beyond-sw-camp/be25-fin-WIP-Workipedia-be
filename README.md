@@ -39,6 +39,10 @@
 1. [프로젝트 기획서](#1-프로젝트-기획서)
 2. [요구사항 명세서](#2-요구사항-명세서)
 3. [WBS](#3-WBS)
+4. [ERD](#4-ERD)
+5. [시스템 아키텍처](#5-시스템-아키텍처)
+6. [화면설계서](#6-화면설계서)
+7. [API 명세서](#7-API-명세서)
 
 <br>
 
@@ -184,14 +188,26 @@ AI 답변 해결 건수
 <details>
 <summary>세부사항</summary>
 
-[📅 ERD](https://www.erdcloud.com/d/f2crxM2E8EBrAy9oW)
+[📅 ERD](https://www.erdcloud.com/d/RrGgjDNdgqAvsg8sZ)
 
 <img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/main/images/ERD.png?raw=true"/>
 </details>
 
 <br>
 
-## <a id="5-화면설계서"></a> 5. 화면설계서
+
+## <a id="5-시스템-아키텍처"></a> 5. 시스템 아키텍처
+
+<details>
+<summary>세부사항</summary>
+
+<img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/dev/images/시스템아키텍처.png?raw=true"/>
+</details>
+
+<br>
+
+
+## <a id="6-화면설계서"></a> 6. 화면설계서
 
 <details>
 <summary>세부사항</summary>
@@ -199,6 +215,18 @@ AI 답변 해결 건수
 [📅 화면설계서](https://www.figma.com/design/jleHnh9qzkjeduukiUuJws/%ED%99%94%EB%A9%B4%EA%B8%B0%EB%8A%A5%EC%84%A4%EA%B3%84%EC%84%9C?node-id=0-1&t=Y0yJvaReqcKLiOyK-1)
 
 <img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/main/images/%ED%99%94%EB%A9%B4%EC%84%A4%EA%B3%84%EC%84%9C.png?raw=true"/>
+</details>
+
+<br>
+
+
+## <a id="7-API-명세서"></a> 7. API 명세서
+
+<details>
+<summary>세부사항</summary>
+
+[📚 API명세서](https://www.notion.so/playdatacademy/367d943bcac28064b9b6c422491d86bd?v=367d943bcac280189fc1000ce027a418&source=copy_link)
+
 </details>
 
 <br>
