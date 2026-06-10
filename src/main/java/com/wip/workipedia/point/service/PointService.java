@@ -133,6 +133,7 @@ public class PointService {
 	}
 
 	// 기존 일일 한도 row에는 쓰기 락(Pessimistic Write Lock)을 걸어 같은 사용자의 동시 적립 요청이 일일 한도를 넘지 않게 한다.
+	// 한 사용자의 포인트 적립 계산을 한 번에 한 요청만 하게 만드는 안전장치
 	private PointsDailyLimit getOrCreateTodayDailyLimit(Long userId) {
 		LocalDate today = LocalDate.now();
 		return pointsDailyLimitRepository.findActiveByUserIdAndPointDateForUpdate(userId, today)
