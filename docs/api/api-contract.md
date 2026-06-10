@@ -102,8 +102,6 @@ Authorization: Bearer <accessToken>
 | PATCH  | `/me/notification-settings`        | 알림 설정 변경         | Access Token 필요  |
 | GET    | `/me/tickets`                      | 내 발행 티켓 목록 조회    | Access Token 필요  |
 | GET    | `/me/tickets/{ticketId}`           | 내 발행 티켓 상세 조회    | Access Token 필요  |
-| PATCH  | `/me/tickets/{ticketId}`           | 내 발행 티켓 수정       | Access Token 필요  |
-| DELETE | `/me/tickets/{ticketId}`           | 내 발행 티켓 삭제       | Access Token 필요  |
 
 
 ## 5. Chatbot API
