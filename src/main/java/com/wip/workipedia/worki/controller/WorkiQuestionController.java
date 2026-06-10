@@ -48,8 +48,11 @@ public class WorkiQuestionController {
     }
 
     @GetMapping("/{questionId}")
-    public ResponseEntity<QuestionDetailResponse> detail(@PathVariable Long questionId) {
-        return ResponseEntity.ok(questionService.getDetail(questionId));
+    public ResponseEntity<QuestionDetailResponse> detail(
+            @AuthenticationPrincipal Long actorUserId,
+            @PathVariable Long questionId) {
+        // 조회자 id는 "같은 사람의 10분 내 재조회는 조회수에 반영하지 않기" 위한 중복 차단 키로 쓰인다.
+        return ResponseEntity.ok(questionService.getDetail(questionId, actorUserId));
     }
 
     // 수정

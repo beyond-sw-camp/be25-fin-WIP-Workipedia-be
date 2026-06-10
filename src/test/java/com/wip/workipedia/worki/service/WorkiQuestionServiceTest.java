@@ -3,6 +3,7 @@ package com.wip.workipedia.worki.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.wip.workipedia.common.exception.CustomException;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 class WorkiQuestionServiceTest {
@@ -43,6 +45,12 @@ class WorkiQuestionServiceTest {
 
     @Mock
     private ReactionRepository reactionRepository;
+
+    @Mock
+    private WorkiViewCountService viewCountService;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private WorkiQuestionService questionService;
@@ -123,21 +131,26 @@ class WorkiQuestionServiceTest {
     }
 
     @Test
-    @DisplayName("detail increments view count and returns answers")
-    void getDetail_incrementsViewCountAndReturnsAnswers() {
+    @DisplayName("detail counts view via Redis and returns answers")
+    void getDetail_countsViewAndReturnsAnswers() {
         Long authorId = 1001L;
         Long answererId = 1002L;
+        Long viewerId = 2001L;
         Long questionId = 1010L;
         WorkiQuestion question = WorkiQuestion.create(authorId, "title", "content", null);
         when(questionRepository.findByQuestionIdAndDeletedAtIsNull(questionId))
                 .thenReturn(Optional.of(question));
         when(answerRepository.findByQuestionIdAndDeletedAtIsNullOrderByCreatedAtAsc(questionId))
                 .thenReturn(List.of(WorkiAnswer.create(questionId, answererId, "answer")));
+        // DB값(0) + 아직 반영 안 된 Redis 누적분(3) = 3 으로 합산해 내려주는지 확인.
+        when(viewCountService.getPendingCount(questionId)).thenReturn(3L);
 
-        QuestionDetailResponse response = questionService.getDetail(questionId);
+        QuestionDetailResponse response = questionService.getDetail(questionId, viewerId);
 
-        long expectedViewCount = 1L;
-        assertThat(question.getViewCount()).isEqualTo(expectedViewCount);
+        // 조회수 집계는 더 이상 엔티티/DB를 즉시 건드리지 않고 Redis 서비스에 위임한다.
+        verify(viewCountService).countView(questionId, viewerId);
+        assertThat(question.getViewCount()).isZero();
+        assertThat(response.viewCount()).isEqualTo(3L);
         assertThat(response.answers()).hasSize(1);
     }
 }
