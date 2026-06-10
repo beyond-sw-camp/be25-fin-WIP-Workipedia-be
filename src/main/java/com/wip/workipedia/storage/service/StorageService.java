@@ -1,13 +1,18 @@
 package com.wip.workipedia.storage.service;
 
+import com.wip.workipedia.common.exception.CustomException;
+import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.storage.dto.PresignedDownloadResponse;
 import com.wip.workipedia.storage.dto.PresignedUploadRequest;
 import com.wip.workipedia.storage.dto.PresignedUploadResponse;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -51,6 +56,26 @@ public class StorageService {
 		return new PresignedUploadResponse(uploadUrl, objectKey, publicUrl);
 	}
 
+	public String uploadFile(String directory, MultipartFile file) {
+		if (file == null || file.isEmpty()) {
+			throw new CustomException(ErrorType.BAD_REQUEST, "file is required.");
+		}
+
+		String objectKey = directory + "/" + UUID.randomUUID() + "/" + sanitizeFileName(file.getOriginalFilename());
+		try {
+			PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+				.bucket(bucket)
+				.key(objectKey)
+				.contentType(resolveContentType(file))
+				.build();
+
+			s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
+			return publicBaseUrl.stripTrailing() + "/" + objectKey;
+		} catch (IOException e) {
+			throw new CustomException(ErrorType.INTERNAL_ERROR, "Failed to read upload file.");
+		}
+	}
+
 	public PresignedDownloadResponse createPresignedDownloadUrl(String objectKey) {
 		GetObjectRequest getObjectRequest = GetObjectRequest.builder()
 			.bucket(bucket)
@@ -71,5 +96,19 @@ public class StorageService {
 			.bucket(bucket)
 			.key(objectKey)
 			.build());
+	}
+
+	private String sanitizeFileName(String fileName) {
+		if (fileName == null || fileName.isBlank()) {
+			return "file";
+		}
+		return fileName.replaceAll("[\\\\/]", "_");
+	}
+
+	private String resolveContentType(MultipartFile file) {
+		if (file.getContentType() == null || file.getContentType().isBlank()) {
+			return "application/octet-stream";
+		}
+		return file.getContentType();
 	}
 }
