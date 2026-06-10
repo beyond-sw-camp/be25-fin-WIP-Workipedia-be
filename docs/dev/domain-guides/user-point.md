@@ -128,6 +128,9 @@ public void usePoint(Long userId, int amount, PointReasonType reasonType, String
 - 적립 처리 전 당일 누적 적립 포인트를 조회한다.
 - 적립 예정 포인트가 잔여 한도를 초과하면 잔여 한도만큼만 적립한다.
 - 잔여 한도가 0인 경우 포인트를 적립하지 않는다.
+- 시스템은 매년 1월 1일 사용자의 현재 보유 포인트(`current_point`)와 누적 포인트(`esg_score`)를 모두 초기화한다.
+- 초기화 시 기존 보유 포인트는 포인트 이력에 `RESET` 타입으로 기록한다.
+- 초기화 이후 사용자의 `current_point`와 `esg_score`는 0으로 설정된다.
 
 ## 포인트 적립 정책
 | 이벤트 | 포인트 |
