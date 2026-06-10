@@ -34,12 +34,22 @@ spring:
           starttls:
             enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:true}
 
-r2:
-  access-key: ${R2_ACCESS_KEY}
-  secret-key: ${R2_SECRET_KEY}
-  account-id: ${R2_ACCOUNT_ID}
-  bucket: ${R2_BUCKET}
-  public-url: ${R2_PUBLIC_BASE_URL}
+storage:
+  provider: ${STORAGE_PROVIDER}
+  bucket: ${STORAGE_BUCKET}
+  public-url: ${STORAGE_PUBLIC_BASE_URL}
+  r2:
+    access-key: ${R2_ACCESS_KEY}
+    secret-key: ${R2_SECRET_KEY}
+    account-id: ${R2_ACCOUNT_ID}
+  minio:
+    access-key: ${MINIO_ACCESS_KEY}
+    secret-key: ${MINIO_SECRET_KEY}
+    endpoint: ${MINIO_ENDPOINT}
+  s3:
+    access-key: ${AWS_ACCESS_KEY}
+    secret-key: ${AWS_SECRET_KEY}
+    region: ${AWS_REGION}
 
 app:
   jwt:

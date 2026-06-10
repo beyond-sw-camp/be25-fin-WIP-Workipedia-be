@@ -2,8 +2,8 @@
 
 > 문서 유형: Constitution
 > 상태: Draft
-> 정본 위치: `docs/001-reference/constitution.md`
-> 관련 문서: `docs/001-reference/document-guide.md`
+> 정본 위치: `docs/reference/constitution.md`
+> 관련 문서: `docs/reference/prd.md`, `docs/reference/trd.md`
 > 버전: v0.2
 > 최종 수정: 2026-05-31
 
@@ -55,7 +55,7 @@ Workipedia는 **사내 구성원이 신뢰할 수 있는 지식에 가장 빠르
 ### Principle 7. 질문 → 요청 → 지식화의 순환 경로는 깨지지 않는다 (Always a Knowledge Loop)
 - 질문은 기존 지식을 찾는 흐름이고, 요청은 담당 부서의 실제 처리가 필요한 공식 티켓 흐름이다.
 - 사용자는 챗봇에 막혀서는 안 된다. 챗봇이 답변하지 못하거나 실제 처리가 필요한 경우 요청 티켓을 발행할 수 있다.
-- 처리 완료된 요청은 개인정보와 개인 사례를 제거한 뒤 지식화 후보가 될 수 있어야 한다.
+- 처리 완료된 요청은 개인정보와 개인 사례를 제거하고 TEAM_ADMIN 승인을 거쳐 `knowledge_data`로 축적할 수 있어야 한다.
 - 어떤 흐름도 막다른 길(dead end)이어서는 안 된다.
 
 ### Principle 8. ESG는 마케팅이 아니라 측정 가능한 지표다 (ESG as Metric)
