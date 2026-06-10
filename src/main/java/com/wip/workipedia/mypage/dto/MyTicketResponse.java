@@ -18,7 +18,7 @@ public record MyTicketResponse(
 
 	public static MyTicketResponse from(
 		MyPageTicketProjection projection,
-		long remainingHours,
+		Long remainingHours,
 		boolean expired
 	) {
 		return new MyTicketResponse(

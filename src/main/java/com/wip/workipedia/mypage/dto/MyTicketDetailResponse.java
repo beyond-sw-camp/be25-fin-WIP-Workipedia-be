@@ -33,7 +33,7 @@ public record MyTicketDetailResponse(
 
 	public static MyTicketDetailResponse from(
 		MyTicketDetailProjection projection,
-		long remainingHours,
+		Long remainingHours,
 		boolean expired,
 		boolean editable,
 		boolean deletable

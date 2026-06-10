@@ -104,7 +104,7 @@ public class MyPageService {
 
 	private TicketTimeStatus calculateTicketTimeStatus(LocalDateTime assignedAt) {
 		if (assignedAt == null) {
-			return new TicketTimeStatus(TICKET_RESPONSE_DEADLINE_HOURS, false);
+			return new TicketTimeStatus(null, false);
 		}
 
 		LocalDateTime deadline = assignedAt.plusHours(TICKET_RESPONSE_DEADLINE_HOURS);
@@ -188,6 +188,6 @@ public class MyPageService {
 		return Math.max(esgGrade.getMaxScore() - esgScore, 0L);
 	}
 
-	private record TicketTimeStatus(long remainingHours, boolean expired) {
+	private record TicketTimeStatus(Long remainingHours, boolean expired) {
 	}
 }
