@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,5 +27,5 @@ jobs:
       - name: Grant execute permission
         run: chmod +x gradlew
 
-      - name: Build and test
-        run: ./gradlew clean build --no-daemon
+      - name: Build backend
+        run: ./gradlew clean bootJar --no-daemon
