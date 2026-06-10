@@ -7,8 +7,7 @@ public enum MyTicketStatus {
 	WAITING(List.of(
 		TicketStatus.RECEIVED,
 		TicketStatus.COMMON_QUEUE,
-		TicketStatus.ASSIGNED,
-		TicketStatus.IN_PROGRESS
+		TicketStatus.ASSIGNED
 	)),
 	COMPLETED(List.of(TicketStatus.COMPLETED));
 

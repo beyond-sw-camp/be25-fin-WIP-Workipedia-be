@@ -99,7 +99,6 @@ public class Ticket {
 
 	public void assignTo(Long assigneeId) {
 		this.assigneeId = assigneeId;
-		this.status = TicketStatus.IN_PROGRESS;
 		touch();
 	}
 

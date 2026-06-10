@@ -25,7 +25,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 		value = """
         UPDATE tickets
         SET status = 'COMMON_QUEUE'
-        WHERE status IN ('RECEIVED', 'ASSIGNED', 'IN_PROGRESS', 'REJECTED')
+        WHERE status IN ('RECEIVED', 'ASSIGNED')
           AND created_at <= DATE_SUB(NOW(), INTERVAL 48 HOUR)
           AND deleted_at IS NULL
           AND is_deleted = 'N'
