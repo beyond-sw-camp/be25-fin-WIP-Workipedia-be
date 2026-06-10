@@ -19,6 +19,7 @@ public interface MyPageTicketRepository extends Repository<Ticket, Long> {
                 t.assigned_department_id AS assignedDepartmentId,
                 d.department_name AS assignedDepartmentName,
                 t.status AS status,
+                t.assigned_at AS assignedAt,
                 t.created_at AS createdAt
             FROM tickets t
             LEFT JOIN departments d
@@ -52,6 +53,7 @@ public interface MyPageTicketRepository extends Repository<Ticket, Long> {
                 t.assigned_department_id AS assignedDepartmentId,
                 d.department_name AS assignedDepartmentName,
                 t.status AS status,
+                t.assigned_at AS assignedAt,
                 t.created_at AS createdAt,
                 t.completed_at AS completedAt,
                 ta.ticket_answer_id AS answerId,
@@ -81,6 +83,7 @@ public interface MyPageTicketRepository extends Repository<Ticket, Long> {
                 ON au.department_id = ad.department_id
             WHERE t.ticket_id = :ticketId
                 AND t.requester_id = :requesterId
+                AND t.status <> 'DELETED'
                 AND t.deleted_at IS NULL
             """,
             nativeQuery = true

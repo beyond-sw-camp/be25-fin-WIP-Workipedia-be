@@ -12,6 +12,7 @@ public record MyTicketResponse(
 	String status,
 	Long remainingHours,
 	boolean expired,
+	LocalDateTime assignedAt,
 	LocalDateTime createdAt
 ) {
 
@@ -28,6 +29,7 @@ public record MyTicketResponse(
 				projection.getStatus(),
 				remainingHours,
 				expired,
+				projection.getAssignedAt(),
 				projection.getCreatedAt()
 		);
 	}

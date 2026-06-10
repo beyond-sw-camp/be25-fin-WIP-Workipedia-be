@@ -17,6 +17,8 @@ public interface MyTicketDetailProjection {
 
 	String getStatus();
 
+	LocalDateTime getAssignedAt();
+
 	LocalDateTime getCreatedAt();
 
 	LocalDateTime getCompletedAt();

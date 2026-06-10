@@ -85,7 +85,7 @@ public class MyPageService {
 	public MyTicketDetailResponse getMyTicketDetail(Long userId, Long ticketId) {
 		MyTicketDetailProjection projection = myPageTicketRepository.findMyTicketDetail(userId, ticketId)
 			.orElseThrow(() -> new CustomException(ErrorType.TICKET_NOT_FOUND));
-		TicketTimeStatus ticketTimeStatus = calculateTicketTimeStatus(projection.getCreatedAt());
+		TicketTimeStatus ticketTimeStatus = calculateTicketTimeStatus(projection.getAssignedAt());
 
 		return MyTicketDetailResponse.from(
 			projection,
@@ -97,13 +97,17 @@ public class MyPageService {
 	}
 
 	private MyTicketResponse toMyTicketResponse(MyPageTicketProjection projection) {
-		TicketTimeStatus ticketTimeStatus = calculateTicketTimeStatus(projection.getCreatedAt());
+		TicketTimeStatus ticketTimeStatus = calculateTicketTimeStatus(projection.getAssignedAt());
 
 		return MyTicketResponse.from(projection, ticketTimeStatus.remainingHours(), ticketTimeStatus.expired());
 	}
 
-	private TicketTimeStatus calculateTicketTimeStatus(LocalDateTime createdAt) {
-		LocalDateTime deadline = createdAt.plusHours(TICKET_RESPONSE_DEADLINE_HOURS);
+	private TicketTimeStatus calculateTicketTimeStatus(LocalDateTime assignedAt) {
+		if (assignedAt == null) {
+			return new TicketTimeStatus(TICKET_RESPONSE_DEADLINE_HOURS, false);
+		}
+
+		LocalDateTime deadline = assignedAt.plusHours(TICKET_RESPONSE_DEADLINE_HOURS);
 		LocalDateTime now = LocalDateTime.now();
 		boolean expired = !now.isBefore(deadline);
 		long remainingHours = expired ? 0L : Duration.between(now, deadline).toHours();

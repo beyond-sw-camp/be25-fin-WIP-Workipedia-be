@@ -15,5 +15,7 @@ public interface MyPageTicketProjection {
 
 	String getStatus();
 
+	LocalDateTime getAssignedAt();
+
 	LocalDateTime getCreatedAt();
 }

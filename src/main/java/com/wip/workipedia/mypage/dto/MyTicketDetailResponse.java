@@ -14,6 +14,7 @@ public record MyTicketDetailResponse(
 	boolean expired,
 	boolean editable,
 	boolean deletable,
+	LocalDateTime assignedAt,
 	LocalDateTime createdAt,
 	LocalDateTime completedAt,
 	Answer answer
@@ -48,6 +49,7 @@ public record MyTicketDetailResponse(
 			expired,
 			editable,
 			deletable,
+			projection.getAssignedAt(),
 			projection.getCreatedAt(),
 			projection.getCompletedAt(),
 			toAnswer(projection)
