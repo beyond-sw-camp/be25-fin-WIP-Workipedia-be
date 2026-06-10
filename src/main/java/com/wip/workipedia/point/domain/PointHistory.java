@@ -1,5 +1,7 @@
 package com.wip.workipedia.point.domain;
 
+import com.wip.workipedia.common.exception.CustomException;
+import com.wip.workipedia.common.exception.ErrorType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -78,7 +80,7 @@ public class PointHistory {
 
 	private static void validatePositiveAmount(int amount) {
 		if (amount <= 0) {
-			throw new IllegalArgumentException("point amount must be positive");
+			throw new CustomException(ErrorType.POINT_INVALID_AMOUNT);
 		}
 	}
 }
