@@ -1,7 +1,7 @@
 # Workipedia WBS
 
 > 버전: v1.0
-> 최종 수정: 2026-06-04
+> 최종 수정: 2026-06-09
 
 ## 작업 조건
 
@@ -40,8 +40,8 @@
 | Elasticsearch | 민정기 | 벡터 스토어, 매뉴얼/워키 청크 인덱싱, kNN 검색 |
 | 티켓 | 김진혁 | 생성, 상태 전이, 라우팅, 이관, 공통 접수 큐 |
 | Flash Chat | 김진혁 + 민정기 | 김진혁: WebSocket/STOMP, Redis TTL, 관리자 설정. 민정기: BE 완료 후 실시간 채팅 UI |
-| 사진 첨부 | 김진혁 + 황희수 | 김진혁: multipart upload API. 황희수: 파일/카메라 첨부 UI |
-| 지식화 | 김진혁 + 김가영 | 지식화 후보 등록(김진혁), TEAM_ADMIN 검수(김가영) |
+| 사진 첨부 | 김진혁 + 황희수 | 김진혁: R2/S3/MinIO 추상화와 presigned API. 황희수: 파일/카메라 직접 업로드 UI |
+| 지식화 | 김진혁 + 김가영 | 지식화 생성·동기화(김진혁), TEAM_ADMIN 승인(김가영) |
 | 관리자 대시보드 | 김가영 | TEAM_ADMIN/SYSTEM_ADMIN 큐, admin_logs, 운영 지표 |
 | 포인트/ESG | 김가영 | 포인트 이력, ESG 등급, ESG 지표 카드 |
 | 프론트엔드 | 황희수 | 전체 화면, API 연동, 발표 시연 UX |
@@ -79,7 +79,7 @@
 
 | 담당 | M2 완료 기준 |
 |---|---|
-| 김진혁 | 챗봇-티켓 전환, 지식화 후보, local embedding 검색 동작 |
+| 김진혁 | A→B→C→D 전환, 지식화 승인 동기화, ChromaDB 검색 동작 |
 | 황희수 | 핵심 화면 API 연동 완성 |
 | 김가영 | 포인트/ESG 이벤트 연동, 관리자 대시보드 완성 |
 | 이슬이 | 챗봇 통합 흐름, 권한 전면 적용, 알림 이벤트 연동 |
@@ -125,7 +125,7 @@
 3. 챗봇 실패 → 요청 티켓 발행
 4. 티켓 자동 배정 / 공통 접수 큐 분기
 5. TEAM_ADMIN 팀원 배정 + 이관 요청
-6. 담당자 처리 완료 → 지식화 후보 등록/검수/워키 반영
+6. 담당자 처리 완료 → 지식화 초안/TEAM_ADMIN 승인/ChromaDB 동기화
 7. 실시간 알림 확인
 8. 포인트 적립 / ESG 등급 산정
 9. ESG 지표 카드
@@ -157,11 +157,13 @@
 - [x] 티켓 CRUD
 - [ ] RAG 파이프라인: 임베딩 생성, 벡터 검색, chunk 저장
 - [ ] 챗봇 응답 생성: LLM 연동, 출처 포함 답변, 개인정보 마스킹
-- [ ] 지식화 후보 등록 API
+- [ ] 지식화 승인 데이터 등록 API
 - [ ] Flash Chat WebSocket/STOMP, Redis TTL
-- [ ] 사진 첨부 API
+- [x] Object Storage R2/S3/MinIO provider 추상화
+- [x] presigned upload/download API
+- [ ] 사진 첨부 메타데이터 API
 - [ ] 티켓 담당자 추천: 부서별 최근 30일 처리 건수 TOP 3
-- [ ] 티켓 중요도(priority): LOW/MEDIUM/HIGH/CRITICAL
+- [ ] 티켓 중요도(priority): MEDIUM/HIGH
 - [ ] CI/CD
 
 ### 이슬이
@@ -189,7 +191,7 @@
 
 - [ ] TEAM_ADMIN 티켓 큐 API
 - [ ] SYSTEM_ADMIN 공통 접수 큐 API
-- [ ] 지식화 후보 검수 API
+- [ ] 지식화 승인/동기화 상태 API
 - [ ] 관리자 작업 로그
 - [ ] 포인트 적립/조회/랭킹 API
 - [ ] ESG 점수/등급 산정 API

@@ -13,10 +13,12 @@ import com.wip.workipedia.manual.domain.ManualStatus;
 import com.wip.workipedia.manual.dto.ManualDetailResponse;
 import com.wip.workipedia.manual.dto.ManualSummaryResponse;
 import com.wip.workipedia.manual.repository.ManualRepository;
+import com.wip.workipedia.storage.dto.StoredObject;
 import com.wip.workipedia.storage.service.StorageService;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.domain.UserRole;
 import com.wip.workipedia.user.repository.UserRepository;
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -27,6 +29,9 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AdminManualService {
+
+    private static final String MANUAL_PDF_KEY_PREFIX = "manuals";
+    private static final String PDF_CONTENT_TYPE = "application/pdf";
 
     private final ManualRepository manualRepository;
     private final ManualVersionRepository manualVersionRepository;
@@ -80,9 +85,10 @@ public class AdminManualService {
         assertSystemAdmin(actorUserId);
 
         String content = pdfTextExtractor.extract(file);
-        String uploadedUrl = storageService.uploadFile("manuals", file);
         String manualNum = normalizeInitialManualNum(version);
-        Manual manual = Manual.create(validateDepartmentId(departmentId), title, content, status, uploadedUrl, manualNum, actorUserId);
+        Manual manual = Manual.create(validateDepartmentId(departmentId), title, content, status, null, manualNum, actorUserId);
+        StoredObject stored = uploadPdf(file);
+        manual.attachFile(stored.objectKey(), stored.publicUrl());
         Manual savedManual = manualRepository.save(manual);
         saveVersion(savedManual, actorUserId, manualNum, "INITIAL_PDF_UPLOAD");
         return ManualDetailResponse.from(savedManual);
@@ -113,9 +119,12 @@ public class AdminManualService {
 
         Manual manual = getManual(manualId);
         String content = pdfTextExtractor.extract(file);
-        String uploadedUrl = storageService.uploadFile("manuals", file);
         String manualNum = resolveManualNum(manual.getManualId(), version);
-        manual.update(validateDepartmentId(departmentId), title, content, status, uploadedUrl, manualNum);
+        manual.update(validateDepartmentId(departmentId), title, content, status, null, manualNum);
+        String previousFileKey = manual.getFileKey();
+        StoredObject stored = uploadPdf(file);
+        manual.attachFile(stored.objectKey(), stored.publicUrl());
+        deleteStoredFile(previousFileKey);
         saveVersion(manual, actorUserId, manualNum, "PDF_UPLOAD");
         return ManualDetailResponse.from(manual);
     }
@@ -123,7 +132,9 @@ public class AdminManualService {
     @Transactional
     public void delete(Long actorUserId, Long manualId) {
         assertSystemAdmin(actorUserId);
-        getManual(manualId).delete();
+        Manual manual = getManual(manualId);
+        manual.delete();
+        deleteStoredFile(manual.getFileKey());
     }
 
     private Manual getManual(Long manualId) {
@@ -147,6 +158,24 @@ public class AdminManualService {
             throw new CustomException(ErrorType.DEPARTMENT_NOT_FOUND);
         }
         return departmentId;
+    }
+
+    private StoredObject uploadPdf(MultipartFile file) {
+        return storageService.upload(readBytes(file), MANUAL_PDF_KEY_PREFIX, file.getOriginalFilename(), PDF_CONTENT_TYPE);
+    }
+
+    private byte[] readBytes(MultipartFile file) {
+        try {
+            return file.getBytes();
+        } catch (IOException e) {
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "Failed to read PDF file.");
+        }
+    }
+
+    private void deleteStoredFile(String fileKey) {
+        if (fileKey != null && !fileKey.isBlank()) {
+            storageService.deleteObject(fileKey);
+        }
     }
 
     private void saveVersion(Manual manual, Long actorUserId, String manualNum, String updateReason) {
