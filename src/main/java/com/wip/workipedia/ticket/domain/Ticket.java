@@ -40,6 +40,7 @@ public class Ticket {
 
 	private Long assigneeId;
 	private Long assignedDepartmentId;
+	private LocalDateTime assignedAt;
 
 	@Column(precision = 5, scale = 2)
 	private BigDecimal routingConfidenceScore;
@@ -86,6 +87,7 @@ public class Ticket {
 
 	public void applyRouting(Long departmentId, String departmentName, BigDecimal confidenceScore, RoutingDecision decision) {
 		this.assignedDepartmentId = departmentId;
+		this.assignedAt = departmentId == null ? null : LocalDateTime.now();
 		this.routingConfidenceScore = confidenceScore;
 		this.routingDecision = decision;
 		this.status = decision == RoutingDecision.AUTO_ASSIGNED ? TicketStatus.ASSIGNED : TicketStatus.COMMON_QUEUE;
@@ -99,7 +101,6 @@ public class Ticket {
 
 	public void assignTo(Long assigneeId) {
 		this.assigneeId = assigneeId;
-		this.status = TicketStatus.IN_PROGRESS;
 		touch();
 	}
 

@@ -114,4 +114,9 @@ public class TicketService {
 	private TicketPriority defaultPriority(TicketPriority priority) {
 		return priority == null ? TicketPriority.MEDIUM : priority;
 	}
+
+	@Transactional
+	public void moveExpiredTicketsToCommonQueue() {
+		ticketRepository.moveExpiredTicketsToCommonQueue();
+	}
 }

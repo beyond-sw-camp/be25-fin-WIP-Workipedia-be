@@ -82,10 +82,9 @@ Authorization: Bearer <accessToken>
 | ESG 지표         | 김가영      | 황희수    |
 
 
-## 4. Auth API
+## 4. Auth & Mypage API
 
 담당: 이슬이
-
 
 | Method | Path                               | 설명               | 인증               |
 | ------ | ---------------------------------- | ---------------- | ---------------- |
@@ -100,76 +99,10 @@ Authorization: Bearer <accessToken>
 | POST   | `/auth/password-reset/code/verify` | 비밀번호 재설정 인증코드 확인 | 불필요              |
 | PATCH  | `/auth/password-reset`             | 비밀번호 재설정         | 불필요              |
 | GET    | `/me/profile`                      | 마이페이지 조회         | Access Token 필요  |
+| PATCH  | `/me/notification-settings`        | 알림 설정 변경         | Access Token 필요  |
+| GET    | `/me/tickets`                      | 내 발행 티켓 목록 조회    | Access Token 필요  |
+| GET    | `/me/tickets/{ticketId}`           | 내 발행 티켓 상세 조회    | Access Token 필요  |
 
-
-### POST `/auth/password-reset/code`
-
-- 비밀번호 재설정을 위한 인증코드를 이메일로 발송한다.
-- 요청한 사번과 이메일이 같은 사용자 계정에 등록된 정보와 일치해야 한다.
-- 인증코드는 숫자 6자리로 생성한다.
-- 인증코드는 Redis에 TTL과 함께 저장한다.
-
-Request:
-
-```json
-{
-  "employeeId": "20260001",
-  "email": "user@company.com"
-}
-```
-
-Response:
-
-```http
-200 OK
-```
-
-### POST `/auth/password-reset/code/verify`
-
-- 사용자가 입력한 인증코드가 Redis에 저장된 인증코드와 일치하는지 확인한다.
-- 회원가입 인증코드 확인과 유사하지만, 비밀번호 재설정은 기존 사용자 대상 기능이므로 사번과 이메일이 DB에 저장된 사용자 정보와 일치해야 한다.
-- 인증코드가 일치하면 비밀번호 재설정을 진행할 수 있도록 인증 완료 상태를 저장하고, 사용이 완료된 인증코드는 Redis에서 삭제한다.
-
-Request:
-
-```json
-{
-  "employeeId": "20260001",
-  "email": "user@company.com",
-  "code": "987654"
-}
-```
-
-Response:
-
-```http
-200 OK
-```
-
-### PATCH `/auth/password-reset`
-
-- 비밀번호 재설정 인증코드 확인이 완료된 사용자만 새 비밀번호로 변경할 수 있다.
-- 요청한 사번과 이메일이 DB에 저장된 사용자 정보와 일치해야 한다.
-- 새 비밀번호와 새 비밀번호 확인값의 일치 여부는 프론트에서 확인한다.
-- 새 비밀번호는 암호화하여 저장하고, DB에 저장된 기존 비밀번호를 새 비밀번호로 변경한다.
-- 비밀번호 변경이 완료되면 Redis에 저장된 기존 Refresh Token을 삭제하여 기존 로그인 세션의 토큰 재발급을 차단한다.
-- 비밀번호 변경이 완료되면 Redis에 저장된 비밀번호 재설정 인증 완료 상태를 삭제한다.
-
-Request:
-
-```json
-{
-  "employeeId": "20260001",
-  "email": "user@company.com",
-  "newPassword": "new12345"
-}
-```
-
-Response:
-
-```http
-200 OK
-```
 
 ## 5. Chatbot API
 
