@@ -9,7 +9,6 @@ import com.wip.workipedia.mypage.domain.MyTicketStatus;
 import com.wip.workipedia.mypage.dto.MyPageResponse;
 import com.wip.workipedia.mypage.dto.MyTicketDetailResponse;
 import com.wip.workipedia.mypage.dto.MyTicketResponse;
-import com.wip.workipedia.mypage.dto.MyTicketUpdateRequest;
 import com.wip.workipedia.mypage.repository.MyPageTicketProjection;
 import com.wip.workipedia.mypage.repository.MyPageTicketRepository;
 import com.wip.workipedia.mypage.repository.MyTicketDetailProjection;
@@ -17,7 +16,6 @@ import com.wip.workipedia.notification.domain.NotificationSetting;
 import com.wip.workipedia.notification.repository.NotificationSettingRepository;
 import com.wip.workipedia.point.domain.UserPoint;
 import com.wip.workipedia.point.repository.UserPointRepository;
-import com.wip.workipedia.ticket.domain.Ticket;
 import com.wip.workipedia.ticket.domain.TicketStatus;
 import com.wip.workipedia.ticket.repository.TicketRepository;
 import com.wip.workipedia.user.domain.User;
@@ -25,7 +23,6 @@ import com.wip.workipedia.user.repository.UserRepository;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -36,12 +33,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class MyPageService {
 
-	private static final int TICKET_EDITABLE_HOURS = 48;
-	private static final Set<String> EDITABLE_TICKET_STATUSES = Set.of(
-		TicketStatus.RECEIVED.name(),
-		TicketStatus.ASSIGNED.name(),
-		TicketStatus.IN_PROGRESS.name()
-	);
+	private static final int TICKET_RESPONSE_DEADLINE_HOURS = 48;
+	private static final boolean MY_TICKET_EDITABLE = false;
+	private static final boolean MY_TICKET_DELETABLE = false;
 
 	private final UserRepository userRepository;
 	private final TicketRepository ticketRepository;
@@ -50,7 +44,6 @@ public class MyPageService {
 	private final EsgGradeRepository esgGradeRepository;
 	private final NotificationSettingRepository notificationSettingRepository;
 
-	// 로그인 사용자 기준으로 마이페이지 화면에 필요한 모든 데이터를 조회해 응답을 조립합니다.
 	public MyPageResponse getMyPage(Long userId) {
 		User user = userRepository.findById(userId)
 			.orElseThrow(() -> new CustomException(ErrorType.NOT_FOUND));
@@ -75,7 +68,6 @@ public class MyPageService {
 		);
 	}
 
-	// 로그인 사용자가 발행한 티켓 목록을 화면 탭 상태에 맞게 조회합니다.
 	public PageResponse<MyTicketResponse> getMyTickets(
 		Long userId,
 		MyTicketStatus status,
@@ -90,55 +82,18 @@ public class MyPageService {
 			.map(this::toMyTicketResponse));
 	}
 
-	// 로그인 사용자가 발행한 티켓의 상세 정보를 조회합니다.
 	public MyTicketDetailResponse getMyTicketDetail(Long userId, Long ticketId) {
 		MyTicketDetailProjection projection = myPageTicketRepository.findMyTicketDetail(userId, ticketId)
 			.orElseThrow(() -> new CustomException(ErrorType.TICKET_NOT_FOUND));
 		TicketTimeStatus ticketTimeStatus = calculateTicketTimeStatus(projection.getCreatedAt());
-		boolean editable = isEditable(projection.getStatus(), ticketTimeStatus.expired());
 
 		return MyTicketDetailResponse.from(
 			projection,
 			ticketTimeStatus.remainingHours(),
 			ticketTimeStatus.expired(),
-			editable,
-			editable
+			MY_TICKET_EDITABLE,
+			MY_TICKET_DELETABLE
 		);
-	}
-
-	// 티켓 생성 시각 기준 48시간까지의 남은 시간과 만료 여부를 계산해 응답 DTO를 생성합니다.
-	// 로그인 사용자가 발행한 티켓의 제목과 내용을 수정합니다.
-	@Transactional
-	public MyTicketDetailResponse updateMyTicket(
-		Long userId,
-		Long ticketId,
-		MyTicketUpdateRequest request
-	) {
-		Ticket ticket = ticketRepository.findByTicketIdAndRequesterIdAndDeletedAtIsNull(ticketId, userId)
-			.orElseThrow(() -> new CustomException(ErrorType.TICKET_NOT_FOUND));
-		TicketTimeStatus ticketTimeStatus = calculateTicketTimeStatus(ticket.getCreatedAt());
-
-		if (!isEditable(ticket.getStatus().name(), ticketTimeStatus.expired())) {
-			throw new CustomException(ErrorType.CONFLICT, "수정할 수 없는 티켓입니다.");
-		}
-
-		ticket.updateQuestion(request.title(), request.content());
-
-		return getMyTicketDetail(userId, ticketId);
-	}
-
-	// 로그인 사용자가 발행한 티켓을 삭제 처리합니다.
-	@Transactional
-	public void deleteMyTicket(Long userId, Long ticketId) {
-		Ticket ticket = ticketRepository.findByTicketIdAndRequesterIdAndDeletedAtIsNull(ticketId, userId)
-			.orElseThrow(() -> new CustomException(ErrorType.TICKET_NOT_FOUND));
-		TicketTimeStatus ticketTimeStatus = calculateTicketTimeStatus(ticket.getCreatedAt());
-
-		if (!isEditable(ticket.getStatus().name(), ticketTimeStatus.expired())) {
-			throw new CustomException(ErrorType.CONFLICT, "삭제할 수 없는 티켓입니다.");
-		}
-
-		ticket.delete();
 	}
 
 	private MyTicketResponse toMyTicketResponse(MyPageTicketProjection projection) {
@@ -147,9 +102,8 @@ public class MyPageService {
 		return MyTicketResponse.from(projection, ticketTimeStatus.remainingHours(), ticketTimeStatus.expired());
 	}
 
-	// 티켓 생성 시각 기준 48시간까지의 남은 시간과 만료 여부를 계산합니다.
 	private TicketTimeStatus calculateTicketTimeStatus(LocalDateTime createdAt) {
-		LocalDateTime deadline = createdAt.plusHours(TICKET_EDITABLE_HOURS);
+		LocalDateTime deadline = createdAt.plusHours(TICKET_RESPONSE_DEADLINE_HOURS);
 		LocalDateTime now = LocalDateTime.now();
 		boolean expired = !now.isBefore(deadline);
 		long remainingHours = expired ? 0L : Duration.between(now, deadline).toHours();
@@ -157,12 +111,6 @@ public class MyPageService {
 		return new TicketTimeStatus(remainingHours, expired);
 	}
 
-	// 답변 대기 상태이면서 48시간이 지나지 않은 티켓만 수정/삭제 가능하도록 판단합니다.
-	private boolean isEditable(String status, boolean expired) {
-		return !expired && EDITABLE_TICKET_STATUSES.contains(status);
-	}
-
-	// 사용자 포인트 정보의 gradeId를 기준으로 현재 ESG 등급을 찾고, 포인트 정보가 없으면 첫 등급을 기본값으로 사용합니다.
 	private EsgGrade findCurrentEsgGrade(
 		UserPoint userPoint,
 		List<EsgGrade> esgGrades
@@ -181,7 +129,6 @@ public class MyPageService {
 			.orElseThrow(() -> new CustomException(ErrorType.NOT_FOUND));
 	}
 
-	// User 엔티티에서 마이페이지 상단 인사말에 필요한 사용자 요약 정보를 생성합니다.
 	private MyPageResponse.UserSummary toUserSummary(User user) {
 		return new MyPageResponse.UserSummary(
 			user.getUserId(),
@@ -191,7 +138,6 @@ public class MyPageService {
 		);
 	}
 
-	// 저장된 알림 설정 엔티티를 마이페이지 응답용 알림 설정 DTO로 변환합니다.
 	private MyPageResponse.NotificationSettings toNotificationSettings(NotificationSetting notificationSetting) {
 		return new MyPageResponse.NotificationSettings(
 			notificationSetting.isAllEnabled(),
@@ -201,7 +147,6 @@ public class MyPageService {
 		);
 	}
 
-	// 현재 ESG 등급 엔티티와 ESG 점수를 조합해 ESG 현황 화면에 필요한 요약 정보를 생성합니다.
 	private MyPageResponse.EsgGradeSummary toEsgGradeSummary(
 		EsgGrade esgGrade,
 		long esgScore
@@ -217,7 +162,6 @@ public class MyPageService {
 		);
 	}
 
-	// 전체 ESG 등급 목록을 마이페이지의 등급 진행 구간 응답으로 변환합니다.
 	private List<MyPageResponse.EsgGradeProgress> toEsgGradeProgress(List<EsgGrade> esgGrades) {
 		return esgGrades.stream()
 			.map(esgGrade -> new MyPageResponse.EsgGradeProgress(
@@ -229,7 +173,6 @@ public class MyPageService {
 			.toList();
 	}
 
-	// 현재 ESG 점수와 현재 등급의 최대 점수를 비교해 다음 등급까지 남은 점수를 계산합니다.
 	private Long calculateRemainingScore(
 		EsgGrade esgGrade,
 		long esgScore

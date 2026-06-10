@@ -7,10 +7,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import java.util.Optional;
 
 public interface TicketRepository extends JpaRepository<Ticket, Long> {
-	
+
 	Page<Ticket> findByStatusAndDeletedAtIsNull(TicketStatus status, Pageable pageable);
 
 	Page<Ticket> findByAssignedDepartmentIdAndDeletedAtIsNull(Long assignedDepartmentId, Pageable pageable);
@@ -19,15 +18,11 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
 	Page<Ticket> findByDeletedAtIsNull(Pageable pageable);
 
-	// 마이페이지 조회 시 사용자가 발행한 티켓 수를 조회합니다.
 	long countByRequesterIdAndDeletedAtIsNull(Long requesterId);
-
-	// 로그인 사용자가 발행한 티켓만 수정 대상으로 조회합니다.
-	Optional<Ticket> findByTicketIdAndRequesterIdAndDeletedAtIsNull(Long ticketId, Long requesterId);
 
 	@Modifying
 	@Query(
-			value = """
+		value = """
         UPDATE tickets
         SET status = 'COMMON_QUEUE'
         WHERE status IN ('RECEIVED', 'ASSIGNED', 'IN_PROGRESS', 'REJECTED')
@@ -35,7 +30,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
           AND deleted_at IS NULL
           AND is_deleted = 'N'
     """,
-			nativeQuery = true
+		nativeQuery = true
 	)
 	int moveExpiredTicketsToCommonQueue();
 }
