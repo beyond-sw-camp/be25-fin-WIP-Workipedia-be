@@ -17,9 +17,20 @@ public class PdfTextExtractor {
     private static final String PDF_CONTENT_TYPE = "application/pdf";
 
     public String extract(MultipartFile file) {
-        validate(file);
+        validate(file, null);
 
-        try (PDDocument document = Loader.loadPDF(file.getBytes())) {
+        try {
+            return extract(file, file.getBytes());
+        } catch (IOException e) {
+            log.warn("Failed to read PDF file filename={}", file.getOriginalFilename(), e);
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "Failed to read PDF file.");
+        }
+    }
+
+    public String extract(MultipartFile file, byte[] bytes) {
+        validate(file, bytes);
+
+        try (PDDocument document = Loader.loadPDF(bytes)) {
             String text = new PDFTextStripper().getText(document).trim();
             if (text.isBlank()) {
                 throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF text is empty.");
@@ -33,8 +44,8 @@ public class PdfTextExtractor {
         }
     }
 
-    private void validate(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
+    private void validate(MultipartFile file, byte[] bytes) {
+        if (file == null || file.isEmpty() || bytes != null && bytes.length == 0) {
             throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF file is required.");
         }
 

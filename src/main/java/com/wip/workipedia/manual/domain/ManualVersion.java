@@ -1,7 +1,5 @@
-package com.wip.workipedia.admin.domain;
+package com.wip.workipedia.manual.domain;
 
-import com.wip.workipedia.manual.domain.Manual;
-import com.wip.workipedia.manual.domain.ManualStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

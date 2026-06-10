@@ -1,6 +1,6 @@
-package com.wip.workipedia.admin.repository;
+package com.wip.workipedia.manual.repository;
 
-import com.wip.workipedia.admin.domain.ManualVersion;
+import com.wip.workipedia.manual.domain.ManualVersion;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 

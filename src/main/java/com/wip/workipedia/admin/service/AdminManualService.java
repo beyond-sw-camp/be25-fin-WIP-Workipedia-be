@@ -1,18 +1,18 @@
 package com.wip.workipedia.admin.service;
 
-import com.wip.workipedia.admin.domain.ManualVersion;
 import com.wip.workipedia.admin.dto.AdminManualCreateRequest;
 import com.wip.workipedia.admin.dto.AdminManualUpdateRequest;
-import com.wip.workipedia.admin.repository.ManualVersionRepository;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.response.PageResponse;
 import com.wip.workipedia.department.repository.DepartmentRepository;
 import com.wip.workipedia.manual.domain.Manual;
+import com.wip.workipedia.manual.domain.ManualVersion;
 import com.wip.workipedia.manual.domain.ManualStatus;
 import com.wip.workipedia.manual.dto.ManualDetailResponse;
 import com.wip.workipedia.manual.dto.ManualSummaryResponse;
 import com.wip.workipedia.manual.repository.ManualRepository;
+import com.wip.workipedia.manual.repository.ManualVersionRepository;
 import com.wip.workipedia.storage.dto.StoredObject;
 import com.wip.workipedia.storage.service.StorageService;
 import com.wip.workipedia.user.domain.User;
@@ -20,12 +20,16 @@ import com.wip.workipedia.user.domain.UserRole;
 import com.wip.workipedia.user.repository.UserRepository;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AdminManualService {
@@ -84,10 +88,12 @@ public class AdminManualService {
             ManualStatus status, String version, MultipartFile file) {
         assertSystemAdmin(actorUserId);
 
-        String content = pdfTextExtractor.extract(file);
+        byte[] bytes = readBytes(file);
+        String content = pdfTextExtractor.extract(file, bytes);
         String manualNum = normalizeInitialManualNum(version);
         Manual manual = Manual.create(validateDepartmentId(departmentId), title, content, status, null, manualNum, actorUserId);
-        StoredObject stored = uploadPdf(file);
+        StoredObject stored = uploadPdf(file, bytes);
+        deleteStoredFileAfterRollback(stored.objectKey());
         manual.attachFile(stored.objectKey(), stored.publicUrl());
         Manual savedManual = manualRepository.save(manual);
         saveVersion(savedManual, actorUserId, manualNum, "INITIAL_PDF_UPLOAD");
@@ -118,14 +124,16 @@ public class AdminManualService {
         assertSystemAdmin(actorUserId);
 
         Manual manual = getManual(manualId);
-        String content = pdfTextExtractor.extract(file);
+        byte[] bytes = readBytes(file);
+        String content = pdfTextExtractor.extract(file, bytes);
         String manualNum = resolveManualNum(manual.getManualId(), version);
         manual.update(validateDepartmentId(departmentId), title, content, status, null, manualNum);
         String previousFileKey = manual.getFileKey();
-        StoredObject stored = uploadPdf(file);
+        StoredObject stored = uploadPdf(file, bytes);
+        deleteStoredFileAfterRollback(stored.objectKey());
         manual.attachFile(stored.objectKey(), stored.publicUrl());
-        deleteStoredFile(previousFileKey);
         saveVersion(manual, actorUserId, manualNum, "PDF_UPLOAD");
+        deleteStoredFileAfterCommit(previousFileKey);
         return ManualDetailResponse.from(manual);
     }
 
@@ -133,8 +141,9 @@ public class AdminManualService {
     public void delete(Long actorUserId, Long manualId) {
         assertSystemAdmin(actorUserId);
         Manual manual = getManual(manualId);
+        String fileKey = manual.getFileKey();
         manual.delete();
-        deleteStoredFile(manual.getFileKey());
+        deleteStoredFileAfterCommit(fileKey);
     }
 
     private Manual getManual(Long manualId) {
@@ -160,11 +169,14 @@ public class AdminManualService {
         return departmentId;
     }
 
-    private StoredObject uploadPdf(MultipartFile file) {
-        return storageService.upload(readBytes(file), MANUAL_PDF_KEY_PREFIX, file.getOriginalFilename(), PDF_CONTENT_TYPE);
+    private StoredObject uploadPdf(MultipartFile file, byte[] bytes) {
+        return storageService.upload(bytes, MANUAL_PDF_KEY_PREFIX, file.getOriginalFilename(), PDF_CONTENT_TYPE);
     }
 
     private byte[] readBytes(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF file is required.");
+        }
         try {
             return file.getBytes();
         } catch (IOException e) {
@@ -174,8 +186,45 @@ public class AdminManualService {
 
     private void deleteStoredFile(String fileKey) {
         if (fileKey != null && !fileKey.isBlank()) {
-            storageService.deleteObject(fileKey);
+            try {
+                storageService.deleteObject(fileKey);
+            } catch (RuntimeException e) {
+                log.warn("Failed to delete manual PDF file objectKey={}", fileKey, e);
+            }
         }
+    }
+
+    private void deleteStoredFileAfterCommit(String fileKey) {
+        if (fileKey == null || fileKey.isBlank()) {
+            return;
+        }
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            deleteStoredFile(fileKey);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                deleteStoredFile(fileKey);
+            }
+        });
+    }
+
+    private void deleteStoredFileAfterRollback(String fileKey) {
+        if (fileKey == null || fileKey.isBlank()) {
+            return;
+        }
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status == STATUS_ROLLED_BACK) {
+                    deleteStoredFile(fileKey);
+                }
+            }
+        });
     }
 
     private void saveVersion(Manual manual, Long actorUserId, String manualNum, String updateReason) {
