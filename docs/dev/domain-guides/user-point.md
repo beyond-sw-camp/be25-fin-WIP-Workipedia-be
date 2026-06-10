@@ -15,7 +15,7 @@
 
 - 현재 로그인한 사용자의 보유 포인트 조회
 - 현재 로그인한 사용자의 포인트 내역 페이지 조회
-- 포인트 내역 조회 시 `ALL`, `EARN`, `USE` 타입 필터 지원
+- 포인트 내역 조회 시 `ALL`, `EARN`, `SPEND` 타입 필터 지원
 - 시스템 내부 포인트 적립 메서드 제공
 - 포인트 잔액 변경과 포인트 내역 저장을 하나의 트랜잭션으로 처리
 - 존재하지 않는 사용자 포인트 row 조회 시 `currentPoint = 0`으로 응답
@@ -30,8 +30,6 @@
 |---|------------------------------|---|---|
 | GET | `/api/v1/me/points`          | 현재 보유 포인트 조회 | Access Token |
 | GET | `/api/v1/me/point-histories` | 포인트 변동 내역 조회 | Access Token |
-
-> 현재 코드에는 `/api/v1/points/me`, `/api/v1/points/histories`가 일부 구현되어 있다. 이번 기능 개발 시 Controller 경로를 사용자 중심 경로인 `/v1/me/points`, `/v1/me/point-histories` 계열로 정리한다.
 
 ## 1. 현재 보유 포인트 조회
 
@@ -60,14 +58,14 @@ Response:
 ```http
 GET /api/v1/me/point-histories?type=ALL&page=0&size=20
 GET /api/v1/me/point-histories?type=EARN&page=0&size=20
-GET /api/v1/me/point-histories?type=USE&page=0&size=20
+GET /api/v1/me/point-histories?type=SPEND&page=0&size=20
 ```
 
 Query Parameters:
 
 | 이름 | 타입 | 필수 | 기본값 | 설명 |
 |---|---|---|---|---|
-| `type` | enum | 아니오 | `ALL` | `ALL`, `EARN`, `USE` |
+| `type` | enum | 아니오 | `ALL` | `ALL`, `EARN`, `SPEND` |
 | `page` | number | 아니오 | `0` | Spring Pageable 기준 0-base 페이지 번호 |
 | `size` | number | 아니오 | `20` | 페이지 크기 |
 
@@ -104,7 +102,7 @@ Response:
 - 최신 내역이 먼저 오도록 `created_at DESC` 정렬을 기본으로 한다.
 - `type=ALL`이면 적립/사용 내역을 모두 반환한다.
 - `type=EARN`이면 `point_amount > 0` 내역만 반환한다.
-- `type=USE`이면 `point_amount < 0` 내역만 반환한다.
+- `type=SPEND`이면 `point_amount < 0` 내역만 반환한다.
 - 잘못된 `type` 값은 `400 bad_request`로 처리한다.
 
 ## 3. 시스템 자동 포인트 적립
@@ -114,8 +112,8 @@ Response:
 내부 서비스 후보:
 
 ```java
-public void earnPoint(Long userId, int amount, PointReasonType reasonType, String relatedType, Long relatedId)
-public void usePoint(Long userId, int amount, PointReasonType reasonType, String relatedType, Long relatedId)
+public void earnPoint(Long userId, int amount, PointReasonType reasonType, String relatedType, Long relatedId);
+public void usePoint(Long userId, int amount, PointReasonType reasonType, String relatedType, Long relatedId);
 ```
 
 처리 규칙:
@@ -126,6 +124,21 @@ public void usePoint(Long userId, int amount, PointReasonType reasonType, String
 - 동일 이벤트 중복 적립을 막기 위해 `related_type + related_id + reason_type` 기준의 멱등성 검사를 검토한다.
 - 자동 적립은 Controller를 만들지 않고 Service 계층 public method 또는 도메인 이벤트 리스너로 제공한다.
 - 일일 적립 제한이 필요한 이벤트는 `points_daily_limit`를 함께 갱신한다.
+- 사용자는 하루 최대 50P까지 적립할 수 있다.
+- 적립 처리 전 당일 누적 적립 포인트를 조회한다.
+- 적립 예정 포인트가 잔여 한도를 초과하면 잔여 한도만큼만 적립한다.
+- 잔여 한도가 0인 경우 포인트를 적립하지 않는다.
+
+## 포인트 적립 정책
+| 이벤트 | 포인트 |
+|---------|---------|
+| 로그인 | +1 |
+| 워키 첫 질문 등록 | +10 |
+| 워키 질문 등록 | +5 |
+| 워키 답변 등록 | +5 |
+| 워키 답변 채택 | +5 |
+| 티켓 답변 등록 | +15 |
+| 티켓 내용 지식화 | +30 |
 
 ## 데이터 모델
 
@@ -153,7 +166,7 @@ public void usePoint(Long userId, int amount, PointReasonType reasonType, String
 ## 구현 체크리스트
 
 - `PointController` 경로를 신규 API 경로 기준으로 정리한다.
-- `PointHistoryType` enum을 추가해 `ALL`, `EARN`, `USE` 필터를 명시한다.
+- `PointHistoryType` enum을 추가해 `ALL`, `EARN`, `SPEND` 필터를 명시한다.
 - `PointHistoryRepository`에 타입별 조회 조건을 추가한다.
 - `PointService`에 내부 적립/사용 메서드를 추가한다.
 - `UserPoint`에 포인트 증가/감소 도메인 메서드를 추가한다.
@@ -164,7 +177,7 @@ public void usePoint(Long userId, int amount, PointReasonType reasonType, String
 ## 완료 기준
 
 - `GET /api/v1/me/points`에서 현재 사용자의 포인트가 조회된다.
-- `GET /api/v1/me/point-histories`에서 `ALL`, `EARN`, `USE` 필터가 정상 동작한다.
+- `GET /api/v1/me/point-histories`에서 `ALL`, `EARN`, `SPEND` 필터가 정상 동작한다.
 - 포인트 자동 적립은 외부 API 없이 서비스 내부 호출로 처리된다.
 - 포인트 잔액과 히스토리 저장이 트랜잭션으로 함께 성공하거나 함께 실패한다.
 - 다른 사용자의 포인트를 임의로 조회할 수 없다.
