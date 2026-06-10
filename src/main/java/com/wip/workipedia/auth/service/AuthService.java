@@ -12,6 +12,7 @@ import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.security.JwtProvider;
 import com.wip.workipedia.department.domain.Department;
 import com.wip.workipedia.department.repository.DepartmentRepository;
+import com.wip.workipedia.point.service.PointService;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.domain.UserStatus;
 import com.wip.workipedia.user.repository.UserRepository;
@@ -41,6 +42,7 @@ public class AuthService {
 	private final EmailVerificationService emailVerificationService;
 	private final RefreshTokenService refreshTokenService;
 	private final JwtProvider jwtProvider;
+	private final PointService pointService;
 	private final SecureRandom secureRandom = new SecureRandom();
 
 	// 로그인 성공 시 Access Token과 Refresh Token을 발급합니다.
@@ -59,6 +61,7 @@ public class AuthService {
 		String refreshToken = jwtProvider.createRefreshToken(user);
 		refreshTokenService.save(user.getUserId(), refreshToken);
 		user.updateLastLoginAt();
+		pointService.earnLoginPoint(user.getUserId());
 
 		return new LoginResult(
 			createLoginResponse(user, accessToken),
