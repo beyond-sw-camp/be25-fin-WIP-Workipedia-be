@@ -7,6 +7,8 @@ public record LoginResponse(
 
 	Long departmentId,
 
+	String departmentName,
+
 	String role,
 
 	String nickname,
