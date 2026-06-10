@@ -547,13 +547,13 @@ Payload:
 
 ## 10. Point API
 
-담당: 김가영
+담당: 이슬이
 
 
-| Method | Path                | 설명           | 인증  |
-| ------ | ------------------- | ------------ | --- |
-| GET    | `/points/me`        | 내 포인트        | 필요  |
-| GET    | `/points/histories` | 포인트 변동 이력 전체 | 필요  |
+| Method | Path                  | 설명           | 인증              |
+| ------ |-----------------------|--------------|-----------------|
+| GET    | `/me/points`          | 현재 보유 포인트 조회 | Access Token 필요 |
+| GET    | `/me/point-histories` | 포인트 변동 내역 조회 | Access Token 필요 |
 
 
 ## 11. ESG Metrics API
