@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wip.workipedia.flashchat.domain.FlashChatPolicy;
 import com.wip.workipedia.flashchat.dto.FlashChatMessageBroadcast;
 import com.wip.workipedia.flashchat.dto.SendMessageRequest;
-import com.wip.workipedia.flashchat.repository.AdminLogRepository;
 import com.wip.workipedia.flashchat.repository.FlashChatPolicyRepository;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.repository.UserRepository;
@@ -34,7 +33,6 @@ class FlashChatServiceTest {
     @Mock StringRedisTemplate stringRedisTemplate;
     @Mock SimpMessagingTemplate messagingTemplate;
     @Mock FlashChatPolicyRepository policyRepository;
-    @Mock AdminLogRepository adminLogRepository;
     @Mock UserRepository userRepository;
     @Mock User user;
     @Mock HashOperations<String, Object, Object> hashOps;
@@ -59,8 +57,6 @@ class FlashChatServiceTest {
 
     @Test
     void sendMessage_정상_전송() {
-        given(stringRedisTemplate.hasKey(anyString())).willReturn(false);
-
         SendMessageRequest request = new SendMessageRequest("연차 반차 차이가 뭐예요?", null);
         FlashChatMessageBroadcast result = flashChatService.sendMessage(1L, request);
 
@@ -73,8 +69,11 @@ class FlashChatServiceTest {
     }
 
     @Test
-    void sendMessage_쿨다운_중_거부() {
-        given(stringRedisTemplate.hasKey(contains("cooldown"))).willReturn(true);
+    void sendMessage_쿨다운_중_거부() throws Exception {
+        // cooldown > 0 정책 + setIfAbsent가 false(이미 키 존재) → 쿨다운 예외.
+        FlashChatPolicy cooldownPolicy = createPolicy(600, 5, null);
+        given(policyRepository.findById(1L)).willReturn(Optional.of(cooldownPolicy));
+        given(valueOps.setIfAbsent(anyString(), anyString(), any())).willReturn(false);
 
         SendMessageRequest request = new SendMessageRequest("질문입니다", null);
 
@@ -86,34 +85,12 @@ class FlashChatServiceTest {
     void sendMessage_금지어_포함_거부() throws Exception {
         FlashChatPolicy policyWithBan = createPolicy(600, 0, "[\"욕설\"]");
         given(policyRepository.findById(1L)).willReturn(Optional.of(policyWithBan));
-        given(stringRedisTemplate.hasKey(anyString())).willReturn(false);
         given(objectMapper.readValue(eq("[\"욕설\"]"), any(com.fasterxml.jackson.core.type.TypeReference.class)))
                 .willReturn(java.util.List.of("욕설"));
 
         SendMessageRequest request = new SendMessageRequest("여기 욕설 있음", null);
 
         assertThatThrownBy(() -> flashChatService.sendMessage(1L, request))
-                .isInstanceOf(com.wip.workipedia.common.exception.CustomException.class);
-    }
-
-    @Test
-    void deleteMessage_존재하는_메시지_삭제() {
-        String messageId = "test-uuid-1234";
-        given(stringRedisTemplate.hasKey("flash-chat:msg:" + messageId)).willReturn(true);
-
-        flashChatService.deleteMessage(1L, messageId);
-
-        verify(stringRedisTemplate).delete("flash-chat:msg:" + messageId);
-        verify(zSetOps).remove("flash-chat:messages", messageId);
-        verify(adminLogRepository).save(any(com.wip.workipedia.flashchat.domain.AdminLog.class));
-        verify(messagingTemplate).convertAndSend(eq("/topic/flash-chat"), any(com.wip.workipedia.flashchat.dto.FlashChatDeleteBroadcast.class));
-    }
-
-    @Test
-    void deleteMessage_없는_메시지_예외() {
-        given(stringRedisTemplate.hasKey(anyString())).willReturn(false);
-
-        assertThatThrownBy(() -> flashChatService.deleteMessage(1L, "nonexistent"))
                 .isInstanceOf(com.wip.workipedia.common.exception.CustomException.class);
     }
 

@@ -81,19 +81,19 @@ hotfix/demo-login -> release/2026-06-26 -> main
 | 담당 | 브랜치 예시 |
 |---|---|
 | 민정기 | `feat/worki-question`, `feat/frontend-chatbot-mobile` |
-| 김가영 | `feat/admin-dashboard`, `feat/point-esg-grade` |
-| 김진혁 | `feat/ticket-transfer`, `feat/local-rag` |
-| 이슬이 | `feat/auth-jwt`, `feat/chatbot-session`, `feat/notification-sse` |
+| 김가영 | `feat/admin-dashboard`, `feat/department-management` |
+| 김진혁 | `feat/ticket-transfer`, `feat/local-rag`, `feat/chatbot-session` |
+| 이슬이 | `feat/auth-jwt`, `feat/user-point-esg`, `feat/notification-sse` |
 | 황희수 | `feat/frontend-core`, `feat/frontend-admin` |
 
 ## 5. 담당자별 초기 브랜치 추천
 
 | 담당 | 1차 브랜치 | 작업 |
 |---|---|---|
-| 민정기 | `feat/worki-faq-search` | 워키, FAQ, Elasticsearch |
-| 김가영 | `feat/admin-point-esg` | 관리자, 포인트, ESG 등급, ESG |
-| 김진혁 | `feat/ticket-local-rag` | 티켓, 이관, local RAG |
-| 이슬이 | `feat/auth-chatbot-notification` | Auth, 챗봇 세션/메시지, 알림 |
+| 민정기 | `feat/worki-faq-manual-search` | 워키, FAQ, 매뉴얼, Elasticsearch |
+| 김가영 | `feat/admin-department` | 관리자 대시보드, 부서 |
+| 김진혁 | `feat/ticket-chatbot-rag` | 티켓, 이관, 챗봇 세션/메시지, local RAG |
+| 이슬이 | `feat/auth-user-point-esg-notification` | Auth, 사용자 관리, 포인트/ESG, 알림 |
 | 황희수 | `feat/frontend-core-flow` | 로그인, 워키, 티켓, 관리자 화면 |
 
 1차 브랜치가 너무 커지면 아래처럼 쪼갠다.

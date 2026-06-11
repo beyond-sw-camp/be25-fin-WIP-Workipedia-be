@@ -305,7 +305,7 @@ src/main/resources/db/migration/
 - ChromaDB retriever + 고객사별 LLM/Embedding provider
 - Cross-Encoder reranking
 - 출처 포함 응답
-- `NO_RESULT` 시 Tool·해결 티켓 RAG·티켓 생성 순서로 전환
+- `NO_RESULT` 시 매뉴얼→워키→지식화 게시판→Tool→수기 지식 순서로 전환
 
 ### Step 6: 티켓
 
@@ -372,13 +372,13 @@ src/test/java/com/wip/workipedia/
 
 | 담당 | 범위 |
 |---|---|
-| 민정기 | worki, FAQ, Elasticsearch, chatbot/mobile/CDN frontend after BE, docs |
-| 김가영 | admin, point, esggrade, ESG metrics |
-| 김진혁 | ticket, TEAM_ADMIN transfer request, AI 연동 계약, chatbot answer flow, docs |
-| 이슬이 | auth, user, security, chatbot sessions/messages, notification |
+| 민정기 | worki, FAQ, Elasticsearch, manual, chatbot/mobile/CDN frontend after BE, docs |
+| 김가영 | admin, department, admin dashboard |
+| 김진혁 | ticket, TEAM_ADMIN transfer request, AI 연동 계약, chatbot sessions/messages/answer flow, docs |
+| 이슬이 | auth, user, security, notification, point, esggrade, ESG metrics |
 | 황희수 | frontend core flow |
 
-단, 챗봇은 이슬이와 김진혁의 경계를 초반에 맞춘다. 이슬이는 세션/메시지 저장, 김진혁은 AI RAG 연동·출처·전환 정책을 담당한다.
+챗봇 세션·메시지 저장과 AI RAG 연동·출처·전환 정책은 김진혁이 담당한다.
 
 ## 10. 지금 결정하면 좋은 것
 

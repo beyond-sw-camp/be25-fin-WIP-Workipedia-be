@@ -41,10 +41,11 @@
 |---|---|---|---|
 | Auth | 이슬이 | `auth.md` | `docs/adr/003-auth-strategy.md`, API Contract, PRD |
 | Ticket | 김진혁 | `ticket.md` | `docs/adr/004-ticket-routing-strategy.md`, `docs/adr/005-role-permission-strategy.md`, Service Flow |
-| Chatbot/RAG | 김진혁, 이슬이 | `chatbot-rag.md` | `docs/adr/002-rag-strategy.md`, `docs/adr/008-local-llm-security-strategy.md`, Harness Guide |
-| Worki/FAQ | 민정기 | `worki-notification.md` | `docs/adr/006-knowledge-conversion-strategy.md`, Service Flow |
+| Chatbot/RAG | 김진혁 | `chatbot-rag.md` | `docs/adr/002-rag-strategy.md`, `docs/adr/008-local-llm-security-strategy.md`, Harness Guide |
+| Worki/FAQ/Manual | 민정기 | `worki-notification.md`, `manual-knowledge.md` | `docs/adr/006-knowledge-conversion-strategy.md`, Service Flow |
 | Notification | 이슬이 | `worki-notification.md` | `docs/adr/007-notification-strategy.md`, Service Flow |
-| Admin/Point/ESG Grade/ESG | 김가영 | `admin-reward-esg.md` | `docs/adr/005-role-permission-strategy.md`, `docs/adr/006-knowledge-conversion-strategy.md`, PRD |
+| User/Point/ESG Grade/ESG | 이슬이 | `admin-reward-esg.md` | `docs/adr/005-role-permission-strategy.md`, `docs/adr/006-knowledge-conversion-strategy.md`, PRD |
+| Admin/Department | 김가영 | `admin-reward-esg.md` | `docs/adr/005-role-permission-strategy.md`, PRD |
 | Frontend Integration | 황희수, 민정기 | `frontend-integration.md` | API Contract, Service Flow, Figma 기준 |
 
 ## 개발 시작 기준
@@ -62,6 +63,13 @@ Issue 생성
 -> 테스트 또는 harness 기준 확인
 -> PR
 ```
+
+## 코드 주석 작성 규칙
+
+- **클래스**: 선언 위에 1~2줄. 이 클래스가 무엇을 담당하는지 적는다.
+- **메서드**: 선언 위에 1줄. 이 메서드가 무엇을 하는지 적는다.
+- **인라인**: 특이사항이 있을 때만 단다. (동시성 처리, 저장소 제약, null-safe 이유 등)
+- 영어 주석 지양 (팀 공용 언어는 한국어)
 
 ## 도메인 가이드 작성 규칙
 

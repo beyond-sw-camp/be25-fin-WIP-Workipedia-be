@@ -1,6 +1,6 @@
-package com.wip.workipedia.flashchat.repository;
+package com.wip.workipedia.admin.repository;
 
-import com.wip.workipedia.flashchat.domain.AdminLog;
+import com.wip.workipedia.admin.domain.AdminLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AdminLogRepository extends JpaRepository<AdminLog, Long> {
