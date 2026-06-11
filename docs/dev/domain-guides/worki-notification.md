@@ -1,59 +1,46 @@
-# Worki/Notification Domain Guide
+# Worki Notification
 
-> 문서 유형: Development Guide
-> 상태: Draft
-> 정본 위치: `docs/dev/domain-guides/worki-notification.md`
-> 관련 문서: `docs/adr/006-knowledge-conversion-strategy.md`, `docs/adr/007-notification-strategy.md`, `docs/reference/service-flow.md`, `docs/api/api-contract.md`
-> 버전: v0.1
-> 최종 수정: 2026-06-04
+## 개요
 
-## 개발 목표
+사용자 알림창은 알림 이력을 기준으로 전체, 티켓, 게시판, 매뉴얼 탭을 조회한다.
+이 문서는 티켓 탭과 게시판 탭에서 생성되어야 하는 시스템 알림 타입과 도메인 상태 매핑을 정리한다.
 
-워키 질문/답변/채택 흐름과 알림 저장/조회 흐름을 구현한다. 워키/FAQ는 민정기가 담당하고, 알림은 이슬이가 담당한다.
+## 티켓 탭 알림
 
-## 먼저 볼 문서
+티켓 탭은 사용자가 발행한 티켓의 상태 변화에 따라 생성된 알림을 보여준다.
 
-- `docs/adr/006-knowledge-conversion-strategy.md`
-- `docs/adr/007-notification-strategy.md`
-- `docs/reference/service-flow.md`
-- `docs/api/api-contract.md`
+| 상황 | 도메인 상태 | 알림 타입 | 알림 메시지 |
+| --- | --- | --- | --- |
+| 티켓에 담당 부서가 배정된 경우 | `tickets.status = ASSIGNED` | `notifications.type = TICKET_ASSIGNED` | 티켓 부서 배정 |
+| 티켓에 답변이 생성된 경우 | `tickets.status = COMPLETED` | `notifications.type = TICKET_COMPLETED` | 티켓 답변 완료 |
+| 티켓이 삭제된 경우 | `tickets.status = DELETED` | `notifications.type = TICKET_DELETED` | 티켓 삭제 |
 
-## MVP 구현 범위
+### 생성 기준
 
-- 워키 질문 등록
-- 워키 답변 등록
-- 답변 채택
-- FAQ 조회
-- 티켓 처리 완료 후 지식화된 워키 반영
-- 알림 생성
-- 알림 목록 조회
-- 알림 읽음 처리
+- 티켓 상태가 `ASSIGNED`, `COMPLETED`, `DELETED`로 변경되는 시점에 알림을 생성한다.
+- 알림 수신자는 해당 티켓을 발행한 사용자다.
+- 티켓 탭 조회는 현재 티켓 상태가 아니라 `notifications`에 저장된 알림 이력을 기준으로 한다.
 
-## API/DB 영향
+## 게시판 탭 알림
 
-- `worki_questions`
-- `worki_answers`
-- `faq`
-- `notifications`
-- notification target URL/type
-- answer accepted flag
+게시판 탭은 워키 질문/답변 활동에 따라 생성된 알림을 보여준다.
 
-## 권한/보안 체크
+| 상황 | 도메인 상태 | 알림 타입 | 알림 메시지 |
+| --- | --- | --- | --- |
+| 내가 작성한 질문이 등록된 경우 | `worki_questions.status = WAITING` | `notifications.type = WORKI_QUESTION_CREATED` | 워키 질문 등록 |
+| 내가 작성한 질문에 답변이 생성된 경우 | `worki_questions.status = IN_PROGRESS` | `notifications.type = WORKI_QUESTION_ANSWERED` | 워키 답변 완료 |
+| 내가 작성한 답변이 채택된 경우 | `worki_questions.status = ANSWERED` | `notifications.type = WORKI_ANSWER_ACCEPTED` | 워키 답변 채택 |
 
-- 질문/답변 삭제는 관리자 정책과 충돌하지 않아야 한다.
-- 채택 이후 추가 답변 가능 여부를 정책에 맞춘다.
-- 알림은 대상 사용자 또는 대상 role에게만 노출한다.
+### 생성 기준
 
-## 완료 기준
+- 질문 등록 시 `WORKI_QUESTION_CREATED` 알림을 생성한다.
+- 내 질문에 다른 사용자가 답변을 등록하면 `WORKI_QUESTION_ANSWERED` 알림을 생성한다.
+- 내가 작성한 답변이 채택되면 `WORKI_ANSWER_ACCEPTED` 알림을 생성한다.
+- 게시판 탭 조회는 현재 질문 상태가 아니라 `notifications`에 저장된 알림 이력을 기준으로 한다.
 
-- 워키 질문과 답변을 등록할 수 있다.
-- 질문자가 답변을 채택할 수 있다.
-- 답변/채택/티켓 상태 변경 시 알림이 생성된다.
-- 사용자는 본인 알림을 조회하고 읽음 처리할 수 있다.
+## 조회 기준
 
-## 논의 필요 사항
-
-- 채택 이후 추가 답변 차단 여부
-- 알림 삭제 허용 여부
-- 팀 알림 대상 범위
-- FAQ와 워키의 경계
+- 전체 탭은 삭제되지 않은 모든 알림을 최신순으로 조회한다.
+- 티켓 탭은 `target_type = TICKET`이고 타입이 티켓 알림 타입인 알림만 조회한다.
+- 게시판 탭은 `target_type`이 `WORKI_QUESTION` 또는 `WORKI_ANSWER`이고 타입이 게시판 알림 타입인 알림만 조회한다.
+- 삭제된 알림은 `deleted_at`이 존재하므로 알림창 목록에서 제외한다.
