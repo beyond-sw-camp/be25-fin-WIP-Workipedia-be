@@ -41,9 +41,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.enableSimpleBroker("/topic");
     }
 
+    // 연결 인증 하는 메서드
     @Override
     public void configureClientInboundChannel(
             org.springframework.messaging.simp.config.ChannelRegistration registration) {
+                // 메세지 가로채서 확인
         registration.interceptors(new ChannelInterceptor() {
             @Override
             public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -51,7 +53,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 // StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
                 // 위의 코드는 원본을 버린다면, 이건 원본에서 정보를 가져와서 로그인됨을 나타냄.
                 StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
-
+                // 메세지 무슨 명령인지 확인.
                 if (StompCommand.CONNECT.equals(accessor.getCommand())) {
                     authenticate(accessor);
                 }
@@ -60,6 +62,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         });
     }
 
+    // 토큰 확인
     private void authenticate(StompHeaderAccessor accessor) {
         String accessToken = resolveAccessToken(accessor);
         if (accessToken == null || !jwtProvider.isValidAccessToken(accessToken)) {
@@ -71,6 +74,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         accessor.setUser(new StompUserPrincipal(userId, role));
     }
 
+    // 토큰 문자열 추출
     private String resolveAccessToken(StompHeaderAccessor accessor) {
         List<String> authorizationHeaders = accessor.getNativeHeader("Authorization");
         if (authorizationHeaders == null || authorizationHeaders.isEmpty()) {
