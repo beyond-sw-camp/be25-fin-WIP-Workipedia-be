@@ -703,14 +703,15 @@ Request:
   "title": "사내 메신저 사용 가이드",
   "content": "## 1. 로그인\n...",
   "status": "PUBLISHED",
-  "sourceUrl": "https://intra.example.com/manuals/123",
-  "version": "v1.0"
+  "sourceUrl": "https://intra.example.com/manuals/123"
 }
 ```
 
 - `title`(최대 255), `content`는 필수이다.
 - `status`를 생략하면 `PUBLISHED`로 등록된다.
-- `departmentId`, `sourceUrl`(최대 500), `version`(최대 50)은 선택값이다.
+- `departmentId`, `sourceUrl`(최대 500)은 선택값이다. `departmentId`가 `null`이면 공용 매뉴얼로 취급한다.
+- 최초 등록 버전은 서버가 `1.0`으로 자동 설정한다.
+- 삭제되지 않은 같은 제목의 매뉴얼이 이미 있으면 `409 conflict`를 반환한다. 기존 매뉴얼은 수정 API를 사용한다.
 - Response: `201 Created`, `ManualDetailResponse`.
 
 ### POST `/admin/manuals/pdf`
@@ -725,11 +726,12 @@ PDF를 업로드해 매뉴얼을 등록한다. `Content-Type: multipart/form-dat
 | `departmentId` | number    | 선택  | 부서 ID              |
 | `status`       | string    | 선택  | 기본 `PUBLISHED`     |
 | `sourceUrl`    | string    | 선택  | 원본 출처 링크 (최대 500)  |
-| `version`      | string    | 선택  | 버전 (최대 50)         |
 
 
 - PDF가 아니거나 추출된 텍스트가 비어 있으면 `400 manual-003`.
 - 추출한 텍스트가 본문(`content`)에 저장되고, 원본 PDF는 선택된 Object Storage에 저장되어 `fileUrl`로 반환된다.
+- 최초 등록 버전은 서버가 `1.0`으로 자동 설정한다.
+- 삭제되지 않은 같은 제목의 매뉴얼이 이미 있으면 `409 conflict`를 반환한다. 기존 매뉴얼은 수정 API를 사용한다.
 - Response: `201 Created`, `ManualDetailResponse`.
 
 ### GET `/admin/manuals/{manualId}`
@@ -748,11 +750,13 @@ Request:
 ```json
 {
   "title": "사내 메신저 사용 가이드 (개정)",
-  "status": "ARCHIVED",
-  "version": "v1.1"
+  "status": "ARCHIVED"
 }
 ```
 
+- 버전은 서버가 자동 증가시킨다.
+- 파일 개수가 유지된 수정은 소수부를 `0.1` 증가시킨다. 예: `1.0` -> `1.1`
+- 파일 개수가 변경된 수정은 정수부를 1 증가시키고 소수부를 `0`으로 설정한다. 예: `1.1` -> `2.0`
 - Response: `200 OK`, `ManualDetailResponse`.
 
 ### PATCH `/admin/manuals/{manualId}/pdf`
@@ -761,6 +765,7 @@ Request:
 
 - form field는 `POST /admin/manuals/pdf`와 동일하되 `title` 포함 모든 필드가 선택값이다. (`file`만 필수)
 - 본문 교체와 함께 **Object Storage의 기존 PDF는 새 파일로 교체(이전 파일 삭제)** 된다.
+- 버전은 서버가 자동 증가시킨다. 기존 파일이 있는 상태에서 새 PDF로 교체하면 파일 개수가 유지되므로 소수부를 `0.1` 증가시킨다.
 - Response: `200 OK`, `ManualDetailResponse`.
 
 ### DELETE `/admin/manuals/{manualId}`

@@ -6,7 +6,9 @@ import com.wip.workipedia.common.response.PageResponse;
 import com.wip.workipedia.manual.domain.ManualStatus;
 import com.wip.workipedia.manual.dto.ManualDetailResponse;
 import com.wip.workipedia.manual.dto.ManualSummaryResponse;
+import com.wip.workipedia.manual.repository.ManualFileRepository;
 import com.wip.workipedia.manual.repository.ManualRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ManualService {
 
     private final ManualRepository manualRepository;
+    private final ManualFileRepository manualFileRepository;
 
     public PageResponse<ManualSummaryResponse> findPublished(Pageable pageable) {
         return PageResponse.from(
@@ -27,9 +30,15 @@ public class ManualService {
     }
 
     public ManualDetailResponse findPublishedById(Long manualId) {
-        return ManualDetailResponse.from(
-                manualRepository.findByManualIdAndDeletedAtIsNullAndStatus(manualId, ManualStatus.PUBLISHED)
-                        .orElseThrow(() -> new CustomException(ErrorType.MANUAL_NOT_FOUND))
-        );
+        return manualRepository.findByManualIdAndDeletedAtIsNullAndStatus(manualId, ManualStatus.PUBLISHED)
+                .map(manual -> ManualDetailResponse.from(manual, findFileUrls(manual.getManualId())))
+                .orElseThrow(() -> new CustomException(ErrorType.MANUAL_NOT_FOUND));
+    }
+
+    private List<String> findFileUrls(Long manualId) {
+        return manualFileRepository.findByManualManualIdAndDeletedAtIsNullOrderBySortOrderAsc(manualId)
+                .stream()
+                .map(manualFile -> manualFile.getFileUrl())
+                .toList();
     }
 }
