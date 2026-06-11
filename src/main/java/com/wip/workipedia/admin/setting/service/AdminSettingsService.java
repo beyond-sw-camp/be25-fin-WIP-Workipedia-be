@@ -25,7 +25,11 @@ public class AdminSettingsService {
 
 		return new AdminSettingsSummaryResponse(
 			userRepository.countByStatus(UserStatus.ACTIVE),
-			userRepository.countByLastLoginAtGreaterThanEqualAndLastLoginAtLessThan(startAt, endAt),
+			userRepository.countByStatusAndLastLoginAtGreaterThanEqualAndLastLoginAtLessThan(
+				UserStatus.ACTIVE,
+				startAt,
+				endAt
+			),
 			manualRepository.countByDeletedAtIsNull()
 		);
 	}

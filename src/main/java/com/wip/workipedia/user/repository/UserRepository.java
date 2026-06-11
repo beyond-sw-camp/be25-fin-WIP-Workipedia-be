@@ -21,7 +21,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
 	long countByStatus(UserStatus status);
 
-	long countByLastLoginAtGreaterThanEqualAndLastLoginAtLessThan(
+	long countByStatusAndLastLoginAtGreaterThanEqualAndLastLoginAtLessThan(
+		UserStatus status,
 		LocalDateTime startAt,
 		LocalDateTime endAt
 	);
