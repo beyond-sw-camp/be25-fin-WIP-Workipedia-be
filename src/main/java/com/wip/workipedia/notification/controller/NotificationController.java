@@ -1,6 +1,7 @@
 package com.wip.workipedia.notification.controller;
 
 import com.wip.workipedia.common.response.PageResponse;
+import com.wip.workipedia.notification.domain.NotificationTab;
 import com.wip.workipedia.notification.dto.NotificationResponse;
 import com.wip.workipedia.notification.dto.UnreadCountResponse;
 import com.wip.workipedia.notification.service.NotificationService;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -25,8 +27,9 @@ public class NotificationController {
     @GetMapping
     public ResponseEntity<PageResponse<NotificationResponse>> list(
             @AuthenticationPrincipal Long actorUserId,
+            @RequestParam(defaultValue = "ALL") NotificationTab tab,
             Pageable pageable) {
-        return ResponseEntity.ok(notificationService.list(actorUserId, pageable));
+        return ResponseEntity.ok(notificationService.list(actorUserId, tab, pageable));
     }
 
     @GetMapping("/unread-count")
