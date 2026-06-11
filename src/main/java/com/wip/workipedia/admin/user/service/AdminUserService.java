@@ -1,6 +1,6 @@
-package com.wip.workipedia.admin.service;
+package com.wip.workipedia.admin.user.service;
 
-import com.wip.workipedia.admin.dto.AdminUserResponse;
+import com.wip.workipedia.admin.user.dto.AdminUserResponse;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.security.SecurityUtil;

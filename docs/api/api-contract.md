@@ -549,13 +549,13 @@ Payload:
 
 ## 10. Point API
 
-담당: 김가영
+담당: 이슬이
 
 
-| Method | Path                | 설명           | 인증  |
-| ------ | ------------------- | ------------ | --- |
-| GET    | `/points/me`        | 내 포인트        | 필요  |
-| GET    | `/points/histories` | 포인트 변동 이력 전체 | 필요  |
+| Method | Path                  | 설명           | 인증              |
+| ------ |-----------------------|--------------|-----------------|
+| GET    | `/me/points`          | 현재 보유 포인트 조회 | Access Token 필요 |
+| GET    | `/me/point-histories` | 포인트 변동 내역 조회 | Access Token 필요 |
 
 
 ## 11. ESG Metrics API
@@ -625,6 +625,7 @@ Response:
 | GET    | `/admin/settings/summary`                       | 전체 사용자 수, 당일 로그인 수, 총 문서 수 조회 | SYSTEM_ADMIN |
 | GET    | `/admin/points/search`                          | 사번으로 사용자 포인트 조회               | SYSTEM_ADMIN |
 | PATCH  | `/admin/points/{employeeId}/deduct`             | 포인트 차감                        | SYSTEM_ADMIN |
+| DELETE | `/admin/worki/questions/{questionId}`           | 워키 게시글 관리자 삭제 및 작성자 포인트 차감    | SYSTEM_ADMIN |
 | GET    | `/admin/departments`                            | 관리자 부서 목록 조회                  | SYSTEM_ADMIN |
 | POST   | `/admin/departments`                            | 부서 등록                         | SYSTEM_ADMIN |
 | PATCH  | `/admin/departments/{departmentId}`             | 부서 정보 수정                      | SYSTEM_ADMIN |

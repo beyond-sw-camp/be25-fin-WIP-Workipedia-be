@@ -51,8 +51,13 @@ public class FlashChatService {
         User user = getUser(userId);
 
         String cooldownKey = COOLDOWN_KEY_PREFIX + userId;
-        if (Boolean.TRUE.equals(stringRedisTemplate.hasKey(cooldownKey))) {
-            throw new CustomException(ErrorType.FLASH_CHAT_COOLDOWN);
+        if (policy.getSendCooldownSeconds() > 0) {
+            boolean acquired = Boolean.TRUE.equals(
+                    stringRedisTemplate.opsForValue()
+                            .setIfAbsent(cooldownKey, "1", Duration.ofSeconds(policy.getSendCooldownSeconds())));
+            if (!acquired) {
+                throw new CustomException(ErrorType.FLASH_CHAT_COOLDOWN);
+            }
         }
 
         checkBannedWords(request.content(), policy.getBannedWords());
@@ -75,11 +80,6 @@ public class FlashChatService {
         stringRedisTemplate.expire(messageKey, Duration.ofSeconds(policy.getMessageTtlSeconds()));
         long expiresEpoch = nowEpoch + (policy.getMessageTtlSeconds() * 1000L);
         stringRedisTemplate.opsForZSet().add(MESSAGES_ZSET_KEY, messageId, (double) expiresEpoch);
-
-        if (policy.getSendCooldownSeconds() > 0) {
-            stringRedisTemplate.opsForValue().set(
-                    cooldownKey, "1", Duration.ofSeconds(policy.getSendCooldownSeconds()));
-        }
 
         FlashChatMessageBroadcast broadcast = FlashChatMessageBroadcast.of(
                 messageId, userId, user.getNickname(),

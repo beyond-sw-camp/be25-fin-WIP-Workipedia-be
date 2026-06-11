@@ -8,7 +8,7 @@ import com.wip.workipedia.department.ai.RoutingPromptEditResult;
 import com.wip.workipedia.department.ai.RoutingPromptEditTarget;
 import com.wip.workipedia.department.domain.Department;
 import com.wip.workipedia.department.domain.DepartmentRoutingPrompt;
-import com.wip.workipedia.department.dto.AdminDepartmentResponse;
+import com.wip.workipedia.admin.department.dto.AdminDepartmentResponse;
 import com.wip.workipedia.department.dto.DepartmentRequest;
 import com.wip.workipedia.department.dto.DepartmentResponse;
 import com.wip.workipedia.department.dto.RoutingPromptEditRequest;

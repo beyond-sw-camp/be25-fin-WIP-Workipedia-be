@@ -25,9 +25,11 @@ public record QuestionDetailResponse(
     // author가 null이면(탈퇴 등) 닉네임/부서명은 null. department는 LAZY라 트랜잭션 안에서 호출해야 한다.
     // 답변 목록은 작성자 batch 조회가 필요해 서비스에서 만들어 넘긴다.
     // likeCount는 reactions에서 COUNT로 집계한 값을 서비스가 넘긴다.
+    // viewCount는 DB 컬럼 값에 아직 반영 대기 중인(Redis 누적) 증가분까지 더한 값을 서비스가 넘긴다.
     public static QuestionDetailResponse of(
             WorkiQuestion question,
             User author,
+            long viewCount,
             long likeCount,
             List<AnswerResponse> answers) {
         return new QuestionDetailResponse(
@@ -41,7 +43,7 @@ public record QuestionDetailResponse(
                 question.getContent(),
                 question.getStatus(),
                 question.getAcceptedAnswerId(),
-                question.getViewCount(),
+                viewCount,
                 likeCount,
                 question.getCreatedAt(),
                 question.getUpdatedAt(),

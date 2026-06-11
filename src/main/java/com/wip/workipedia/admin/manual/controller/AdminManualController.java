@@ -1,8 +1,8 @@
-package com.wip.workipedia.admin.controller;
+package com.wip.workipedia.admin.manual.controller;
 
-import com.wip.workipedia.admin.service.AdminManualService;
-import com.wip.workipedia.admin.dto.AdminManualCreateRequest;
-import com.wip.workipedia.admin.dto.AdminManualUpdateRequest;
+import com.wip.workipedia.admin.manual.dto.AdminManualCreateRequest;
+import com.wip.workipedia.admin.manual.dto.AdminManualUpdateRequest;
+import com.wip.workipedia.admin.manual.service.AdminManualService;
 import com.wip.workipedia.common.request.BasePageRequest;
 import com.wip.workipedia.common.response.PageResponse;
 import com.wip.workipedia.manual.domain.ManualStatus;

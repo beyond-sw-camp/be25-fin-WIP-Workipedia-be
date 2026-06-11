@@ -1,7 +1,7 @@
-package com.wip.workipedia.admin.service;
+package com.wip.workipedia.admin.manual.service;
 
-import com.wip.workipedia.admin.dto.AdminManualCreateRequest;
-import com.wip.workipedia.admin.dto.AdminManualUpdateRequest;
+import com.wip.workipedia.admin.manual.dto.AdminManualCreateRequest;
+import com.wip.workipedia.admin.manual.dto.AdminManualUpdateRequest;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.response.PageResponse;
