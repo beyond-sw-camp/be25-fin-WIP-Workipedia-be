@@ -21,10 +21,11 @@
 
 ```text
 AI가 활성·승인 Tool과 인자 선택
+→ AI가 POST /internal/ai-tools/{toolId}/execute 호출
 → BE가 JSON Schema와 권한 검증
 → HTTP/DB adapter 실행
-→ 결과 마스킹과 감사 로그
-→ AI가 결과를 해석해 답변
+→ BE가 마스킹된 파라미터와 실행 메타데이터만 감사 로그 기록
+→ AI가 결과를 마스킹한 뒤 해석해 답변
 ```
 
 ## 관리 화면 필드
@@ -59,7 +60,7 @@ SYSTEM_ADMIN이 다음 항목을 등록·테스트·활성화한다.
 - credential reference와 datasource 관리
 - HTTP/DB 실행
 - timeout, 최대 결과 수, 허용 컬럼 제한
-- 결과 마스킹과 호출 감사 로그
+- 호출 감사 로그
 
 ## DB Query Tool 제한
 

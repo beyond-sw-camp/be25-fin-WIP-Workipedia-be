@@ -18,7 +18,9 @@
 - LLM과 Embedding은 공통 인터페이스 뒤에 로컬/클라우드 구현체를 둔다.
 - Object Storage는 `StoragePort` 뒤에 R2/S3/MinIO 구현체를 둔다.
 - provider 종류, 모델명, 내부 주소와 자격 증명은 배포 설정과 Secret으로 관리하며 관리자 화면에 노출하지 않는다.
-- 민감정보는 DB 저장과 모델·Tool 호출 전에 마스킹하고 원문은 보관하지 않는다.
+- BE RDB에는 권한이 통제된 업무 원문을 저장할 수 있다.
+- AI 서버는 모델·Tool 호출 전과 Vector Store 저장 전에 민감정보를 마스킹한다.
+- 민감정보 원문은 AI 로그, Vector Store, 외부 LLM 요청에 남기지 않는다.
 - IAM/EAM 연동을 전제로 하지 않으며 Workipedia의 인증·권한 정책을 적용한다.
 - 운영 환경에 mock 응답을 두지 않는다.
 

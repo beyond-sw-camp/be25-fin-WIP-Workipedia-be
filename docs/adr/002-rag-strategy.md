@@ -19,17 +19,25 @@ Workipedia의 AI는 사내 매뉴얼, 워키, 승인 지식과 해결된 티켓 
 - 운영 응답에 mock 답변을 사용하지 않는다.
 - 고객사별 배포에서 LLM과 Embedding provider를 로컬 또는 클라우드 구현체로 선택한다.
 
-### A to D fallback
+### Fallback pipeline
+
+폴백 순서: A 매뉴얼 → B 워키 → C 지식화 게시판 → D Tool Calling → E 수기 지식
 
 ```text
-A. 매뉴얼/워키/수기 지식 RAG
+A. 매뉴얼 RAG
 → NO_RESULT 또는 ERROR
-B. 등록된 Tool 호출
+B. 워키 RAG
 → NO_RESULT 또는 ERROR
-C. 해결된 티켓 이력 RAG
+C. TEAM_ADMIN 승인 지식화 게시판 RAG
 → NO_RESULT 또는 ERROR
-D. 요청 티켓 생성
+D. 등록된 Tool 호출
+→ NO_RESULT 또는 ERROR
+E. SYSTEM_ADMIN 수기 지식 RAG
+→ NO_RESULT 또는 ERROR
+요청 티켓 생성 전환 액션
 ```
+
+해결된 티켓 이력은 별도 단계가 아니며 TEAM_ADMIN 승인 지식화 게시판(c)으로만 검색에 반영한다.
 
 오케스트레이션은 명시적인 Python `for` loop와 `if-else`로 구현한다. 각 단계는 답변 문자열이 아니라 다음 상태 중 하나를 반환한다.
 
