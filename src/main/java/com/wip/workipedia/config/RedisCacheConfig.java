@@ -1,9 +1,7 @@
-package com.wip.workipedia.config;
+﻿package com.wip.workipedia.config;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.wip.workipedia.faq.dto.ManualSummaryResponse;
 import com.wip.workipedia.faq.dto.PopularWorkiResponse;
 import java.time.Duration;
@@ -33,10 +31,15 @@ public class RedisCacheConfig {
     /** 기본 캐시 TTL — 인기/최근 목록은 30분 캐싱한다. */
     private static final Duration DEFAULT_TTL = Duration.ofMinutes(30);
 
-    /** 자바 8 날짜 타입(LocalDateTime 등)을 사람이 읽는 ISO 문자열로 직렬화하는 매퍼. */
-    private final ObjectMapper objectMapper = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    /**
+     * 캐시 값 (역)직렬화에 쓰는 매퍼. 직접 {@code new} 하지 않고 Spring이 관리하는
+     * 공용 ObjectMapper 빈을 주입받아, 전역 직렬화 설정 변경이 캐시에도 그대로 반영되게 한다.
+     */
+    private final ObjectMapper objectMapper;
+
+    public RedisCacheConfig(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     /**
      * 캐시 이름별로 "저장 타입"을 못박아 등록한다.

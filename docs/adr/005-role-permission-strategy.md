@@ -2,8 +2,8 @@
 
 > 문서 유형: ADR
 > 상태: Draft
-> 정본 위치: `docs/003-adr/005-role-permission-strategy.md`
-> 관련 문서: `docs/001-reference/constitution.md`, `docs/001-reference/prd.md`, `docs/001-reference/service-flow.md`, `docs/004-api/api-contract.md`
+> 정본 위치: `docs/adr/005-role-permission-strategy.md`
+> 관련 문서: `docs/reference/constitution.md`, `docs/reference/prd.md`, `docs/reference/service-flow.md`, `docs/api/api-contract.md`
 > 버전: v0.1
 > 최종 수정: 2026-05-31
 
@@ -22,7 +22,7 @@ MVP 권한은 다음 3개 역할로 운영한다.
 |---|---|
 | `USER` | 질문 작성, 요청 티켓 발행, 본인 티켓 상태 확인, 워키 답변 작성 |
 | `TEAM_ADMIN` | 자기 팀 티켓 확인, 팀원 배정, 티켓 이관 요청, 지식화 승인 |
-| `SYSTEM_ADMIN` | 공통 접수 큐 관리, 자동 배정 실패 검토, 부서/카테고리 매핑, 운영 지표 확인 |
+| `SYSTEM_ADMIN` | 공통 접수 큐 관리, 자동 배정 실패 검토, 부서 R&R·AI Tool·수기 지식 관리, 운영 지표 확인 |
 
 권한 원칙:
 
@@ -30,6 +30,8 @@ MVP 권한은 다음 3개 역할로 운영한다.
 - `TEAM_ADMIN`은 자기 팀에 배정된 티켓을 조회하고 팀원에게 분배한다.
 - `TEAM_ADMIN`은 직접 다른 부서로 이관하지 않고 공통 접수 큐로 보낸다.
 - `SYSTEM_ADMIN`은 공통 접수 큐와 운영 지표를 관리한다.
+- AI는 담당 부서까지만 추천하며 개인 담당자 배정은 `TEAM_ADMIN`이 수행한다.
+- DB Query Tool의 SQL과 접속정보는 개발자가 관리하고 `SYSTEM_ADMIN`은 승인된 Tool의 활성 상태만 변경한다.
 - 전체 관리자 대시보드는 개인 평가가 아니라 운영 현황 파악을 목적으로 한다.
 - 관리자 작업은 추적 가능해야 하며, 중요한 작업은 `admin_logs`에 기록한다.
 

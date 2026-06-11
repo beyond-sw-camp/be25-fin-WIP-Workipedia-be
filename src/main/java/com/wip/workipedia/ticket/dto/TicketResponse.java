@@ -2,6 +2,7 @@ package com.wip.workipedia.ticket.dto;
 
 import com.wip.workipedia.ticket.domain.RoutingDecision;
 import com.wip.workipedia.ticket.domain.Ticket;
+import com.wip.workipedia.ticket.domain.TicketPriority;
 import com.wip.workipedia.ticket.domain.TicketStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -16,9 +17,8 @@ public record TicketResponse(
 	RoutingDecision routingDecision,
 	List<String> routingReasons,
 	List<CandidateDepartmentResponse> candidateDepartments,
-	Long questionId,
 	Long sourceChatbotMessageId,
-	Long categoryId,
+	TicketPriority priority,
 	String title,
 	String content,
 	Long assigneeId,
@@ -35,9 +35,8 @@ public record TicketResponse(
 			ticket.getRoutingDecision(),
 			routingResult.reasons(),
 			routingResult.candidateDepartments(),
-			ticket.getQuestionId(),
 			ticket.getSourceChatbotMessageId(),
-			ticket.getCategoryId(),
+			ticket.getPriority(),
 			ticket.getTitle(),
 			ticket.getContent(),
 			ticket.getAssigneeId(),

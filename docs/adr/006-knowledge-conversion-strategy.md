@@ -1,54 +1,42 @@
 # ADR 006 - Knowledge Conversion Strategy
 
 > 문서 유형: ADR
-> 상태: Draft
-> 정본 위치: `docs/003-adr/006-knowledge-conversion-strategy.md`
-> 관련 문서: `docs/001-reference/constitution.md`, `docs/001-reference/service-flow.md`, `docs/001-reference/prd.md`, `docs/004-api/api-contract.md`
-> 버전: v0.1
-> 최종 수정: 2026-05-31
+> 상태: Accepted
+> 정본 위치: `docs/adr/006-knowledge-conversion-strategy.md`
+> 관련 문서: `docs/reference/service-flow.md`, `docs/reference/prd.md`, `docs/api/api-contract.md`
+> 버전: v0.2
+> 최종 수정: 2026-06-09
 
 ## Context
 
-Workipedia의 차별점은 챗봇 답변에서 끝나는 것이 아니라, 처리 완료된 요청을 조직 지식으로 전환하는 구조다.
-
-요청 티켓에는 개인 상황, 자산번호, 일정, 계정 정보 등 그대로 공개하면 안 되는 내용이 포함될 수 있다.
-따라서 티켓 원문을 워키에 그대로 반영하지 않고, 일반화된 지식으로 변환하는 흐름이 필요하다.
+처리 완료 티켓에는 반복 활용할 수 있는 업무 지식과 개인 상황·자산번호·계정 정보가 함께 포함될 수 있다. 원문을 그대로 RAG에 넣지 않고 민감정보를 제거한 승인 지식으로 전환해야 한다.
 
 ## Decision
 
-처리 완료 티켓은 **지식화 후보**가 될 수 있으며, 워키 반영 전 일반화 과정을 거친다.
-
-기본 흐름:
-
 ```text
-요청 티켓 처리 완료
--> 담당자가 지식화 후보 등록 여부 선택
--> AI가 개인 상황을 제거하고 일반 절차 형태로 요약
--> TEAM_ADMIN 검수
--> 워키 문서 또는 워키 Q&A로 반영
--> 이후 RAG 검색 대상에 포함
+티켓 처리 완료
+→ AI가 민감정보를 마스킹하고 일반 절차 초안 생성
+→ TEAM_ADMIN 검수·승인
+→ knowledge_data 저장(sync_status=PENDING)
+→ 커밋 후 비동기 chunking/embedding/ChromaDB upsert
+→ SYNCED 또는 FAILED
 ```
 
-지식화 원칙:
-
-- 티켓 원문을 그대로 워키에 올리지 않는다.
-- 개인 이름, 사번, 자산번호, 날짜, 계정 정보 등 개인/상황 정보를 제거한다.
-- 반복 활용 가능한 절차, 기준, 준비물, 담당 부서 중심으로 정리한다.
-- `TEAM_ADMIN`이 최종 검수 후 워키에 반영한다.
-- 반영된 워키는 추후 챗봇 답변의 출처가 될 수 있다.
+- `knowledge_candidates` 중간 테이블은 사용하지 않는다.
+- 승인 결과는 V15의 `knowledge_data`에 저장한다.
+- 민감정보 원문은 보관하지 않는다.
+- RDB 저장과 Vector Store 반영을 하나의 트랜잭션으로 묶지 않는다.
+- 실패한 동기화는 상태와 사유를 남기고 재시도한다.
+- 승인된 처리 사례는 별도 라우팅 사례로도 반영할 수 있다.
 
 ## Consequences
 
-- 반복 요청이 조직 지식으로 축적되어 다음 문의를 줄일 수 있다.
-- 개인 사례가 그대로 공개되는 위험을 줄일 수 있다.
-- 담당자는 단순 처리자가 아니라 지식 축적의 1차 판단자가 된다.
-- 팀 관리자는 지식 품질을 검수하는 책임을 가진다.
-- DB/API는 티켓과 지식화 후보, 워키 반영 결과의 연결 관계를 표현해야 한다.
+- TEAM_ADMIN 승인 전 데이터가 RAG 근거로 노출되지 않는다.
+- RDB와 ChromaDB 사이의 비동기 정합성 관리가 필요하다.
+- `sync_status`, 실패 사유, Vector Store 문서 ID는 후속 migration으로 추가해야 한다.
 
-## Discussion Needed
+## Open Questions
 
-- 지식화 후보 등록을 담당자 수동 선택으로 할지, 완료 티켓 전체를 후보로 둘지 결정이 필요하다.
-- 워키 반영 형태를 문서형/질문답변형 중 어떻게 구분할지 결정이 필요하다.
-- 일반화된 초안을 누가 수정할 수 있는지 결정이 필요하다.
-- 지식화 반영 후 원본 티켓과 워키 문서의 링크를 어디까지 노출할지 결정이 필요하다.
-- 민감한 티켓 유형을 아직 정의하지 않았으므로, 민감 티켓이 생길 경우 별도 검수 흐름이 필요한지 논의해야 한다.
+- 문서 유형별 chunk 크기와 overlap
+- 실패 재시도 횟수와 dead-letter 처리
+- 승인 지식 수정·삭제 시 ChromaDB 보상 처리

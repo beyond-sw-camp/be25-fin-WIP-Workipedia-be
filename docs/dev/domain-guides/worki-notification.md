@@ -2,21 +2,21 @@
 
 > 문서 유형: Development Guide
 > 상태: Draft
-> 정본 위치: `docs/010-development/domain-guides/worki-notification.md`
-> 관련 문서: `docs/003-adr/006-knowledge-conversion-strategy.md`, `docs/003-adr/007-notification-strategy.md`, `docs/001-reference/service-flow.md`, `docs/004-api/api-contract.md`
+> 정본 위치: `docs/dev/domain-guides/worki-notification.md`
+> 관련 문서: `docs/adr/006-knowledge-conversion-strategy.md`, `docs/adr/007-notification-strategy.md`, `docs/reference/service-flow.md`, `docs/api/api-contract.md`
 > 버전: v0.1
-> 최종 수정: 2026-05-31
+> 최종 수정: 2026-06-04
 
 ## 개발 목표
 
-워키 질문/답변/채택 흐름과 알림 저장/조회 흐름을 구현한다.
+워키 질문/답변/채택 흐름과 알림 저장/조회 흐름을 구현한다. 워키/FAQ는 민정기가 담당하고, 알림은 이슬이가 담당한다.
 
 ## 먼저 볼 문서
 
-- `docs/003-adr/006-knowledge-conversion-strategy.md`
-- `docs/003-adr/007-notification-strategy.md`
-- `docs/001-reference/service-flow.md`
-- `docs/004-api/api-contract.md`
+- `docs/adr/006-knowledge-conversion-strategy.md`
+- `docs/adr/007-notification-strategy.md`
+- `docs/reference/service-flow.md`
+- `docs/api/api-contract.md`
 
 ## MVP 구현 범위
 

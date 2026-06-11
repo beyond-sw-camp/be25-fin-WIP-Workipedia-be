@@ -10,15 +10,18 @@ public record QuestionSummaryResponse(
         String title,
         QuestionStatus status,
         long viewCount,
+        long likeCount,
         LocalDateTime createdAt
 ) {
-    public static QuestionSummaryResponse from(WorkiQuestion question) {
+    // likeCount는 reactions에서 배치 집계한 값을 서비스가 넘긴다.
+    public static QuestionSummaryResponse of(WorkiQuestion question, long likeCount) {
         return new QuestionSummaryResponse(
                 question.getQuestionId(),
                 question.getAuthorId(),
                 question.getTitle(),
                 question.getStatus(),
                 question.getViewCount(),
+                likeCount,
                 question.getCreatedAt()
         );
     }

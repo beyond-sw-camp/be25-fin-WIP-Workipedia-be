@@ -11,6 +11,9 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
 
+  elasticsearch:
+    uris: http://localhost:${ELASTICSEARCH_PORT:9200}
+
   jpa:
     database-platform: org.hibernate.dialect.MariaDBDialect
     hibernate:
@@ -18,3 +21,42 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+  mail:
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:true}
+
+storage:
+  provider: ${STORAGE_PROVIDER}
+  bucket: ${STORAGE_BUCKET}
+  public-url: ${STORAGE_PUBLIC_BASE_URL}
+  r2:
+    access-key: ${R2_ACCESS_KEY}
+    secret-key: ${R2_SECRET_KEY}
+    account-id: ${R2_ACCOUNT_ID}
+  minio:
+    access-key: ${MINIO_ACCESS_KEY}
+    secret-key: ${MINIO_SECRET_KEY}
+    endpoint: ${MINIO_ENDPOINT}
+  s3:
+    access-key: ${AWS_ACCESS_KEY}
+    secret-key: ${AWS_SECRET_KEY}
+    region: ${AWS_REGION}
+
+app:
+  jwt:
+    # JWT_SECRET은 토큰 서명에 사용하는 민감값이므로 로컬 .env에 설정하고 Git에 커밋하지 않습니다.
+    # 만료 시간을 변경해야 한다면 .env에서 JWT_ACCESS_TOKEN_EXPIRATION, JWT_REFRESH_TOKEN_EXPIRATION 값을 수정합니다.
+    secret: ${JWT_SECRET}
+    # access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:30m}
+    # Access Token 만료 시간은 로컬 테스트 편의를 위해 임시로 12시간으로 설정합니다.
+    access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:12h}
+    refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:14d}

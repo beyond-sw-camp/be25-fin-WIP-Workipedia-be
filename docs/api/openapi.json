@@ -1,0 +1,2378 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Workipedia API",
+    "description": "",
+    "version": "1.0.0"
+  },
+  "tags": [
+    {
+      "name": "departments"
+    },
+    {
+      "name": "auth"
+    },
+    {
+      "name": "tickets"
+    },
+    {
+      "name": "worki"
+    },
+    {
+      "name": "faq"
+    },
+    {
+      "name": "notifications"
+    },
+    {
+      "name": "points"
+    },
+    {
+      "name": "esg"
+    }
+  ],
+  "paths": {
+    "/admin/departments": {
+      "post": {
+        "summary": "부서 등록",
+        "deprecated": false,
+        "description": "",
+        "operationId": "getDepartments",
+        "tags": [
+          "departments"
+        ],
+        "parameters": [
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "application/json",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              },
+              "example": {
+                "departmentName": "개발 2팀"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DepartmentResponse"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "관리자 부서 목록 조회",
+        "deprecated": false,
+        "description": "",
+        "operationId": "getDepartments",
+        "tags": [
+          "departments"
+        ],
+        "parameters": [
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "application/json",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DepartmentResponse"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/departments/1": {
+      "patch": {
+        "summary": "부서 수정",
+        "deprecated": false,
+        "description": "",
+        "operationId": "getDepartments",
+        "tags": [
+          "departments"
+        ],
+        "parameters": [
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "application/json",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              },
+              "example": {
+                "departmentName": "인사 관리팀"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DepartmentResponse"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/departments/7": {
+      "delete": {
+        "summary": "부서 삭제",
+        "deprecated": false,
+        "description": "",
+        "operationId": "getDepartments",
+        "tags": [
+          "departments"
+        ],
+        "parameters": [
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "application/json",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              },
+              "example": null
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DepartmentResponse"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/departments": {
+      "get": {
+        "summary": "부서 목록 조회",
+        "deprecated": false,
+        "description": "",
+        "operationId": "getDepartments",
+        "tags": [
+          "departments"
+        ],
+        "parameters": [
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "application/json",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DepartmentResponse"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/departments/routing-prompt/instruction": {
+      "patch": {
+        "summary": "역할 배정 공용 프롬프트 수정",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "application/json",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              },
+              "example": {
+                "instruction": "개발 1팀은 ERP랑 IT 담당이고 개발 2팀은 QLOLA 담당이야"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": [
+                  {
+                    "departmentId": 1,
+                    "departmentName": "인사 관리팀",
+                    "routingPrompt": "인사팀은 인사관리담당"
+                  },
+                  {
+                    "departmentId": 2,
+                    "departmentName": "총무1팀",
+                    "routingPrompt": "사내 PC 장애, 계정 권한, 네트워크 문제, 업무 시스템 오류 문의를 담당합니다."
+                  },
+                  {
+                    "departmentId": 3,
+                    "departmentName": "IT지원팀",
+                    "routingPrompt": null
+                  },
+                  {
+                    "departmentId": 4,
+                    "departmentName": "개발팀",
+                    "routingPrompt": null
+                  },
+                  {
+                    "departmentId": 5,
+                    "departmentName": "재무관리팀",
+                    "routingPrompt": null
+                  },
+                  {
+                    "departmentId": 6,
+                    "departmentName": "개발 1팀",
+                    "routingPrompt": "개발 1팀은 ERP랑 IT 담당이고\r\n개발 1팀은 ERD담당\r\n개발 1팀은 ERP랑 IT 담당이고 개발 2팀은 QLOLA 담당이야\r\n개발 1팀은 ERP랑 IT 담당이고 개발 2팀은 QLOLA 담당이야"
+                  }
+                ]
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/auth/signup/code": {
+      "post": {
+        "summary": "회원가입 인증코드 발송",
+        "deprecated": false,
+        "description": "",
+        "operationId": "sendSignupCode",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailCodeSendRequest"
+              },
+              "example": {
+                "employeeId": "20260002",
+                "departmentId": 1,
+                "email": "gahyoung920@gmail.com",
+                "password": "abc1234567"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/auth/signup/code/verify": {
+      "post": {
+        "summary": "회원가입 인증코드 확인",
+        "deprecated": false,
+        "description": "",
+        "operationId": "verifySignupCode",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailCodeVerifyRequest"
+              },
+              "example": {
+                "email": "gahyoung920@gmail.com",
+                "code": "158952"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/auth/signup": {
+      "post": {
+        "summary": "회원가입",
+        "deprecated": false,
+        "description": "",
+        "operationId": "signup",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupRequest"
+              },
+              "example": {
+                "employeeId": "20260002",
+                "departmentId": 1,
+                "email": "gahyoung920@gmail.com",
+                "password": "abc1234567"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignupResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "로그인",
+        "deprecated": false,
+        "description": "",
+        "operationId": "login",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              },
+              "example": {
+                "employeeId": "20260002",
+                "password": "abc1234567"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK - Refresh Token은 Set-Cookie 헤더로 반환",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "description": "refreshToken=...; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/auth/token/refresh": {
+      "post": {
+        "summary": "토큰 재발급",
+        "deprecated": false,
+        "description": "",
+        "operationId": "refreshToken",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [
+          {
+            "name": "refreshToken",
+            "in": "cookie",
+            "description": "",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenRefreshResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "로그아웃",
+        "deprecated": false,
+        "description": "",
+        "operationId": "logout",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK - refreshToken 쿠키 만료 처리",
+            "headers": {
+              "Set-Cookie": {
+                "description": "refreshToken=; Max-Age=0; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/tickets": {
+      "post": {
+        "summary": "티켓 생성",
+        "deprecated": false,
+        "description": "",
+        "operationId": "createTicket",
+        "tags": [
+          "tickets"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTicketRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      },
+      "get": {
+        "summary": "티켓 목록 조회",
+        "deprecated": false,
+        "description": "",
+        "operationId": "getTickets",
+        "tags": [
+          "tickets"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "COMMON_QUEUE",
+                "ASSIGNED",
+                "IN_PROGRESS",
+                "COMPLETED",
+                "REFUSED"
+              ]
+            }
+          },
+          {
+            "name": "departmentId",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketPageResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/tickets/{ticketId}": {
+      "get": {
+        "summary": "티켓 상세 조회",
+        "deprecated": false,
+        "description": "",
+        "operationId": "getTicket",
+        "tags": [
+          "tickets"
+        ],
+        "parameters": [
+          {
+            "name": "ticketId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": 0,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/tickets/{ticketId}/status": {
+      "patch": {
+        "summary": "티켓 상태 변경",
+        "deprecated": false,
+        "description": "",
+        "operationId": "changeTicketStatus",
+        "tags": [
+          "tickets"
+        ],
+        "parameters": [
+          {
+            "name": "ticketId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": 0,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketStatusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/tickets/{ticketId}/assignee": {
+      "patch": {
+        "summary": "티켓 담당자 배정",
+        "deprecated": false,
+        "description": "",
+        "operationId": "assignTicket",
+        "tags": [
+          "tickets"
+        ],
+        "parameters": [
+          {
+            "name": "ticketId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": 0,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketAssigneeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketAssigneeResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/worki/questions": {
+      "post": {
+        "summary": "질문 등록",
+        "deprecated": false,
+        "description": "",
+        "operationId": "createQuestion",
+        "tags": [
+          "worki"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      },
+      "get": {
+        "summary": "질문 목록 조회",
+        "deprecated": false,
+        "description": "",
+        "operationId": "listQuestions",
+        "tags": [
+          "worki"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionSummaryPage"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/worki/questions/{questionId}": {
+      "get": {
+        "summary": "질문 상세 조회",
+        "deprecated": false,
+        "description": "",
+        "operationId": "getQuestion",
+        "tags": [
+          "worki"
+        ],
+        "parameters": [
+          {
+            "name": "questionId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": 0,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionDetailResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      },
+      "patch": {
+        "summary": "질문 수정",
+        "deprecated": false,
+        "description": "",
+        "operationId": "updateQuestion",
+        "tags": [
+          "worki"
+        ],
+        "parameters": [
+          {
+            "name": "questionId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": 0,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/worki/questions/{questionId}/like": {
+      "post": {
+        "summary": "질문 좋아요",
+        "deprecated": false,
+        "description": "",
+        "operationId": "likeQuestion",
+        "tags": [
+          "worki"
+        ],
+        "parameters": [
+          {
+            "name": "questionId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": 0,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "headers": {}
+          }
+        },
+        "security": []
+      },
+      "delete": {
+        "summary": "질문 좋아요 취소",
+        "deprecated": false,
+        "description": "",
+        "operationId": "unlikeQuestion",
+        "tags": [
+          "worki"
+        ],
+        "parameters": [
+          {
+            "name": "questionId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": 0,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/worki/questions/{questionId}/answers": {
+      "post": {
+        "summary": "답변 등록",
+        "deprecated": false,
+        "description": "",
+        "operationId": "createAnswer",
+        "tags": [
+          "worki"
+        ],
+        "parameters": [
+          {
+            "name": "questionId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": 0,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnswerResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/worki/answers/{answerId}/accept": {
+      "post": {
+        "summary": "답변 채택",
+        "deprecated": false,
+        "description": "",
+        "operationId": "acceptAnswer",
+        "tags": [
+          "worki"
+        ],
+        "parameters": [
+          {
+            "name": "answerId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": 0,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnswerResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/faq/worki/popular": {
+      "get": {
+        "summary": "인기 워키 질문 목록",
+        "deprecated": false,
+        "description": "",
+        "operationId": "popularWorki",
+        "tags": [
+          "faq"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PopularWorkiResponse"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/faq/manuals/popular": {
+      "get": {
+        "summary": "인기 매뉴얼 목록",
+        "deprecated": false,
+        "description": "",
+        "operationId": "popularManuals",
+        "tags": [
+          "faq"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ManualSummaryResponse"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/faq/manuals/recent": {
+      "get": {
+        "summary": "최근 등록 매뉴얼 목록",
+        "deprecated": false,
+        "description": "",
+        "operationId": "recentManuals",
+        "tags": [
+          "faq"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ManualSummaryResponse"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/notifications": {
+      "get": {
+        "summary": "알림 목록 조회",
+        "deprecated": false,
+        "description": "",
+        "operationId": "listNotifications",
+        "tags": [
+          "notifications"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPageResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/notifications/unread-count": {
+      "get": {
+        "summary": "미읽은 알림 수",
+        "deprecated": false,
+        "description": "",
+        "operationId": "unreadCount",
+        "tags": [
+          "notifications"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadCountResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/notifications/{notificationId}/read": {
+      "patch": {
+        "summary": "알림 개별 읽음",
+        "deprecated": false,
+        "description": "",
+        "operationId": "readNotification",
+        "tags": [
+          "notifications"
+        ],
+        "parameters": [
+          {
+            "name": "notificationId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": 0,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/notifications/read-all": {
+      "patch": {
+        "summary": "알림 모두 읽음",
+        "deprecated": false,
+        "description": "",
+        "operationId": "readAllNotifications",
+        "tags": [
+          "notifications"
+        ],
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/notifications/{notificationId}": {
+      "delete": {
+        "summary": "알림 삭제",
+        "deprecated": false,
+        "description": "",
+        "operationId": "deleteNotification",
+        "tags": [
+          "notifications"
+        ],
+        "parameters": [
+          {
+            "name": "notificationId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": 0,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/points/me": {
+      "get": {
+        "summary": "내 포인트 조회",
+        "deprecated": false,
+        "description": "",
+        "operationId": "getMyPoint",
+        "tags": [
+          "points"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyPointResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/points/histories": {
+      "get": {
+        "summary": "포인트 변동 이력",
+        "deprecated": false,
+        "description": "",
+        "operationId": "getPointHistories",
+        "tags": [
+          "points"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PointHistoryPageResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/esg/me": {
+      "get": {
+        "summary": "내 ESG 지표 조회",
+        "deprecated": false,
+        "description": "",
+        "operationId": "getMyEsg",
+        "tags": [
+          "esg"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EsgResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/esg/leaderboard": {
+      "get": {
+        "summary": "ESG 리더보드",
+        "deprecated": false,
+        "description": "",
+        "operationId": "getEsgLeaderboard",
+        "tags": [
+          "esg"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EsgLeaderboardPageResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/flash-chat/messages": {
+      "get": {
+        "summary": "활성 메시지 목록 조회",
+        "deprecated": false,
+        "description": "채팅방 입장 시 현재 Redis에 살아있는 메시지 목록을 반환합니다.",
+        "operationId": "getActiveMessages",
+        "tags": [
+          "flash-chat"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlashChatMessagesResponse"
+                },
+                "example": {
+                  "messages": [
+                    {
+                      "messageId": "550e8400-e29b-41d4-a716-446655440000",
+                      "userId": 1,
+                      "nickname": "노잇0001",
+                      "content": "안녕하세요",
+                      "replyToId": null,
+                      "createdAt": "2026-06-08T11:30:00",
+                      "expiresAt": "2026-06-08T11:40:00"
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/admin/flash-chat/policy": {
+      "get": {
+        "summary": "Flash Chat 정책 조회 (관리자)",
+        "deprecated": false,
+        "description": "",
+        "operationId": "getFlashChatPolicy",
+        "tags": [
+          "flash-chat"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlashChatPolicyResponse"
+                },
+                "example": {
+                  "messageTtlSeconds": 600,
+                  "sendCooldownSeconds": 0,
+                  "bannedWords": []
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      },
+      "patch": {
+        "summary": "Flash Chat 정책 수정 (관리자)",
+        "deprecated": false,
+        "description": "",
+        "operationId": "updateFlashChatPolicy",
+        "tags": [
+          "flash-chat"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlashChatPolicyRequest"
+              },
+              "example": {
+                "messageTtlSeconds": 600,
+                "sendCooldownSeconds": 5,
+                "bannedWords": [
+                  "욕설",
+                  "광고"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlashChatPolicyResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/admin/flash-chat/messages/{messageId}": {
+      "delete": {
+        "summary": "메시지 강제 삭제 (관리자)",
+        "deprecated": false,
+        "description": "",
+        "operationId": "deleteFlashChatMessage",
+        "tags": [
+          "flash-chat"
+        ],
+        "parameters": [
+          {
+            "name": "messageId",
+            "in": "path",
+            "description": "Redis 메시지 UUID",
+            "required": true,
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "headers": {}
+          },
+          "404": {
+            "description": "메시지 없음",
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DepartmentResponse": {
+        "type": "object",
+        "properties": {
+          "departmentId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "departmentName": {
+            "type": "string"
+          }
+        }
+      },
+      "EmailCodeSendRequest": {
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          }
+        }
+      },
+      "EmailCodeVerifyRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "code"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      },
+      "SignupRequest": {
+        "type": "object",
+        "required": [
+          "employeeId",
+          "departmentId",
+          "email",
+          "password"
+        ],
+        "properties": {
+          "employeeId": {
+            "type": "string"
+          },
+          "departmentId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 16
+          }
+        }
+      },
+      "SignupResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "USER",
+              "TEAM_ADMIN",
+              "SYSTEM_ADMIN"
+            ]
+          },
+          "nickname": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "employeeId",
+          "password"
+        ],
+        "properties": {
+          "employeeId": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "departmentId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "USER",
+              "TEAM_ADMIN",
+              "SYSTEM_ADMIN"
+            ]
+          },
+          "nickname": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "TokenRefreshResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateTicketRequest": {
+        "type": "object",
+        "required": [
+          "title",
+          "content"
+        ],
+        "properties": {
+          "sourceChatbotMessageId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH"
+            ],
+            "nullable": true
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          }
+        }
+      },
+      "TicketResponse": {
+        "type": "object",
+        "properties": {
+          "ticketId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "COMMON_QUEUE",
+              "ASSIGNED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "REFUSED"
+            ]
+          },
+          "assignedDepartmentId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "assignedDepartmentName": {
+            "type": "string",
+            "nullable": true
+          },
+          "routingConfidenceScore": {
+            "type": "number",
+            "nullable": true
+          },
+          "routingDecision": {
+            "type": "string",
+            "enum": [
+              "AUTO_ASSIGNED",
+              "COMMON_QUEUE"
+            ],
+            "nullable": true
+          },
+          "routingReasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sourceChatbotMessageId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "assigneeId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TicketPageResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketResponse"
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        }
+      },
+      "TicketStatusRequest": {
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "COMMON_QUEUE",
+              "ASSIGNED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "REFUSED"
+            ]
+          }
+        }
+      },
+      "TicketAssigneeRequest": {
+        "type": "object",
+        "required": [
+          "assigneeId"
+        ],
+        "properties": {
+          "assigneeId": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "TicketAssigneeResponse": {
+        "type": "object",
+        "properties": {
+          "ticketId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "assigneeId": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "QuestionCreateRequest": {
+        "type": "object",
+        "required": [
+          "title",
+          "content"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "sourceChatbotMessageId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          }
+        }
+      },
+      "QuestionResponse": {
+        "type": "object",
+        "properties": {
+          "questionId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "authorId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "WAITING",
+              "ANSWERED"
+            ]
+          },
+          "authorNickname": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "QuestionSummaryPage": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuestionResponse"
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        }
+      },
+      "QuestionDetailResponse": {
+        "type": "object",
+        "properties": {
+          "questionId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "authorId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "WAITING",
+              "ANSWERED"
+            ]
+          },
+          "authorNickname": {
+            "type": "string",
+            "nullable": true
+          },
+          "answers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnswerResponse"
+            }
+          }
+        }
+      },
+      "QuestionUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          }
+        }
+      },
+      "AnswerCreateRequest": {
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "properties": {
+          "content": {
+            "type": "string"
+          }
+        }
+      },
+      "AnswerResponse": {
+        "type": "object",
+        "properties": {
+          "answerId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "questionId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "authorId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "content": {
+            "type": "string"
+          },
+          "accepted": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PopularWorkiResponse": {
+        "type": "object",
+        "properties": {
+          "questionId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "title": {
+            "type": "string"
+          },
+          "likeCount": {
+            "type": "integer"
+          }
+        }
+      },
+      "ManualSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "manualId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "title": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "NotificationPageResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationResponse"
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        }
+      },
+      "UnreadCountResponse": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          }
+        }
+      },
+      "MyPointResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPoint": {
+            "type": "integer"
+          }
+        }
+      },
+      "PointHistoryPageResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PointHistoryResponse"
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        }
+      },
+      "EsgResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "grade": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number"
+          }
+        }
+      },
+      "EsgLeaderboardPageResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EsgResponse"
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        }
+      },
+      "PageInfo": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer"
+          }
+        }
+      },
+      "NotificationResponse": {
+        "type": "object",
+        "properties": {
+          "notificationId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "isRead": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PointHistoryResponse": {
+        "type": "object",
+        "properties": {
+          "historyId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "integer"
+          },
+          "description": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "FlashChatMessageResponse": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nickname": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "replyToId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "FlashChatMessagesResponse": {
+        "type": "object",
+        "properties": {
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlashChatMessageResponse"
+            }
+          }
+        }
+      },
+      "FlashChatPolicyResponse": {
+        "type": "object",
+        "properties": {
+          "messageTtlSeconds": {
+            "type": "integer"
+          },
+          "sendCooldownSeconds": {
+            "type": "integer"
+          },
+          "bannedWords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "FlashChatPolicyRequest": {
+        "type": "object",
+        "required": [
+          "messageTtlSeconds",
+          "sendCooldownSeconds"
+        ],
+        "properties": {
+          "messageTtlSeconds": {
+            "type": "integer",
+            "minimum": 60
+          },
+          "sendCooldownSeconds": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bannedWords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "servers": []
+}

@@ -11,24 +11,33 @@ spring:
   flyway:
     enabled: true
 
-  logging:
-    level:
-      '[org.springframework.web]': info
-      '[org.springframework.security]': info
-      '[org.mariadb.jdbc.client.impl]': info
-      '[org.springframework.data.redis]': info
-      '[io.lettuce.core]': info
+  servlet:
+    multipart:
+      max-file-size: ${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE:20MB}
+      max-request-size: ${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE:25MB}
 
-  management:
-    endpoints:
-      web:
-        exposure:
-          include: health,info,metrics
+logging:
+  level:
+    '[org.springframework.web]': info
+    '[org.springframework.security]': info
+    '[org.mariadb.jdbc.client.impl]': info
+    '[org.springframework.data.redis]': info
+    '[io.lettuce.core]': info
 
-    endpoint:
-      health:
-        show-details: always
+management:
+  health:
+    mail:
+      enabled: false
 
-    metrics:
-      tags:
-        application: Workipedia
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+  endpoint:
+    health:
+      show-details: always
+
+  metrics:
+    tags:
+      application: Workipedia
