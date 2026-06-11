@@ -1,4 +1,4 @@
-﻿package com.wip.workipedia.config;
+package com.wip.workipedia.config;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
