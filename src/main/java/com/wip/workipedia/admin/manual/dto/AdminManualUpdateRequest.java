@@ -1,4 +1,4 @@
-package com.wip.workipedia.admin.dto;
+package com.wip.workipedia.admin.manual.dto;
 
 import com.wip.workipedia.manual.domain.ManualStatus;
 import jakarta.validation.constraints.Size;

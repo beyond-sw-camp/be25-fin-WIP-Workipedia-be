@@ -1,6 +1,6 @@
-package com.wip.workipedia.department.controller;
+package com.wip.workipedia.admin.department.controller;
 
-import com.wip.workipedia.department.dto.AdminDepartmentResponse;
+import com.wip.workipedia.admin.department.dto.AdminDepartmentResponse;
 import com.wip.workipedia.department.dto.DepartmentRequest;
 import com.wip.workipedia.department.dto.RoutingPromptEditRequest;
 import com.wip.workipedia.department.service.DepartmentService;

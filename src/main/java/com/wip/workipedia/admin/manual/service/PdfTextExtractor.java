@@ -1,4 +1,4 @@
-package com.wip.workipedia.admin.service;
+package com.wip.workipedia.admin.manual.service;
 
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
