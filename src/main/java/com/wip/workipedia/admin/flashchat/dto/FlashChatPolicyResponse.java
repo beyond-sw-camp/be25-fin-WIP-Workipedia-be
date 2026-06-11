@@ -1,4 +1,4 @@
-package com.wip.workipedia.flashchat.dto;
+package com.wip.workipedia.admin.flashchat.dto;
 
 import java.util.List;
 

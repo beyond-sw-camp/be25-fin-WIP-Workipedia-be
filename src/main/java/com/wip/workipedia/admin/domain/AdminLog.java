@@ -1,4 +1,4 @@
-package com.wip.workipedia.flashchat.domain;
+package com.wip.workipedia.admin.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
