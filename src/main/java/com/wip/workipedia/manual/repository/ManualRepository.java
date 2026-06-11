@@ -15,6 +15,8 @@ public interface ManualRepository extends JpaRepository<Manual, Long> {
 
     Page<Manual> findByDeletedAtIsNull(Pageable pageable);
 
+    long countByDeletedAtIsNull();
+
     List<Manual> findTop10ByDeletedAtIsNullAndStatusOrderByCreatedAtDesc(ManualStatus status);
 
     Optional<Manual> findByManualIdAndDeletedAtIsNull(Long manualId);
