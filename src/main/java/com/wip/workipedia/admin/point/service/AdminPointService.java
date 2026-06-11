@@ -14,8 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class AdminPointService {
-	// 포인트 이력에서 관리자 차감 이벤트를 구분하기 위한 사유 코드.
-	private static final String ADMIN_DEDUCT_REASON_TYPE = "ADMIN_DEDUCT";
 	// 포인트 이력의 관련 대상이 사용자임을 표시한다.
 	private static final String USER_RELATED_TYPE = "USER";
 
@@ -34,13 +32,13 @@ public class AdminPointService {
 
 	// 포인트 차감과 이력 저장은 PointService.spendPoint()에 위임한다.
 	@Transactional
-	public AdminPointResponse deduct(String employeeId, int amount) {
+	public AdminPointResponse deduct(String employeeId, int amount, String reason) {
 		User user = findUserByEmployeeId(employeeId);
 
 		pointService.spendPoint(
 			user.getUserId(),
 			amount,
-			ADMIN_DEDUCT_REASON_TYPE,
+			reason,
 			USER_RELATED_TYPE,
 			user.getUserId()
 		);

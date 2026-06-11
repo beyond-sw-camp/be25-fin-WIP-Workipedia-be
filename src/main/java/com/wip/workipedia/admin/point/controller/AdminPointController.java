@@ -39,6 +39,6 @@ public class AdminPointController {
 			@PathVariable String employeeId,
 			@Valid @RequestBody AdminPointDeductRequest request
 	) {
-		return ResponseEntity.ok(adminPointService.deduct(employeeId, request.amount()));
+		return ResponseEntity.ok(adminPointService.deduct(employeeId, request.amount(), request.reason()));
 	}
 }
