@@ -45,7 +45,7 @@ Spring Boot API
   +-- RDB: MariaDB
   +-- Redis (Refresh Token)
   +-- Elasticsearch (Vector Store)
-  +-- Kafka (이벤트 브로커)
+  +-- RabbitMQ (비동기 이벤트·작업 큐)
   +-- LLM API
   +-- Embedding API
   +-- Object Storage (R2 / S3 / MinIO)
@@ -305,7 +305,8 @@ src/main/resources/db/migration/
 - ChromaDB retriever + 고객사별 LLM/Embedding provider
 - Cross-Encoder reranking
 - 출처 포함 응답
-- `NO_RESULT` 시 매뉴얼→워키→지식화 게시판→Tool→수기 지식 순서로 전환
+- `NO_RESULT` 시 매뉴얼→워키→지식 RAG→Tool 순서로 전환
+- 지식 RAG는 분리 저장된 `KNOWLEDGE_DATA`와 `MANUAL_KNOWLEDGE` 후보를 함께 reranking
 
 ### Step 6: 티켓
 

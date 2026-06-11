@@ -8,7 +8,7 @@ AI 기반 사내 지식 공유 플랫폼 (한화 계열사 대상). 5인 팀 프
 - MariaDB (Spring Data JPA + Flyway), Redis
 - Spring Security (현재 permit-all skeleton, Auth 미구현)
 - Spring AI (ticket AI 라우팅 adapter)
-- Kafka, Spring Scheduler (`@Scheduled`), Spring Mail
+- RabbitMQ, Spring Scheduler (`@Scheduled`), Spring Mail
 
 ## Package Structure
 

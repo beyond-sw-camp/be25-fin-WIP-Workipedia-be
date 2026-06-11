@@ -4,8 +4,8 @@
 > 상태: Accepted
 > 정본 위치: `docs/adr/002-rag-strategy.md`
 > 관련 문서: `docs/reference/trd.md`, `docs/adr/008-local-llm-security-strategy.md`, `docs/dev/domain-guides/chatbot-rag.md`
-> 버전: v0.3
-> 최종 수정: 2026-06-09
+> 버전: v0.4
+> 최종 수정: 2026-06-11
 
 ## Context
 
@@ -21,23 +21,24 @@ Workipedia의 AI는 사내 매뉴얼, 워키, 승인 지식과 해결된 티켓 
 
 ### Fallback pipeline
 
-폴백 순서: A 매뉴얼 → B 워키 → C 지식화 게시판 → D Tool Calling → E 수기 지식
+폴백 순서: A 매뉴얼 → B 워키 → C 지식 RAG → D Tool Calling
 
 ```text
 A. 매뉴얼 RAG
 → NO_RESULT 또는 ERROR
 B. 워키 RAG
 → NO_RESULT 또는 ERROR
-C. TEAM_ADMIN 승인 지식화 게시판 RAG
+C. 지식 RAG
+   - TEAM_ADMIN 승인 지식화 게시판(`KNOWLEDGE_DATA`)
+   - SYSTEM_ADMIN 수기 지식(`MANUAL_KNOWLEDGE`)
 → NO_RESULT 또는 ERROR
 D. 등록된 Tool 호출
-→ NO_RESULT 또는 ERROR
-E. SYSTEM_ADMIN 수기 지식 RAG
 → NO_RESULT 또는 ERROR
 요청 티켓 생성 전환 액션
 ```
 
 해결된 티켓 이력은 별도 단계가 아니며 TEAM_ADMIN 승인 지식화 게시판(c)으로만 검색에 반영한다.
+`knowledge_data`와 `manual_knowledge`는 DB·`sourceType`·collection을 분리하고 C단계에서 검색 후보만 합쳐 reranking한다.
 
 오케스트레이션은 명시적인 Python `for` loop와 `if-else`로 구현한다. 각 단계는 답변 문자열이 아니라 다음 상태 중 하나를 반환한다.
 
