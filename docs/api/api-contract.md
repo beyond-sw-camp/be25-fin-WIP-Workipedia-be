@@ -76,10 +76,12 @@ Authorization: Bearer <accessToken>
 | 티켓             | 김진혁      | 황희수    |
 | 티켓 지식화         | 김진혁, 김가영 | 황희수    |
 | 관리자 대시보드       | 김가영      | 황희수    |
-| 관리자 매뉴얼/부서/사용자 | 김가영      | 황희수    |
-| 포인트            | 김가영      | 황희수    |
-| ESG 등급         | 김가영      | 황희수    |
-| ESG 지표         | 김가영      | 황희수    |
+| 관리자 매뉴얼        | 민정기      | 황희수    |
+| 관리자 부서         | 김가영      | 황희수    |
+| 관리자 사용자        | 이슬이      | 황희수    |
+| 포인트            | 이슬이      | 황희수    |
+| ESG 등급         | 이슬이      | 황희수    |
+| ESG 지표         | 이슬이      | 황희수    |
 
 
 ## 4. Auth & Mypage API
@@ -623,6 +625,7 @@ Response:
 | GET    | `/admin/settings/summary`                       | 전체 사용자 수, 당일 로그인 수, 총 문서 수 조회 | SYSTEM_ADMIN |
 | GET    | `/admin/points/search`                          | 사번으로 사용자 포인트 조회               | SYSTEM_ADMIN |
 | PATCH  | `/admin/points/{employeeId}/deduct`             | 포인트 차감                        | SYSTEM_ADMIN |
+| DELETE | `/admin/worki/questions/{questionId}`           | 워키 게시글 관리자 삭제 및 작성자 포인트 차감    | SYSTEM_ADMIN |
 | GET    | `/admin/departments`                            | 관리자 부서 목록 조회                  | SYSTEM_ADMIN |
 | POST   | `/admin/departments`                            | 부서 등록                         | SYSTEM_ADMIN |
 | PATCH  | `/admin/departments/{departmentId}`             | 부서 정보 수정                      | SYSTEM_ADMIN |
