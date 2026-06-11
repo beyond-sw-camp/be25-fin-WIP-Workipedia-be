@@ -728,6 +728,8 @@ PDF를 업로드해 매뉴얼을 등록한다. `Content-Type: multipart/form-dat
 | `sourceUrl`    | string    | 선택  | 원본 출처 링크 (최대 500)  |
 
 
+- 여러 PDF를 업로드할 때는 같은 multipart field 이름 `file`을 반복해서 전송한다.
+  - 예: `file=a.pdf`, `file=b.pdf`
 - PDF가 아니거나 추출된 텍스트가 비어 있으면 `400 manual-003`.
 - 추출한 텍스트가 본문(`content`)에 저장되고, 원본 PDF는 선택된 Object Storage에 저장되어 `fileUrl`로 반환된다.
 - 최초 등록 버전은 서버가 `1.0`으로 자동 설정한다.
@@ -763,7 +765,8 @@ Request:
 
 새 PDF를 업로드해 기존 매뉴얼의 본문(`content`)을 교체한다. `Content-Type: multipart/form-data`.
 
-- form field는 `POST /admin/manuals/pdf`와 동일하되 `title` 포함 모든 필드가 선택값이다. (`file`만 필수)
+- form field는 `POST /admin/manuals/pdf`와 동일하되 `title`, `departmentId`, `status`, `sourceUrl`은 선택값이다. (`file`만 필수)
+- `sourceUrl`을 전달하지 않으면 기존 값을 유지하고, 전달하면 새 값으로 수정한다.
 - 본문 교체와 함께 **Object Storage의 기존 PDF는 새 파일로 교체(이전 파일 삭제)** 된다.
 - 버전은 서버가 자동 증가시킨다. 기존 파일이 있는 상태에서 새 PDF로 교체하면 파일 개수가 유지되므로 소수부를 `0.1` 증가시킨다.
 - Response: `200 OK`, `ManualDetailResponse`.

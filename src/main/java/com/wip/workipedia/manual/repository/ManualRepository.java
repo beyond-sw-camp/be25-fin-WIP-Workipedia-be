@@ -25,6 +25,8 @@ public interface ManualRepository extends JpaRepository<Manual, Long> {
 
     boolean existsByTitleAndDeletedAtIsNull(String title);
 
+    boolean existsByTitleAndManualIdNotAndDeletedAtIsNull(String title, Long manualId);
+
     @Query(value = """
             SELECT m.manual_id AS manualId,
                    m.title AS title,

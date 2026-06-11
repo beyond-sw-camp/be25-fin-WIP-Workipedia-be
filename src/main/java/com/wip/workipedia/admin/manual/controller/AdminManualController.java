@@ -59,9 +59,10 @@ public class AdminManualController {
             @RequestParam(required = false) Long departmentId,
             @RequestParam @NotBlank @Size(max = 255) String title,
             @RequestParam(required = false) ManualStatus status,
+            @RequestParam(required = false) @Size(max = 500) String sourceUrl,
             @RequestParam("file") List<MultipartFile> files) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(adminManualService.createFromPdf(actorUserId, departmentId, title, status, files));
+                .body(adminManualService.createFromPdf(actorUserId, departmentId, title, status, sourceUrl, files));
     }
 
     @GetMapping("/{manualId}")
@@ -86,9 +87,10 @@ public class AdminManualController {
             @RequestParam(required = false) Long departmentId,
             @RequestParam(required = false) @Size(max = 255) String title,
             @RequestParam(required = false) ManualStatus status,
+            @RequestParam(required = false) @Size(max = 500) String sourceUrl,
             @RequestParam("file") List<MultipartFile> files) {
         return ResponseEntity.ok(
-                adminManualService.updateFromPdf(actorUserId, manualId, departmentId, title, status, files)
+                adminManualService.updateFromPdf(actorUserId, manualId, departmentId, title, status, sourceUrl, files)
         );
     }
 

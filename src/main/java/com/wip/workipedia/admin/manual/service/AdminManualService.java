@@ -93,14 +93,14 @@ public class AdminManualService {
 
     @Transactional
     public ManualDetailResponse createFromPdf(Long actorUserId, Long departmentId, String title,
-            ManualStatus status, List<MultipartFile> files) {
+            ManualStatus status, String sourceUrl, List<MultipartFile> files) {
         assertSystemAdmin(actorUserId);
         validateDuplicateTitle(title);
 
         List<PdfUpload> uploads = readPdfUploads(files);
         String content = extractContent(uploads);
         String manualNum = INITIAL_VERSION;
-        Manual manual = Manual.create(validateDepartmentId(departmentId), title, content, status, null, manualNum, actorUserId);
+        Manual manual = Manual.create(validateDepartmentId(departmentId), title, content, status, sourceUrl, manualNum, actorUserId);
         Manual savedManual = manualRepository.save(manual);
         List<StoredObject> storedObjects = uploadPdfFiles(uploads);
         attachFiles(savedManual, storedObjects);
@@ -113,6 +113,7 @@ public class AdminManualService {
         assertSystemAdmin(actorUserId);
 
         Manual manual = getManual(manualId);
+        validateDuplicateTitleForUpdate(request.title(), manual.getManualId());
         String manualNum = resolveNextVersion(manual, fileCount(manual));
         manual.update(
                 validateDepartmentId(request.departmentId()),
@@ -128,14 +129,15 @@ public class AdminManualService {
 
     @Transactional
     public ManualDetailResponse updateFromPdf(Long actorUserId, Long manualId, Long departmentId,
-            String title, ManualStatus status, List<MultipartFile> files) {
+            String title, ManualStatus status, String sourceUrl, List<MultipartFile> files) {
         assertSystemAdmin(actorUserId);
 
         Manual manual = getManual(manualId);
+        validateDuplicateTitleForUpdate(title, manual.getManualId());
         List<PdfUpload> uploads = readPdfUploads(files);
         String content = extractContent(uploads);
         String manualNum = resolveNextVersion(manual, uploads.size());
-        manual.update(validateDepartmentId(departmentId), title, content, status, null, manualNum);
+        manual.update(validateDepartmentId(departmentId), title, content, status, sourceUrl, manualNum);
         List<ManualFile> previousFiles = findActiveFiles(manual.getManualId());
         List<StoredObject> storedObjects = uploadPdfFiles(uploads);
         replaceFiles(manual, previousFiles, storedObjects);
@@ -165,6 +167,15 @@ public class AdminManualService {
         }
     }
 
+    private void validateDuplicateTitleForUpdate(String title, Long manualId) {
+        if (title == null || title.isBlank()) {
+            return;
+        }
+        if (manualRepository.existsByTitleAndManualIdNotAndDeletedAtIsNull(title, manualId)) {
+            throw new CustomException(ErrorType.CONFLICT, "Manual title already exists.");
+        }
+    }
+
     private void assertSystemAdmin(Long actorUserId) {
         User user = userRepository.findById(actorUserId)
                 .orElseThrow(() -> new CustomException(ErrorType.MANUAL_FORBIDDEN));
@@ -185,15 +196,20 @@ public class AdminManualService {
 
     private List<StoredObject> uploadPdfFiles(List<PdfUpload> uploads) {
         List<StoredObject> storedObjects = new ArrayList<>();
-        for (PdfUpload upload : uploads) {
-            StoredObject stored = storageService.upload(
-                    upload.bytes(),
-                    MANUAL_PDF_KEY_PREFIX,
-                    upload.file().getOriginalFilename(),
-                    PDF_CONTENT_TYPE
-            );
-            deleteStoredFileAfterRollback(stored.objectKey());
-            storedObjects.add(stored);
+        try {
+            for (PdfUpload upload : uploads) {
+                StoredObject stored = storageService.upload(
+                        upload.bytes(),
+                        MANUAL_PDF_KEY_PREFIX,
+                        upload.file().getOriginalFilename(),
+                        PDF_CONTENT_TYPE
+                );
+                deleteStoredFileAfterRollback(stored.objectKey());
+                storedObjects.add(stored);
+            }
+        } catch (RuntimeException exception) {
+            storedObjects.forEach(storedObject -> deleteStoredFile(storedObject.objectKey()));
+            throw exception;
         }
         return storedObjects;
     }
