@@ -51,6 +51,11 @@ public enum ErrorType {
 	NOTIFICATION_NOT_FOUND("notification-001", "알림을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 	NOTIFICATION_FORBIDDEN("notification-002", "본인 알림이 아닙니다.", HttpStatus.FORBIDDEN),
 
+	// point
+	POINT_INVALID_AMOUNT("point-001", "포인트 금액은 0보다 커야 합니다.", HttpStatus.BAD_REQUEST),
+	POINT_INSUFFICIENT_BALANCE("point-002", "보유 포인트가 부족합니다.", HttpStatus.CONFLICT),
+	POINT_AMOUNT_OVERFLOW("point-003", "처리할 수 있는 포인트 범위를 초과했습니다.", HttpStatus.BAD_REQUEST),
+
 	// flash-chat
 	FLASH_CHAT_COOLDOWN("flash-chat-001", "메시지 전송 쿨다운 중입니다.", HttpStatus.TOO_MANY_REQUESTS),
 	FLASH_CHAT_BANNED_WORD("flash-chat-002", "금지어가 포함된 메시지입니다.", HttpStatus.BAD_REQUEST),
