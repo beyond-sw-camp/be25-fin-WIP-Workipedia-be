@@ -2,6 +2,7 @@ package com.wip.workipedia.admin.setting.service;
 
 import com.wip.workipedia.admin.setting.dto.AdminSettingsSummaryResponse;
 import com.wip.workipedia.manual.repository.ManualRepository;
+import com.wip.workipedia.user.domain.UserStatus;
 import com.wip.workipedia.user.repository.UserRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,7 +24,7 @@ public class AdminSettingsService {
 		LocalDateTime endAt = today.plusDays(1).atStartOfDay();
 
 		return new AdminSettingsSummaryResponse(
-			userRepository.count(),
+			userRepository.countByStatus(UserStatus.ACTIVE),
 			userRepository.countByLastLoginAtGreaterThanEqualAndLastLoginAtLessThan(startAt, endAt),
 			manualRepository.countByDeletedAtIsNull()
 		);
