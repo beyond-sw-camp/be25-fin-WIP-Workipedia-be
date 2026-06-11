@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface WorkiQuestionRepository extends JpaRepository<WorkiQuestion, Long> {
 
@@ -36,12 +37,16 @@ public interface WorkiQuestionRepository extends JpaRepository<WorkiQuestion, Lo
             """, nativeQuery = true)
     List<PopularWorkiProjection> findTop10PopularByLike();
 
-    @Modifying // 트랜젝션을 체크 하더라. 
+    // Redis에 모아둔 조회 증가분(amount)을 한 번에 더해 반영한다. 스케줄러의 일괄 flush에서 호출.
+    // 질문 1건씩 독립된 트랜잭션으로 커밋한다(@Transactional). flush 루프에서 한 건이 실패해도
+    // 앞서 성공한 다른 질문의 반영이 함께 롤백되지 않게 하기 위함이다.
+    @Transactional
+    @Modifying // 트랜젝션을 체크 하더라.
     @Query("""
             UPDATE WorkiQuestion q
-               SET q.viewCount = q.viewCount + 1
+               SET q.viewCount = q.viewCount + :amount
              WHERE q.questionId = :questionId
                AND q.deletedAt IS NULL
             """)
-    int increaseViewCount(Long questionId); // 조회수 업데이트 하기 위한 쿼리 등록
+    int increaseViewCount(Long questionId, long amount);
 }
