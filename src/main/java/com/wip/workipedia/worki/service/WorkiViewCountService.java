@@ -4,9 +4,9 @@ import com.wip.workipedia.worki.repository.WorkiQuestionRepository;
 import java.time.Duration;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 워키 질문 조회수 처리.
@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 포기하는 대신, 어뷰징을 막고 DB write 부하를 크게 줄인다. 화면에는 DB값 + 미반영 누적분을
  * 합쳐 보여줘 사용자 체감 지연은 없앤다.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class WorkiViewCountService {
@@ -73,27 +74,50 @@ public class WorkiViewCountService {
     /**
      * Redis에 쌓인 조회 증가분을 DB에 일괄 반영한다. 스케줄러가 주기적으로 호출.
      *
-     * <p>질문별로 카운터를 통째로 꺼내며 삭제(GETDEL)해 그 사이 새로 들어온 조회는 다음 주기로 자연스레 넘긴다.
-     * 카운터를 꺼낸 뒤 DB 반영 전에 새 조회가 들어오면 dirty 집합에 다시 등록되므로, 일시적으로 지연될 수는
-     * 있어도 증가분이 유실되지는 않는다(최종적 일관성).
+     * <p><b>반영 순서가 핵심이다.</b> 카운터를 먼저 지우고(GETDEL) DB를 나중에 건드리면, DB 반영이
+     * 실패했을 때 증가분이 Redis에서도 이미 사라져 영영 유실된다. 그래서 여기서는
+     * <ol>
+     *   <li>카운터를 <b>읽기만</b> 하고(GET, 삭제하지 않음),</li>
+     *   <li>DB에 먼저 반영한 뒤,</li>
+     *   <li>반영에 성공한 만큼만 Redis에서 차감(DECRBY)한다.</li>
+     * </ol>
+     * DB 반영이 실패하면 Redis 카운터를 손대지 않으므로 증가분이 그대로 남아 다음 주기에 재시도된다.
+     *
+     * <p>GETDEL이 아니라 GET + DECRBY(delta)를 쓰는 또 다른 이유: flush 도중 들어온 새 조회분은
+     * 카운터에 INCR로 더해지는데, 우리가 방금 DB에 넣은 양만 정확히 빼면 그 새 조회분은 보존된다.
+     *
+     * <p>질문별 DB 반영은 {@link WorkiQuestionRepository#increaseViewCount}가 각자 독립 트랜잭션으로
+     * 커밋하므로, 한 질문에서 예외가 나도 이미 반영된 다른 질문이 함께 롤백되지 않는다. 실패한 질문은
+     * 건너뛰고 다음 주기에 다시 시도된다.
      */
-    @Transactional
     public void flushToDatabase() {
         Set<String> dirtyIds = redisTemplate.opsForSet().members(DIRTY_SET_KEY);
         if (dirtyIds == null || dirtyIds.isEmpty()) {
             return;
         }
         for (String idStr : dirtyIds) {
-            String deltaStr = redisTemplate.opsForValue().getAndDelete(PENDING_KEY_PREFIX + idStr);
-            redisTemplate.opsForSet().remove(DIRTY_SET_KEY, idStr);
-            if (deltaStr == null) {
-                continue;
+            try {
+                String pendingKey = PENDING_KEY_PREFIX + idStr;
+                String deltaStr = redisTemplate.opsForValue().get(pendingKey); // 읽기만 한다(삭제 X).
+                long delta = deltaStr == null ? 0L : Long.parseLong(deltaStr);
+                if (delta <= 0) {
+                    // 더할 게 없으면 dirty 표시만 정리한다.
+                    redisTemplate.opsForSet().remove(DIRTY_SET_KEY, idStr);
+                    continue;
+                }
+
+                // 1) DB부터 반영. 여기서 예외가 나면 아래 Redis는 손대지 않으므로 카운터가 그대로 남아 재시도된다.
+                questionRepository.increaseViewCount(Long.parseLong(idStr), delta);
+
+                // 2) 반영에 성공한 만큼만 차감. flush 도중 새로 들어온 조회분은 카운터에 남아 사라지지 않는다.
+                Long remaining = redisTemplate.opsForValue().decrement(pendingKey, delta);
+                if (remaining != null && remaining <= 0) {
+                    redisTemplate.opsForSet().remove(DIRTY_SET_KEY, idStr);
+                }
+            } catch (Exception e) {
+                // 이 질문만 건너뛰고 다음 주기에 다시 시도한다. 한 건 실패가 나머지 반영을 막지 않게 한다.
+                log.warn("워키 조회수 flush 실패. questionId={} 는 다음 주기에 재시도한다.", idStr, e);
             }
-            long delta = Long.parseLong(deltaStr);
-            if (delta <= 0) {
-                continue;
-            }
-            questionRepository.increaseViewCount(Long.parseLong(idStr), delta);
         }
     }
 }
