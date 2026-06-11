@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -21,6 +22,16 @@ public interface PointsDailyLimitRepository extends JpaRepository<PointsDailyLim
 			AND p.deletedAt IS NULL
 		""")
 	Optional<PointsDailyLimit> findActiveByUserIdAndPointDateForUpdate(
+		@Param("userId") Long userId,
+		@Param("pointDate") LocalDate pointDate
+	);
+
+	@Modifying
+	@Query(value = """
+		INSERT IGNORE INTO points_daily_limit (user_id, point_date, today_point)
+		VALUES (:userId, :pointDate, 0)
+		""", nativeQuery = true)
+	void insertIgnore(
 		@Param("userId") Long userId,
 		@Param("pointDate") LocalDate pointDate
 	);

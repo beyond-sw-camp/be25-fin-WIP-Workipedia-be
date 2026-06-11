@@ -18,12 +18,14 @@ import com.wip.workipedia.user.domain.UserStatus;
 import com.wip.workipedia.user.repository.UserRepository;
 import java.security.SecureRandom;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
 	private static final String[] NICKNAME_PREFIXES = {
@@ -63,7 +65,7 @@ public class AuthService {
 		user.updateLastLoginAt();
 		// 로그인 성공 후 로그인 포인트 적립을 처리합니다.
 		// 실제 중복 지급 여부와 일일 적립 한도는 PointService에서 검증합니다.
-		pointService.earnLoginPoint(user.getUserId());
+		awardLoginPoint(user.getUserId());
 
 		return new LoginResult(
 			createLoginResponse(user, accessToken),
@@ -168,6 +170,14 @@ public class AuthService {
 	private void validateActiveUser(User user) {
 		if (user.getStatus() != UserStatus.ACTIVE) {
 			throw new CustomException(ErrorType.AUTH_INACTIVE_USER);
+		}
+	}
+
+	private void awardLoginPoint(Long userId) {
+		try {
+			pointService.earnLoginPoint(userId);
+		} catch (RuntimeException exception) {
+			log.warn("Login point earning failed. userId={}", userId, exception);
 		}
 	}
 

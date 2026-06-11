@@ -62,6 +62,7 @@ public class UserPoint extends BaseTimeEntity {
 		long resetAmount = this.currentPoint;
 		this.currentPoint = 0;
 		this.esgScore = 0;
+		this.gradeId = DEFAULT_GRADE_ID;
 		return resetAmount;
 	}
 

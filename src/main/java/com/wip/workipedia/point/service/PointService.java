@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -87,7 +88,7 @@ public class PointService {
 	}
 
 	// 로그인 포인트는 사용자별 하루 1회만 지급한다.
-	@Transactional
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void earnLoginPoint(Long userId) {
 		if (hasEarnedLoginPointToday(userId)) {
 			return;
@@ -136,8 +137,9 @@ public class PointService {
 	// 한 사용자의 포인트 적립 계산을 한 번에 한 요청만 하게 만드는 안전장치
 	private PointsDailyLimit getOrCreateTodayDailyLimit(Long userId) {
 		LocalDate today = LocalDate.now();
+		pointsDailyLimitRepository.insertIgnore(userId, today);
 		return pointsDailyLimitRepository.findActiveByUserIdAndPointDateForUpdate(userId, today)
-			.orElseGet(() -> pointsDailyLimitRepository.save(PointsDailyLimit.create(userId, today)));
+			.orElseThrow(() -> new CustomException(ErrorType.INTERNAL_ERROR));
 	}
 
 	private boolean hasEarnedLoginPointToday(Long userId) {
