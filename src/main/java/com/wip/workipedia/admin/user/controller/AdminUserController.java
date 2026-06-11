@@ -1,8 +1,8 @@
-package com.wip.workipedia.admin.controller;
+package com.wip.workipedia.admin.user.controller;
 
-import com.wip.workipedia.admin.dto.AdminUserResponse;
-import com.wip.workipedia.admin.dto.AdminUserStatusRequest;
-import com.wip.workipedia.admin.service.AdminUserService;
+import com.wip.workipedia.admin.user.dto.AdminUserResponse;
+import com.wip.workipedia.admin.user.dto.AdminUserStatusRequest;
+import com.wip.workipedia.admin.user.service.AdminUserService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;

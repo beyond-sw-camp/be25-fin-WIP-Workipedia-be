@@ -1,4 +1,4 @@
-package com.wip.workipedia.admin.dto;
+package com.wip.workipedia.admin.user.dto;
 
 import com.wip.workipedia.department.domain.Department;
 import com.wip.workipedia.user.domain.User;
