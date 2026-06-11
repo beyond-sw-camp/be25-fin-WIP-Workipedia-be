@@ -10,7 +10,6 @@ import com.wip.workipedia.worki.dto.QuestionSummaryResponse;
 import com.wip.workipedia.worki.dto.QuestionUpdateRequest;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
-import com.wip.workipedia.notification.service.NotificationService;
 import com.wip.workipedia.reaction.domain.ReactionTargetType;
 import com.wip.workipedia.reaction.domain.ReactionType;
 import com.wip.workipedia.reaction.repository.ReactionRepository;
@@ -44,7 +43,6 @@ public class WorkiQuestionService {
     private final ReactionRepository reactionRepository;
     private final WorkiViewCountService viewCountService;
     private final ApplicationEventPublisher eventPublisher;
-    private final NotificationService notificationService;
 
     @Transactional
     public QuestionResponse create(Long actorUserId, QuestionCreateRequest request) {
@@ -54,7 +52,6 @@ public class WorkiQuestionService {
         // 커밋 후 검색 색인이 반영되도록 이벤트만 발행한다(실제 색인은 search가 구독 즉, search 서비스에서 처리).
         // 롤백 되면 색인 요청 삭제. 안하게 됨. 커밋과 색인 요청이 동시에 일어남.
         eventPublisher.publishEvent(new WorkiQuestionChangedEvent(saved.getQuestionId()));
-        notificationService.createWorkiQuestionCreated(actorUserId, saved.getQuestionId(), saved.getTitle());
         return QuestionResponse.from(saved);
     }
 
@@ -148,7 +145,6 @@ public class WorkiQuestionService {
 
         savedQuestions.forEach(saved -> {
             eventPublisher.publishEvent(new WorkiQuestionChangedEvent(saved.getQuestionId()));
-            notificationService.createWorkiQuestionCreated(actorUserId, saved.getQuestionId(), saved.getTitle());
         });
 
         return savedQuestions.stream()

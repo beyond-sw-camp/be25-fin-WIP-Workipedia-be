@@ -27,13 +27,13 @@
 
 | 상황 | 도메인 상태 | 알림 타입 | 알림 메시지 |
 | --- | --- | --- | --- |
-| 내가 작성한 질문이 등록된 경우 | `worki_questions.status = WAITING` | `notifications.type = WORKI_QUESTION_CREATED` | 워키 질문 등록 |
 | 내가 작성한 질문에 답변이 생성된 경우 | `worki_questions.status = IN_PROGRESS` | `notifications.type = WORKI_QUESTION_ANSWERED` | 워키 답변 완료 |
 | 내가 작성한 답변이 채택된 경우 | `worki_questions.status = ANSWERED` | `notifications.type = WORKI_ANSWER_ACCEPTED` | 워키 답변 채택 |
 
 ### 생성 기준
 
-- 질문 등록 시 `WORKI_QUESTION_CREATED` 알림을 생성한다.
+- 질문 등록 성공 안내는 알림함에 저장하지 않고 프론트 토스트 등 즉시 피드백으로 처리한다.
+- `WORKI_QUESTION_CREATED` 타입은 기존 데이터 호환을 위해 유지하지만, 신규 질문 등록 시에는 생성하지 않는다.
 - 내 질문에 다른 사용자가 답변을 등록하면 `WORKI_QUESTION_ANSWERED` 알림을 생성한다.
 - 내가 작성한 답변이 채택되면 `WORKI_ANSWER_ACCEPTED` 알림을 생성한다.
 - 게시판 탭 조회는 현재 질문 상태가 아니라 `notifications`에 저장된 알림 이력을 기준으로 한다.
