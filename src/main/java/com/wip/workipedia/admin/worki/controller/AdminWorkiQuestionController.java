@@ -1,5 +1,6 @@
 package com.wip.workipedia.admin.worki.controller;
 
+import com.wip.workipedia.admin.worki.dto.AdminWorkiQuestionDeleteResponse;
 import com.wip.workipedia.admin.worki.service.AdminWorkiQuestionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,8 +18,7 @@ public class AdminWorkiQuestionController {
 
 	// 부적절한 워키 게시글을 관리자 권한으로 삭제하고, 작성자 포인트를 차감한다.
 	@DeleteMapping("/{questionId}")
-	public ResponseEntity<Void> delete(@PathVariable Long questionId) {
-		adminWorkiQuestionService.delete(questionId);
-		return ResponseEntity.noContent().build();
+	public ResponseEntity<AdminWorkiQuestionDeleteResponse> delete(@PathVariable Long questionId) {
+		return ResponseEntity.ok(adminWorkiQuestionService.delete(questionId));
 	}
 }
