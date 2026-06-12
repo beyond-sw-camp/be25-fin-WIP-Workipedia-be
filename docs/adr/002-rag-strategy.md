@@ -5,7 +5,7 @@
 > 정본 위치: `docs/adr/002-rag-strategy.md`
 > 관련 문서: `docs/reference/trd.md`, `docs/adr/008-local-llm-security-strategy.md`, `docs/dev/domain-guides/chatbot-rag.md`
 > 버전: v0.4
-> 최종 수정: 2026-06-11
+> 최종 수정: 2026-06-12
 
 ## Context
 
@@ -14,10 +14,20 @@ Workipedia의 AI는 사내 매뉴얼, 워키, 승인 지식과 해결된 티켓 
 ## Decision
 
 - 지식 제공은 RAG로 통일하며 QLoRA와 LangGraph는 사용하지 않는다.
-- AI Vector Store는 ChromaDB를 사용한다. BE의 Elasticsearch는 전문 검색과 BE 검색 기능을 담당하며 서로 대체하지 않는다.
+- AI Vector Store는 Qdrant를 사용한다. BE의 Elasticsearch는 전문 검색과 BE 검색 기능을 담당하며 서로 대체하지 않는다.
 - 검색 후보는 Cross-Encoder로 재정렬한다. 반환 계약에는 `candidate_id`, 원본 `score`, `rank`를 포함한다.
 - 운영 응답에 mock 답변을 사용하지 않는다.
 - 고객사별 배포에서 LLM과 Embedding provider를 로컬 또는 클라우드 구현체로 선택한다.
+
+### Qdrant 운영 기준
+
+- Qdrant는 고객사 배포 환경의 로컬 Docker 단일 노드로 실행한다.
+- MariaDB가 정본이며 Qdrant는 동기화 작업으로 재구축 가능한 검색 저장소다.
+- 매뉴얼·워키·승인 지식·수기 지식·라우팅 사례는 데이터 유형과 수명주기에 따라 collection을 분리한다.
+- `source_type`, `source_id`, `status`, `active`, `department_id` 등 검색과 삭제에 필요한 payload를 저장하고 필요한 필드에 payload index를 생성한다.
+- cosine similarity를 기본 metric으로 사용한다.
+- embedding vector size가 변경되면 기존 collection을 재사용하지 않고 새 collection을 생성해 재색인한다.
+- point ID는 업무 식별자와 chunk 순서에서 생성한 deterministic UUID를 사용한다.
 
 ### Fallback pipeline
 
@@ -78,6 +88,7 @@ final_system_prompt = base_prompt + custom_prompt
 - 검색 실패와 보안 차단을 구조화된 상태로 감사할 수 있다.
 - 고객사별 로컬/클라우드 차이는 동일 provider 계약으로 격리한다.
 - 임계값은 고정 숫자가 아니라 평가 데이터로 보정해야 한다.
+- Qdrant 장애나 데이터 유실은 RDB 정본 기반 재색인으로 복구한다.
 
 ## Open Questions
 

@@ -32,7 +32,7 @@ A. 매뉴얼 RAG
 - LangGraph 대신 Python `for` loop와 `if-else`를 사용한다.
 - 단계 결과는 `SUCCESS`, `NO_RESULT`, `ERROR`, `BLOCKED`로 반환한다.
 - QLoRA와 mock 답변은 사용하지 않는다.
-- AI Vector Store는 ChromaDB, BE 검색은 Elasticsearch가 담당한다.
+- AI Vector Store는 Qdrant, BE 검색은 Elasticsearch가 담당한다.
 - 검색 후보는 Cross-Encoder로 재정렬하고 `candidate_id`, `score`, `rank`를 반환한다.
 
 ## BE 책임
@@ -43,7 +43,7 @@ A. 매뉴얼 RAG
 - `custom_prompt` 저장과 SYSTEM_ADMIN 변경 API
 - API/DB Query Tool 정의, credential reference, 승인·활성 상태 저장
 - Tool HTTP/DB 실행과 감사 로그
-- 수기 지식·승인 지식 CRUD와 ChromaDB 동기화 상태 저장
+- 수기 지식·승인 지식 CRUD와 Qdrant 동기화 상태 저장
 
 ## AI 책임
 
@@ -67,7 +67,7 @@ final_system_prompt = base_prompt + custom_prompt
 
 1. TEAM_ADMIN 승인 트랜잭션에서 `knowledge_data`와 `ai_sync_jobs` 작업을 함께 저장한다.
 2. 커밋 후 `@Scheduled` 워커가 AI 동기화 API를 호출한다.
-3. AI가 마스킹, chunking, embedding, ChromaDB upsert를 수행한다.
+3. AI가 마스킹, chunking, embedding, Qdrant upsert를 수행한다.
 4. 성공 시 `SYNCED`, 실패 시 `FAILED`와 실패 사유를 작업 테이블에 저장한다.
 5. 실패 작업은 관리자 화면 또는 배치에서 재시도한다.
 

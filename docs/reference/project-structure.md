@@ -302,7 +302,7 @@ src/main/resources/db/migration/
 
 - 채팅 세션 생성
 - 메시지 저장
-- ChromaDB retriever + 고객사별 LLM/Embedding provider
+- Qdrant retriever + 고객사별 LLM/Embedding provider
 - Cross-Encoder reranking
 - 출처 포함 응답
 - `NO_RESULT` 시 매뉴얼→워키→지식 RAG→Tool 순서로 전환
@@ -323,7 +323,7 @@ src/main/resources/db/migration/
 - 처리 완료 티켓의 지식화 생성/승인
 - 개인 사례/개인정보 제거
 - TEAM_ADMIN 검수
-- ChromaDB 비동기 동기화
+- Qdrant 비동기 동기화
 
 ### Step 8: AI 운영 연결
 
@@ -386,8 +386,8 @@ src/test/java/com/wip/workipedia/
 | 결정 | 추천 |
 |---|---|
 | DB | 현재 의존성 기준 MariaDB로 MVP 시작. Vector Store는 별도 adapter로 둔다 |
-| Vector Store | AI RAG는 ChromaDB, BE 전문 검색은 Elasticsearch로 분리한다 |
+| Vector Store | AI RAG는 Qdrant, BE 전문 검색은 Elasticsearch로 분리한다 |
 | 인증 | 자체 JWT 먼저. SSO는 Phase 3 |
-| RAG | 고객사별 LLM/Embedding provider + ChromaDB. 출처 저장과 구조화된 `NO_RESULT` 전환을 필수로 둔다 |
+| RAG | 고객사별 LLM/Embedding provider + Qdrant. 출처 저장과 구조화된 `NO_RESULT` 전환을 필수로 둔다 |
 | 배치 | 이벤트 기반 동기화 + 일일 정합성 점검으로 구성한다 |
 | 모듈 분리 | 패키지 모듈러 모놀리스. 멀티모듈 Gradle은 MVP 이후 |

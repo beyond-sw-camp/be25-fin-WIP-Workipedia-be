@@ -135,7 +135,7 @@ Authorization: Bearer <accessToken>
 | POST   | `/admin/ai-tools/{aiToolId}/test`| Tool 테스트 실행                           | SYSTEM_ADMIN   |
 | GET    | `/admin/manual-knowledge`        | 수기 지식과 동기화 상태 조회               | SYSTEM_ADMIN   |
 | POST   | `/admin/manual-knowledge`        | 수기 지식 등록                             | SYSTEM_ADMIN   |
-| POST   | `/admin/manual-knowledge/{id}/sync` | 실패한 ChromaDB 동기화 재시도           | SYSTEM_ADMIN   |
+| POST   | `/admin/manual-knowledge/{id}/sync` | 실패한 Vector Store 동기화 재시도      | SYSTEM_ADMIN   |
 
 `base_prompt`, provider 설정, credential, DB 접속정보와 SQL 원문은 관리자 API로 변경하지 않는다. 위 API는 아직 Controller가 구현되지 않은 계획 계약이며, V16에는 `ai_tools` 테이블만 반영되어 있다.
 
