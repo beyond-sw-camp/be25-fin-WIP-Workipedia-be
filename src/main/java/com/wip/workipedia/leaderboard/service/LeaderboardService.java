@@ -44,7 +44,7 @@ public class LeaderboardService {
         return LeaderboardResponse.from(rankingPeriodStart, calculatedAt, rankers, mySummary, totalEsgScore);
     }
 
-    // 매주 월요일 09:00 기준 전체 활성 사용자 순위를 스냅샷으로 재생성한다.
+    // 매주 월요일 00:00 기준 전체 활성 사용자 순위를 스냅샷으로 재생성한다.
     @Transactional
     public void refreshWeeklySnapshot() {
         LocalDate rankingPeriodStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
