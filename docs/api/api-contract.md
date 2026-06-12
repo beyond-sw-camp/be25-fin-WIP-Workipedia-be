@@ -102,7 +102,7 @@ Authorization: Bearer <accessToken>
 | PATCH  | `/auth/password-reset`             | 비밀번호 재설정         | 불필요              |
 | GET    | `/me/profile`                      | 마이페이지 조회         | Access Token 필요  |
 | PATCH  | `/me/notification-settings`        | 알림 설정 변경         | Access Token 필요  |
-| GET    | `/me/tickets`                      | 내 발행 티켓ㄴ 목록 조회    | Access Token 필요  |
+| GET    | `/me/tickets`                      | 내 발행 티켓 목록 조회    | Access Token 필요  |
 | GET    | `/me/tickets/{ticketId}`           | 내 발행 티켓 상세 조회    | Access Token 필요  |
 
 
