@@ -24,9 +24,9 @@ public class ManualPdfValidator {
     private final long maxFileSizeBytes;
 
     public ManualPdfValidator(
-            @Value("${spring.servlet.multipart.max-file-size:20MB}") DataSize maxFileSize
+            @Value("${spring.servlet.multipart.max-file-size:20MB}") String maxFileSize
     ) {
-        this.maxFileSizeBytes = maxFileSize.toBytes();
+        this.maxFileSizeBytes = DataSize.parse(maxFileSize).toBytes();
     }
 
     public byte[] validateAndRead(MultipartFile file) {

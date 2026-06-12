@@ -13,12 +13,11 @@ import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
 import org.apache.pdfbox.pdmodel.encryption.StandardProtectionPolicy;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.util.unit.DataSize;
 import org.springframework.web.multipart.MultipartFile;
 
 class ManualPdfValidatorTest {
 
-    private final ManualPdfValidator validator = new ManualPdfValidator(DataSize.ofMegabytes(1));
+    private final ManualPdfValidator validator = new ManualPdfValidator("1MB");
 
     @Test
     void validateAndRead_acceptsValidPdf() throws IOException {
@@ -53,7 +52,7 @@ class ManualPdfValidatorTest {
 
     @Test
     void validateAndRead_rejectsOversizedFileBeforeParsing() {
-        ManualPdfValidator smallLimitValidator = new ManualPdfValidator(DataSize.ofBytes(4));
+        ManualPdfValidator smallLimitValidator = new ManualPdfValidator("4B");
         MultipartFile file = pdfFile("manual.pdf", "application/pdf", "%PDF-".getBytes());
 
         assertThatThrownBy(() -> smallLimitValidator.validateAndRead(file))
