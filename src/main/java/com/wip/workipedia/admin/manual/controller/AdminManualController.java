@@ -11,6 +11,7 @@ import com.wip.workipedia.manual.dto.ManualSummaryResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -58,10 +59,10 @@ public class AdminManualController {
             @RequestParam(required = false) Long departmentId,
             @RequestParam @NotBlank @Size(max = 255) String title,
             @RequestParam(required = false) ManualStatus status,
-            @RequestParam(required = false) @Size(max = 50) String version,
-            @RequestParam("file") MultipartFile file) {
+            @RequestParam(required = false) @Size(max = 500) String sourceUrl,
+            @RequestParam("file") List<MultipartFile> files) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(adminManualService.createFromPdf(actorUserId, departmentId, title, status, version, file));
+                .body(adminManualService.createFromPdf(actorUserId, departmentId, title, status, sourceUrl, files));
     }
 
     @GetMapping("/{manualId}")
@@ -86,10 +87,10 @@ public class AdminManualController {
             @RequestParam(required = false) Long departmentId,
             @RequestParam(required = false) @Size(max = 255) String title,
             @RequestParam(required = false) ManualStatus status,
-            @RequestParam(required = false) @Size(max = 50) String version,
-            @RequestParam("file") MultipartFile file) {
+            @RequestParam(required = false) @Size(max = 500) String sourceUrl,
+            @RequestParam("file") List<MultipartFile> files) {
         return ResponseEntity.ok(
-                adminManualService.updateFromPdf(actorUserId, manualId, departmentId, title, status, version, file)
+                adminManualService.updateFromPdf(actorUserId, manualId, departmentId, title, status, sourceUrl, files)
         );
     }
 

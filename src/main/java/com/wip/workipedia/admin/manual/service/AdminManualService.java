@@ -7,10 +7,12 @@ import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.response.PageResponse;
 import com.wip.workipedia.department.repository.DepartmentRepository;
 import com.wip.workipedia.manual.domain.Manual;
+import com.wip.workipedia.manual.domain.ManualFile;
 import com.wip.workipedia.manual.domain.ManualVersion;
 import com.wip.workipedia.manual.domain.ManualStatus;
 import com.wip.workipedia.manual.dto.ManualDetailResponse;
 import com.wip.workipedia.manual.dto.ManualSummaryResponse;
+import com.wip.workipedia.manual.repository.ManualFileRepository;
 import com.wip.workipedia.manual.repository.ManualRepository;
 import com.wip.workipedia.manual.repository.ManualVersionRepository;
 import com.wip.workipedia.storage.dto.StoredObject;
@@ -19,8 +21,13 @@ import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.domain.UserRole;
 import com.wip.workipedia.user.repository.UserRepository;
 import java.io.IOException;
-import lombok.RequiredArgsConstructor;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -30,19 +37,41 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AdminManualService {
 
     private static final String MANUAL_PDF_KEY_PREFIX = "manuals";
     private static final String PDF_CONTENT_TYPE = "application/pdf";
+    private static final String INITIAL_VERSION = "1.0";
 
     private final ManualRepository manualRepository;
+    private final ManualFileRepository manualFileRepository;
     private final ManualVersionRepository manualVersionRepository;
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
     private final PdfTextExtractor pdfTextExtractor;
     private final StorageService storageService;
+    private final Executor manualPdfUploadExecutor;
+
+    public AdminManualService(
+            ManualRepository manualRepository,
+            ManualFileRepository manualFileRepository,
+            ManualVersionRepository manualVersionRepository,
+            DepartmentRepository departmentRepository,
+            UserRepository userRepository,
+            PdfTextExtractor pdfTextExtractor,
+            StorageService storageService,
+            @Qualifier("manualPdfUploadExecutor") Executor manualPdfUploadExecutor
+    ) {
+        this.manualRepository = manualRepository;
+        this.manualFileRepository = manualFileRepository;
+        this.manualVersionRepository = manualVersionRepository;
+        this.departmentRepository = departmentRepository;
+        this.userRepository = userRepository;
+        this.pdfTextExtractor = pdfTextExtractor;
+        this.storageService = storageService;
+        this.manualPdfUploadExecutor = manualPdfUploadExecutor;
+    }
 
     public PageResponse<ManualSummaryResponse> findAll(Long actorUserId, ManualStatus status, Pageable pageable) {
         assertSystemAdmin(actorUserId);
@@ -60,14 +89,16 @@ public class AdminManualService {
 
     public ManualDetailResponse findById(Long actorUserId, Long manualId) {
         assertSystemAdmin(actorUserId);
-        return ManualDetailResponse.from(getManual(manualId));
+        Manual manual = getManual(manualId);
+        return ManualDetailResponse.from(manual, findFileUrls(manual.getManualId()));
     }
 
     @Transactional
     public ManualDetailResponse create(Long actorUserId, AdminManualCreateRequest request) {
         assertSystemAdmin(actorUserId);
+        validateDuplicateTitle(request.title());
 
-        String manualNum = normalizeInitialManualNum(request.version());
+        String manualNum = INITIAL_VERSION;
         Long departmentId = validateDepartmentId(request.departmentId());
         Manual manual = Manual.create(
                 departmentId,
@@ -85,19 +116,19 @@ public class AdminManualService {
 
     @Transactional
     public ManualDetailResponse createFromPdf(Long actorUserId, Long departmentId, String title,
-            ManualStatus status, String version, MultipartFile file) {
+            ManualStatus status, String sourceUrl, List<MultipartFile> files) {
         assertSystemAdmin(actorUserId);
+        validateDuplicateTitle(title);
 
-        byte[] bytes = readBytes(file);
-        String content = pdfTextExtractor.extract(file, bytes);
-        String manualNum = normalizeInitialManualNum(version);
-        Manual manual = Manual.create(validateDepartmentId(departmentId), title, content, status, null, manualNum, actorUserId);
-        StoredObject stored = uploadPdf(file, bytes);
-        deleteStoredFileAfterRollback(stored.objectKey());
-        manual.attachFile(stored.objectKey(), stored.publicUrl());
+        List<PdfUpload> uploads = readPdfUploads(files);
+        String content = extractContent(uploads);
+        String manualNum = INITIAL_VERSION;
+        Manual manual = Manual.create(validateDepartmentId(departmentId), title, content, status, sourceUrl, manualNum, actorUserId);
         Manual savedManual = manualRepository.save(manual);
+        List<StoredObject> storedObjects = uploadPdfFiles(uploads);
+        attachFiles(savedManual, storedObjects);
         saveVersion(savedManual, actorUserId, manualNum, "INITIAL_PDF_UPLOAD");
-        return ManualDetailResponse.from(savedManual);
+        return ManualDetailResponse.from(savedManual, toFileUrls(storedObjects));
     }
 
     @Transactional
@@ -105,7 +136,8 @@ public class AdminManualService {
         assertSystemAdmin(actorUserId);
 
         Manual manual = getManual(manualId);
-        String manualNum = resolveManualNum(manual.getManualId(), request.version());
+        validateDuplicateTitleForUpdate(request.title(), manual.getManualId());
+        String manualNum = resolveNextVersion(manual, fileCount(manual));
         manual.update(
                 validateDepartmentId(request.departmentId()),
                 request.title(),
@@ -115,40 +147,56 @@ public class AdminManualService {
                 manualNum
         );
         saveVersion(manual, actorUserId, manualNum, request.updateReason());
-        return ManualDetailResponse.from(manual);
+        return ManualDetailResponse.from(manual, findFileUrls(manual.getManualId()));
     }
 
     @Transactional
     public ManualDetailResponse updateFromPdf(Long actorUserId, Long manualId, Long departmentId,
-            String title, ManualStatus status, String version, MultipartFile file) {
+            String title, ManualStatus status, String sourceUrl, List<MultipartFile> files) {
         assertSystemAdmin(actorUserId);
 
         Manual manual = getManual(manualId);
-        byte[] bytes = readBytes(file);
-        String content = pdfTextExtractor.extract(file, bytes);
-        String manualNum = resolveManualNum(manual.getManualId(), version);
-        manual.update(validateDepartmentId(departmentId), title, content, status, null, manualNum);
-        String previousFileKey = manual.getFileKey();
-        StoredObject stored = uploadPdf(file, bytes);
-        deleteStoredFileAfterRollback(stored.objectKey());
-        manual.attachFile(stored.objectKey(), stored.publicUrl());
+        validateDuplicateTitleForUpdate(title, manual.getManualId());
+        List<PdfUpload> uploads = readPdfUploads(files);
+        String content = extractContent(uploads);
+        String manualNum = resolveNextVersion(manual, uploads.size());
+        manual.update(validateDepartmentId(departmentId), title, content, status, sourceUrl, manualNum);
+        List<ManualFile> previousFiles = findActiveFiles(manual.getManualId());
+        List<StoredObject> storedObjects = uploadPdfFiles(uploads);
+        replaceFiles(manual, previousFiles, storedObjects);
         saveVersion(manual, actorUserId, manualNum, "PDF_UPLOAD");
-        deleteStoredFileAfterCommit(previousFileKey);
-        return ManualDetailResponse.from(manual);
+        previousFiles.forEach(previousFile -> deleteStoredFileAfterCommit(previousFile.getFileKey()));
+        return ManualDetailResponse.from(manual, toFileUrls(storedObjects));
     }
 
     @Transactional
     public void delete(Long actorUserId, Long manualId) {
         assertSystemAdmin(actorUserId);
         Manual manual = getManual(manualId);
-        String fileKey = manual.getFileKey();
+        List<ManualFile> files = findActiveFiles(manual.getManualId());
         manual.delete();
-        deleteStoredFileAfterCommit(fileKey);
+        files.forEach(ManualFile::delete);
+        files.forEach(file -> deleteStoredFileAfterCommit(file.getFileKey()));
     }
 
     private Manual getManual(Long manualId) {
         return manualRepository.findByManualIdAndDeletedAtIsNull(manualId)
                 .orElseThrow(() -> new CustomException(ErrorType.MANUAL_NOT_FOUND));
+    }
+
+    private void validateDuplicateTitle(String title) {
+        if (manualRepository.existsByTitleAndDeletedAtIsNull(title)) {
+            throw new CustomException(ErrorType.CONFLICT, "이미 같은 제목의 매뉴얼이 있습니다. 기존 매뉴얼을 수정해주세요.");
+        }
+    }
+
+    private void validateDuplicateTitleForUpdate(String title, Long manualId) {
+        if (title == null || title.isBlank()) {
+            return;
+        }
+        if (manualRepository.existsByTitleAndManualIdNotAndDeletedAtIsNull(title, manualId)) {
+            throw new CustomException(ErrorType.CONFLICT, "Manual title already exists.");
+        }
     }
 
     private void assertSystemAdmin(Long actorUserId) {
@@ -169,19 +217,69 @@ public class AdminManualService {
         return departmentId;
     }
 
-    private StoredObject uploadPdf(MultipartFile file, byte[] bytes) {
-        return storageService.upload(bytes, MANUAL_PDF_KEY_PREFIX, file.getOriginalFilename(), PDF_CONTENT_TYPE);
+    private List<StoredObject> uploadPdfFiles(List<PdfUpload> uploads) {
+        List<CompletableFuture<StoredObject>> uploadFutures = uploads.stream()
+                .map(upload -> CompletableFuture.supplyAsync(() -> uploadPdfFile(upload), manualPdfUploadExecutor))
+                .toList();
+
+        try {
+            CompletableFuture.allOf(uploadFutures.toArray(CompletableFuture[]::new)).join();
+            List<StoredObject> storedObjects = uploadFutures.stream()
+                    .map(CompletableFuture::join)
+                    .toList();
+            storedObjects.forEach(storedObject -> deleteStoredFileAfterRollback(storedObject.objectKey()));
+            return storedObjects;
+        } catch (CompletionException exception) {
+            List<StoredObject> storedObjects = uploadFutures.stream()
+                    .filter(future -> future.isDone() && !future.isCompletedExceptionally() && !future.isCancelled())
+                    .map(CompletableFuture::join)
+                    .toList();
+            storedObjects.forEach(storedObject -> deleteStoredFile(storedObject.objectKey()));
+            throw unwrapCompletionException(exception);
+        }
     }
 
-    private byte[] readBytes(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
+    private StoredObject uploadPdfFile(PdfUpload upload) {
+        return storageService.upload(
+                upload.bytes(),
+                MANUAL_PDF_KEY_PREFIX,
+                upload.file().getOriginalFilename(),
+                PDF_CONTENT_TYPE
+        );
+    }
+
+    private RuntimeException unwrapCompletionException(CompletionException exception) {
+        Throwable cause = exception.getCause();
+        if (cause instanceof RuntimeException runtimeException) {
+            return runtimeException;
+        }
+        return exception;
+    }
+
+    private List<PdfUpload> readPdfUploads(List<MultipartFile> files) {
+        if (files == null || files.isEmpty()) {
             throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF file is required.");
         }
-        try {
-            return file.getBytes();
-        } catch (IOException e) {
-            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "Failed to read PDF file.");
+
+        List<PdfUpload> uploads = new ArrayList<>();
+        for (MultipartFile file : files) {
+            if (file == null || file.isEmpty()) {
+                throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF file is required.");
+            }
+            try {
+                uploads.add(new PdfUpload(file, file.getBytes()));
+            } catch (IOException e) {
+                throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "Failed to read PDF file.");
+            }
         }
+        return uploads;
+    }
+
+    private String extractContent(List<PdfUpload> uploads) {
+        return uploads.stream()
+                .map(upload -> pdfTextExtractor.extract(upload.file(), upload.bytes()))
+                .reduce((left, right) -> left + "\n\n" + right)
+                .orElse("");
     }
 
     private void deleteStoredFile(String fileKey) {
@@ -234,29 +332,35 @@ public class AdminManualService {
         manualVersionRepository.save(ManualVersion.create(manual, actorUserId, manualNum, normalizeUpdateReason(updateReason)));
     }
 
-    private String normalizeInitialManualNum(String requestedVersion) {
-        if (requestedVersion != null && !requestedVersion.isBlank()) {
-            return requestedVersion;
-        }
-        return "v1";
-    }
-
-    private String resolveManualNum(Long manualId, String requestedVersion) {
-        if (requestedVersion != null && !requestedVersion.isBlank()) {
-            return requestedVersion;
-        }
-        return manualVersionRepository.findTopByManualManualIdAndDeletedAtIsNullOrderByManualVersionIdDesc(manualId)
+    private String resolveNextVersion(Manual manual, int nextFileCount) {
+        String latestVersion = manualVersionRepository
+                .findTopByManualManualIdAndDeletedAtIsNullOrderByManualVersionIdDesc(manual.getManualId())
                 .map(ManualVersion::getManualNum)
-                .map(this::incrementManualNum)
-                .orElse("v1");
+                .orElse(manual.getVersion());
+
+        boolean fileCountChanged = fileCount(manual) != nextFileCount;
+        return incrementVersion(latestVersion, fileCountChanged);
     }
 
-    private String incrementManualNum(String latestManualNum) {
-        if (latestManualNum != null && latestManualNum.matches("v\\d+")) {
-            int number = Integer.parseInt(latestManualNum.substring(1));
-            return "v" + (number + 1);
+    private int fileCount(Manual manual) {
+        long count = manualFileRepository.countByManualManualIdAndDeletedAtIsNull(manual.getManualId());
+        if (count > 0) {
+            return Math.toIntExact(count);
         }
-        return "v" + System.currentTimeMillis();
+        return manual.getFileKey() == null || manual.getFileKey().isBlank() ? 0 : 1;
+    }
+
+    private String incrementVersion(String latestVersion, boolean fileCountChanged) {
+        VersionParts version = VersionParts.parse(latestVersion);
+        if (fileCountChanged) {
+            return (version.major() + 1) + ".0";
+        }
+
+        int nextMinor = version.minor() + 1;
+        if (nextMinor >= 10) {
+            return (version.major() + 1) + ".0";
+        }
+        return version.major() + "." + nextMinor;
     }
 
     private String normalizeUpdateReason(String updateReason) {
@@ -264,5 +368,60 @@ public class AdminManualService {
             return "ADMIN_UPDATE";
         }
         return updateReason;
+    }
+
+    private List<ManualFile> findActiveFiles(Long manualId) {
+        return manualFileRepository.findByManualManualIdAndDeletedAtIsNullOrderBySortOrderAsc(manualId);
+    }
+
+    private List<String> findFileUrls(Long manualId) {
+        return findActiveFiles(manualId).stream()
+                .map(ManualFile::getFileUrl)
+                .toList();
+    }
+
+    private List<String> toFileUrls(List<StoredObject> storedObjects) {
+        return storedObjects.stream()
+                .map(StoredObject::publicUrl)
+                .toList();
+    }
+
+    private void attachFiles(Manual manual, List<StoredObject> storedObjects) {
+        for (int index = 0; index < storedObjects.size(); index++) {
+            StoredObject storedObject = storedObjects.get(index);
+            manualFileRepository.save(ManualFile.create(manual, storedObject.objectKey(), storedObject.publicUrl(), index + 1));
+        }
+        StoredObject first = storedObjects.get(0);
+        manual.attachFile(first.objectKey(), first.publicUrl());
+    }
+
+    private void replaceFiles(Manual manual, List<ManualFile> previousFiles, List<StoredObject> storedObjects) {
+        previousFiles.forEach(ManualFile::delete);
+        attachFiles(manual, storedObjects);
+    }
+
+    private record VersionParts(int major, int minor) {
+        private static VersionParts parse(String version) {
+            if (version == null || version.isBlank()) {
+                return new VersionParts(1, 0);
+            }
+
+            String normalized = version.trim();
+            if (normalized.startsWith("v") || normalized.startsWith("V")) {
+                normalized = normalized.substring(1);
+            }
+
+            String[] parts = normalized.split("\\.");
+            try {
+                int major = Integer.parseInt(parts[0]);
+                int minor = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+                return new VersionParts(Math.max(major, 1), Math.max(minor, 0));
+            } catch (NumberFormatException exception) {
+                return new VersionParts(1, 0);
+            }
+        }
+    }
+
+    private record PdfUpload(MultipartFile file, byte[] bytes) {
     }
 }

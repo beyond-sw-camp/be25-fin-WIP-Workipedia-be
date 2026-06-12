@@ -11,8 +11,6 @@ public record AdminManualUpdateRequest(
         ManualStatus status,
         @Size(max = 500)
         String sourceUrl,
-        @Size(max = 50)
-        String version,
         @Size(max = 500)
         String updateReason
 ) {
