@@ -3,9 +3,12 @@ package com.wip.workipedia.admin.point.controller;
 import com.wip.workipedia.admin.point.dto.AdminPointDeductRequest;
 import com.wip.workipedia.admin.point.dto.AdminPointResponse;
 import com.wip.workipedia.admin.point.service.AdminPointService;
+import com.wip.workipedia.common.request.BasePageRequest;
+import com.wip.workipedia.common.response.PageResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +26,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminPointController {
 
 	private final AdminPointService adminPointService;
+
+	// 전체 사용자 포인트 목록을 페이징으로 조회한다.
+	@GetMapping
+	public ResponseEntity<PageResponse<AdminPointResponse>> findAll(@Valid BasePageRequest pageRequest) {
+		Sort sort = Sort.by(Sort.Direction.ASC, "userId");
+		return ResponseEntity.ok(adminPointService.findAll(pageRequest.toPageable(sort)));
+	}
 
 	// 사번으로 사용자를 찾고, 해당 사용자의 현재 보유 포인트를 조회한다.
 	@GetMapping("/search")

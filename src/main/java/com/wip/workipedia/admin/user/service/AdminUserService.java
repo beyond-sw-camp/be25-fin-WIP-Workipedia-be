@@ -3,11 +3,13 @@ package com.wip.workipedia.admin.user.service;
 import com.wip.workipedia.admin.user.dto.AdminUserResponse;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
+import com.wip.workipedia.common.response.PageResponse;
 import com.wip.workipedia.common.security.SecurityUtil;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.domain.UserStatus;
 import com.wip.workipedia.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdminUserService {
 
 	private final UserRepository userRepository;
+
+	@Transactional(readOnly = true)
+	public PageResponse<AdminUserResponse> findAll(Pageable pageable) {
+		return PageResponse.from(userRepository.findByDeletedAtIsNull(pageable).map(AdminUserResponse::from));
+	}
 
 	@Transactional(readOnly = true)
 	public AdminUserResponse search(String employeeId) {

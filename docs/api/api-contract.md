@@ -135,7 +135,7 @@ Authorization: Bearer <accessToken>
 | POST   | `/admin/ai-tools/{aiToolId}/test`| Tool 테스트 실행                           | SYSTEM_ADMIN   |
 | GET    | `/admin/manual-knowledge`        | 수기 지식과 동기화 상태 조회               | SYSTEM_ADMIN   |
 | POST   | `/admin/manual-knowledge`        | 수기 지식 등록                             | SYSTEM_ADMIN   |
-| POST   | `/admin/manual-knowledge/{id}/sync` | 실패한 ChromaDB 동기화 재시도           | SYSTEM_ADMIN   |
+| POST   | `/admin/manual-knowledge/{id}/sync` | 실패한 Vector Store 동기화 재시도      | SYSTEM_ADMIN   |
 
 `base_prompt`, provider 설정, credential, DB 접속정보와 SQL 원문은 관리자 API로 변경하지 않는다. 위 API는 아직 Controller가 구현되지 않은 계획 계약이며, V16에는 `ai_tools` 테이블만 반영되어 있다.
 
@@ -623,6 +623,7 @@ Response:
 | Method | Path                                            | 설명                            | 인증           |
 | ------ | ----------------------------------------------- | ----------------------------- | ------------ |
 | GET    | `/admin/settings/summary`                       | 전체 사용자 수, 당일 로그인 수, 총 문서 수 조회 | SYSTEM_ADMIN |
+| GET    | `/admin/points`                                 | 전체 사용자 포인트 목록 조회               | SYSTEM_ADMIN |
 | GET    | `/admin/points/search`                          | 사번으로 사용자 포인트 조회               | SYSTEM_ADMIN |
 | PATCH  | `/admin/points/{employeeId}/deduct`             | 포인트 차감                        | SYSTEM_ADMIN |
 | DELETE | `/admin/worki/questions/{questionId}`           | 워키 게시글 관리자 삭제 및 작성자 포인트 차감    | SYSTEM_ADMIN |
@@ -631,6 +632,8 @@ Response:
 | PATCH  | `/admin/departments/{departmentId}`             | 부서 정보 수정                      | SYSTEM_ADMIN |
 | DELETE | `/admin/departments/{departmentId}`             | 부서 삭제                         | SYSTEM_ADMIN |
 | PATCH  | `/admin/departments/routing-prompt/instruction` | 부서 라우팅 프롬프트                   | SYSTEM_ADMIN |
+
+| GET    | `/admin/users`                                  | 전체 사용자 목록 조회                    | SYSTEM_ADMIN |
 | GET    | `/admin/users/search`                           | 사번으로 사용자 조회                   | SYSTEM_ADMIN |
 | PATCH  | `/admin/users/{userId}/status`                  | 사용자 활성화/비활성화 변경               | SYSTEM_ADMIN |
 | GET    | `/admin/manuals`                                | 매뉴얼 목록 조회                     | SYSTEM_ADMIN |
