@@ -6,6 +6,7 @@ import com.wip.workipedia.worki.dto.AnswerCreateRequest;
 import com.wip.workipedia.worki.dto.AnswerResponse;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
+import com.wip.workipedia.notification.service.NotificationService;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.repository.UserRepository;
 import com.wip.workipedia.worki.repository.WorkiAnswerRepository;
@@ -22,6 +23,7 @@ public class WorkiAnswerService {
     private final WorkiAnswerRepository answerRepository;
     private final WorkiQuestionRepository questionRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public AnswerResponse createAnswer(Long actorUserId, Long questionId, AnswerCreateRequest request) {
         WorkiQuestion question = getQuestionOrThrow(questionId);
@@ -31,6 +33,11 @@ public class WorkiAnswerService {
         WorkiAnswer answer = answerRepository.save(
                 WorkiAnswer.create(questionId, actorUserId, request.content()));
         question.markInProgress();
+        // 본인이 작성한 질문에 직접 답변한 경우에는 별도 알림을 만들지 않는다.
+        if (!question.isAuthor(actorUserId)) {
+            notificationService.createWorkiQuestionAnswered(
+                    question.getAuthorId(), question.getQuestionId(), question.getTitle());
+        }
         User author = userRepository.findById(actorUserId).orElse(null);
         return AnswerResponse.of(answer, author);
     }
@@ -50,6 +57,11 @@ public class WorkiAnswerService {
 
         answer.accept();
         question.acceptAnswer(answer.getAnswerId());
+        // 답변 채택 알림은 채택된 답변 작성자에게만 보낸다.
+        if (!answer.getAuthorId().equals(actorUserId)) {
+            notificationService.createWorkiAnswerAccepted(
+                    answer.getAuthorId(), answer.getAnswerId(), question.getQuestionId(), question.getTitle());
+        }
         User author = userRepository.findById(answer.getAuthorId()).orElse(null);
         return AnswerResponse.of(answer, author);
     }

@@ -48,11 +48,14 @@ public class Notification extends BaseTimeEntity {
     @Column(name = "target_url", length = 500)
     private String targetUrl;
 
+    @Column(name = "point_amount")
+    private Integer pointAmount;
+
     @Column(name = "read_at")
     private LocalDateTime readAt;
 
     private Notification(Long userId, NotificationType type, String title, String message,
-                         NotificationTargetType targetType, Long targetId, String targetUrl) {
+                         NotificationTargetType targetType, Long targetId, String targetUrl, Integer pointAmount) {
         this.userId = userId;
         this.type = type;
         this.title = title;
@@ -60,11 +63,18 @@ public class Notification extends BaseTimeEntity {
         this.targetType = targetType;
         this.targetId = targetId;
         this.targetUrl = targetUrl;
+        this.pointAmount = pointAmount;
     }
 
     public static Notification create(Long userId, NotificationType type, String title, String message,
                                       NotificationTargetType targetType, Long targetId, String targetUrl) {
-        return new Notification(userId, type, title, message, targetType, targetId, targetUrl);
+        return new Notification(userId, type, title, message, targetType, targetId, targetUrl, null);
+    }
+
+    public static Notification create(Long userId, NotificationType type, String title, String message,
+                                      NotificationTargetType targetType, Long targetId, String targetUrl,
+                                      Integer pointAmount) {
+        return new Notification(userId, type, title, message, targetType, targetId, targetUrl, pointAmount);
     }
 
     // 이미 읽음 처리된 알림에 다시 호출돼도 timestamp가 갱신되지 않도록 멱등성 확보.
