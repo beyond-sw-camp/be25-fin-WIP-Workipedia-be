@@ -15,8 +15,6 @@ public record AdminManualCreateRequest(
         @NotNull
         ManualStatus status,
         @Size(max = 500)
-        String sourceUrl,
-        @Size(max = 50)
-        String version
+        String sourceUrl
 ) {
 }

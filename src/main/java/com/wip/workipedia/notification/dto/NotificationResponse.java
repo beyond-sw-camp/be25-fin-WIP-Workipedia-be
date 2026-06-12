@@ -13,6 +13,7 @@ public record NotificationResponse(
         NotificationTargetType targetType,
         Long targetId,
         String targetUrl,
+        Integer pointAmount,
         LocalDateTime readAt,
         LocalDateTime createdAt
 ) {
@@ -25,6 +26,7 @@ public record NotificationResponse(
                 n.getTargetType(),
                 n.getTargetId(),
                 n.getTargetUrl(),
+                n.getPointAmount(),
                 n.getReadAt(),
                 n.getCreatedAt()
         );

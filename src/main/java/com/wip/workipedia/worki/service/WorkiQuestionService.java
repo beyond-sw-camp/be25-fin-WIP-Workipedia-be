@@ -143,9 +143,9 @@ public class WorkiQuestionService {
 
         List<WorkiQuestion> savedQuestions = questionRepository.saveAll(questions);
 
-        savedQuestions.forEach(saved ->
-                eventPublisher.publishEvent(new WorkiQuestionChangedEvent(saved.getQuestionId()))
-        );
+        savedQuestions.forEach(saved -> {
+            eventPublisher.publishEvent(new WorkiQuestionChangedEvent(saved.getQuestionId()));
+        });
 
         return savedQuestions.stream()
                 .map(QuestionResponse::from)
