@@ -72,6 +72,31 @@
 - 하지만 두 번째 파트에서 TOP 3 밖에 있는 사용자의 내 순위도 보여줘야 하므로, 스냅샷에는 전체 활성 사용자 순위를 저장해야 한다.
 - API 응답에서는 전체 스냅샷 중 `rank_no <= 3`만 첫 번째 파트로 반환하고, 현재 로그인 사용자 ID에 해당하는 row를 두 번째 파트로 반환한다.
 
+## 네 번째 파트: 전체 ESG 점수 합계
+
+네 번째 파트는 전체 활성 사용자의 ESG 점수 총합을 보여준다.
+
+표시 데이터:
+
+- 전체 ESG 점수 합계
+
+데이터 기준:
+
+- 전체 ESG 점수 합계는 실시간 `user_points` 기준이 아니라 매주 월요일 오전 9시에 생성된 최신 리더보드 스냅샷 기준으로 보여준다.
+- 합계는 최신 `ranking_period_start`에 해당하는 `leaderboard_snapshots.esg_score`를 모두 더해서 계산한다.
+- 비활성 사용자는 스냅샷 생성 시점에 제외되므로 합계에도 포함되지 않는다.
+- 삭제된 스냅샷 row는 합계에서 제외한다.
+- 최초 스냅샷이 없으면 `totalEsgScore = 0`으로 반환한다.
+
+구현 기준:
+
+```sql
+SELECT COALESCE(SUM(l.esg_score), 0)
+FROM leaderboard_snapshots l
+WHERE l.ranking_period_start = :rankingPeriodStart
+  AND l.deleted_at IS NULL
+```
+
 ## ESG 등급 기준
 
 | 등급 | `esg_grade.grade_id` | ESG 점수 범위 |
@@ -141,21 +166,30 @@ GET /api/v1/leaderboard
     "esgScore": 230,
     "answerCount": 12,
     "acceptedAnswerCount": 3
-  }
+  },
+  "totalEsgScore": 123456
 }
 ```
 
-응답 구조는 남은 2개 파트의 요구사항이 확정되면 함께 확장한다.
+초기 응답 정책:
+
+- `user_points.esg_score`에 누적 데이터가 있더라도 `leaderboard_snapshots`에 스냅샷 row가 아직 없으면 빈 응답을 반환한다.
+- 스케줄러가 월요일 오전 9시에 실행되어 스냅샷을 생성한 이후부터 최신 스냅샷 데이터를 반환한다.
+- 스냅샷이 없는 경우 `rankingPeriodStart = null`, `calculatedAt = null`, `topRankers = []`, `mySummary = null`, `totalEsgScore = 0`으로 응답한다.
+
+응답 구조는 남은 1개 파트의 요구사항이 확정되면 함께 확장한다.
 
 ## 구현 전 확인 필요
 
 - 스냅샷 보관 정책: 최신 1건만 유지할지, 주차별 이력을 보관할지 결정 필요
 - 최초 스냅샷이 없는 경우: 빈 목록을 반환할지, 최초 1회 실시간 계산할지 결정 필요
 - 로그인 사용자가 스냅샷에 없는 경우 `mySummary`를 `null`로 반환할지 기본값으로 반환할지 결정 필요
-- 리더보드 나머지 2개 파트의 데이터 기준 및 응답 구조 확정 필요
+- 리더보드 세 번째 파트의 데이터 기준 및 응답 구조 확정 필요
 
 ## 현재까지의 결론
 
 리더보드 첫 번째 파트는 `leaderboard_snapshots`에서 최신 주차의 `rank_no <= 3` 데이터를 조회하면 구현 가능하다.
 
 두 번째 파트까지 고려하면 스냅샷 저장 범위는 TOP 3가 아니라 전체 활성 사용자 순위여야 한다. 그래야 TOP 3 밖의 사용자도 월요일 오전 9시 기준 내 순위를 확인할 수 있다.
+
+네 번째 파트는 최신 주차의 전체 스냅샷 `esg_score` 합계로 구현한다. 따라서 TOP 3, 내 순위, 전체 ESG 점수 합계가 모두 같은 월요일 오전 9시 기준을 사용한다.
