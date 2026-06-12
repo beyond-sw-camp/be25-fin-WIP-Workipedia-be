@@ -20,7 +20,6 @@ import com.wip.workipedia.storage.service.StorageService;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.domain.UserRole;
 import com.wip.workipedia.user.repository.UserRepository;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -49,6 +48,7 @@ public class AdminManualService {
     private final ManualVersionRepository manualVersionRepository;
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
+    private final ManualPdfValidator manualPdfValidator;
     private final PdfTextExtractor pdfTextExtractor;
     private final StorageService storageService;
     private final Executor manualPdfUploadExecutor;
@@ -59,6 +59,7 @@ public class AdminManualService {
             ManualVersionRepository manualVersionRepository,
             DepartmentRepository departmentRepository,
             UserRepository userRepository,
+            ManualPdfValidator manualPdfValidator,
             PdfTextExtractor pdfTextExtractor,
             StorageService storageService,
             @Qualifier("manualPdfUploadExecutor") Executor manualPdfUploadExecutor
@@ -68,6 +69,7 @@ public class AdminManualService {
         this.manualVersionRepository = manualVersionRepository;
         this.departmentRepository = departmentRepository;
         this.userRepository = userRepository;
+        this.manualPdfValidator = manualPdfValidator;
         this.pdfTextExtractor = pdfTextExtractor;
         this.storageService = storageService;
         this.manualPdfUploadExecutor = manualPdfUploadExecutor;
@@ -263,14 +265,7 @@ public class AdminManualService {
 
         List<PdfUpload> uploads = new ArrayList<>();
         for (MultipartFile file : files) {
-            if (file == null || file.isEmpty()) {
-                throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF file is required.");
-            }
-            try {
-                uploads.add(new PdfUpload(file, file.getBytes()));
-            } catch (IOException e) {
-                throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "Failed to read PDF file.");
-            }
+            uploads.add(new PdfUpload(file, manualPdfValidator.validateAndRead(file)));
         }
         return uploads;
     }
