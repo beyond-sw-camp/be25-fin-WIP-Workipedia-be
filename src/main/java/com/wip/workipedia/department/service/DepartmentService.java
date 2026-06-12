@@ -14,6 +14,7 @@ import com.wip.workipedia.department.dto.DepartmentResponse;
 import com.wip.workipedia.department.dto.RoutingPromptEditRequest;
 import com.wip.workipedia.department.repository.DepartmentRepository;
 import com.wip.workipedia.department.repository.RoutingPromptRepository;
+import com.wip.workipedia.user.repository.UserRepository.DepartmentMemberCountProjection;
 import com.wip.workipedia.user.repository.UserRepository;
 import java.util.List;
 import java.util.Map;
@@ -45,11 +46,13 @@ public class DepartmentService {
 	public List<AdminDepartmentResponse> findAllForAdmin() {
 		List<Department> departments = departmentRepository.findByDeletedAtIsNullOrderByDepartmentIdAsc();
 		Map<Long, DepartmentRoutingPrompt> routingPrompts = findRoutingPromptMap(departments);
+		Map<Long, Long> memberCounts = findMemberCountMap(departments);
 
 		return departments.stream()
 			.map(department -> AdminDepartmentResponse.from(
 				department,
-				getPromptContent(routingPrompts, department.getDepartmentId())
+				getPromptContent(routingPrompts, department.getDepartmentId()),
+				memberCounts.getOrDefault(department.getDepartmentId(), 0L)
 			))
 			.toList();
 	}
@@ -60,7 +63,7 @@ public class DepartmentService {
 
 		Department department = departmentRepository.save(Department.create(request.departmentName()));
 
-		return AdminDepartmentResponse.from(department, null);
+		return AdminDepartmentResponse.from(department, null, 0);
 	}
 
 	@Transactional
@@ -70,7 +73,11 @@ public class DepartmentService {
 
 		department.update(request.departmentName());
 
-		return AdminDepartmentResponse.from(department, findPromptContent(departmentId));
+		return AdminDepartmentResponse.from(
+			department,
+			findPromptContent(departmentId),
+			userRepository.countByDepartment_DepartmentId(departmentId)
+		);
 	}
 
 	@Transactional
@@ -130,6 +137,23 @@ public class DepartmentService {
 			.collect(Collectors.toMap(
 				routingPrompt -> routingPrompt.getDepartment().getDepartmentId(),
 				Function.identity()
+			));
+	}
+
+	private Map<Long, Long> findMemberCountMap(List<Department> departments) {
+		if (departments.isEmpty()) {
+			return Map.of();
+		}
+
+		List<Long> departmentIds = departments.stream()
+			.map(Department::getDepartmentId)
+			.toList();
+
+		return userRepository.countMembersByDepartmentIds(departmentIds)
+			.stream()
+			.collect(Collectors.toMap(
+				DepartmentMemberCountProjection::getDepartmentId,
+				DepartmentMemberCountProjection::getMemberCount
 			));
 	}
 
