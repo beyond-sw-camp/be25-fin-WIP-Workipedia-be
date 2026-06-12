@@ -43,7 +43,7 @@
 - `user_points.esg_score` 내림차순
 - 동점자는 `user_points.user_id` 오름차순
 - API 응답에서는 `rank_no <= 3`인 사용자만 TOP 3로 반환
-- 삭제되었거나 비활성 처리된 사용자는 제외하는 방향이 적절함
+- 삭제되었거나 비활성 처리된 사용자는 스냅샷 생성 시점에 제외한다.
 
 ## 두 번째 파트: 내 리더보드 요약
 
@@ -52,6 +52,8 @@
 표시 후보 데이터:
 
 - 내 순위
+- 내 닉네임
+- 내 부서명
 - 내 ESG 등급
 - 내 ESG 점수
 - 내가 등록한 답변 수
@@ -71,6 +73,8 @@
 - 첫 번째 파트만 고려하면 `leaderboard_snapshots`에 TOP 3만 저장해도 된다.
 - 하지만 두 번째 파트에서 TOP 3 밖에 있는 사용자의 내 순위도 보여줘야 하므로, 스냅샷에는 전체 활성 사용자 순위를 저장해야 한다.
 - API 응답에서는 전체 스냅샷 중 `rank_no <= 3`만 첫 번째 파트로 반환하고, 현재 로그인 사용자 ID에 해당하는 row를 두 번째 파트로 반환한다.
+- 닉네임, 부서명, 등급명, 등급 이미지 URL은 스냅샷 생성 시점의 표시값을 `leaderboard_snapshots`에 함께 저장한다.
+- 조회 API는 사용자/부서/등급 테이블을 다시 조인해서 화면 표시값을 가져오지 않고, 스냅샷에 저장된 표시값을 그대로 반환한다.
 
 ## 네 번째 파트: 전체 ESG 점수 합계
 
@@ -112,21 +116,48 @@ WHERE l.ranking_period_start = :rankingPeriodStart
 
 따라서 API 호출 시점마다 실시간으로 `user_points`를 정렬하는 방식이 아니라, 매주 월요일 09:00에 계산된 전체 사용자 순위 스냅샷을 저장하고 조회 API는 저장된 스냅샷을 반환하는 방식으로 구현한다.
 
+현재 스케줄러는 프로젝트의 기존 스케줄러 스타일에 맞춰 `@Scheduled(cron = "0 0 9 * * MON")` 형태로 동작한다. 따라서 운영 환경에서는 JVM 기본 timezone이 KST 기준으로 설정되어 있어야 월요일 오전 9시 정책과 일치한다.
+
 이유:
 
 - 화면에 표시되는 순위가 한 주 동안 안정적으로 유지된다.
 - "월요일 오전 9시 기준 순위"라는 정책을 명확하게 보장할 수 있다.
 - 첫 번째 파트 TOP 3와 두 번째 파트 내 순위가 같은 기준을 사용하게 된다.
 
+## 스냅샷 저장 정책
+
+`leaderboard_snapshots`는 주차별 리더보드 결과를 저장한다.
+
+저장 필드:
+
+- `ranking_period_start`: 해당 스냅샷의 기준 주차 월요일 날짜
+- `rank_no`: 기준 주차의 사용자 순위
+- `user_id`: 사용자 ID
+- `nickname`: 스냅샷 생성 시점의 사용자 닉네임
+- `department_name`: 스냅샷 생성 시점의 부서명
+- `grade_id`: 스냅샷 생성 시점의 ESG 등급 ID
+- `grade_name`: 스냅샷 생성 시점의 ESG 등급명
+- `grade_image_url`: 스냅샷 생성 시점의 ESG 등급 이미지 URL
+- `esg_score`: 스냅샷 생성 시점의 ESG 점수
+- `calculated_at`: 스냅샷 계산 시각
+
+보관 정책:
+
+- 기존 주차 스냅샷은 삭제하지 않고 주차별 이력으로 보관한다.
+- 같은 `ranking_period_start`의 스냅샷이 이미 존재하면 다시 생성하지 않는다.
+- 다중 인스턴스 또는 중복 실행을 막기 위해 DB advisory lock을 사용한다.
+- 기존 데이터를 삭제한 뒤 다시 저장하는 방식은 조회 중 빈 화면이 생길 수 있으므로 사용하지 않는다.
+
 ## 추천 구현 방식
 
 1. 리더보드 스냅샷 테이블을 추가한다.
 2. 매주 월요일 09:00에 스케줄러가 실행된다.
 3. 스케줄러는 `user_points.esg_score DESC`, `user_points.user_id ASC` 기준으로 전체 활성 사용자 순위를 계산한다.
-4. 계산된 전체 사용자 순위를 스냅샷 테이블에 저장한다.
+4. 계산된 전체 사용자 순위와 화면 표시용 사용자/부서/등급 정보를 스냅샷 테이블에 저장한다.
 5. `GET /api/v1/leaderboard`는 최신 스냅샷 테이블에서 데이터를 조회한다.
 6. 응답의 `topRankers`에는 `rank_no <= 3` 데이터만 반환한다.
 7. 응답의 `myRank` 또는 `mySummary`에는 현재 로그인 사용자 ID에 해당하는 스냅샷 row와 답변/채택 집계값을 반환한다.
+8. 응답의 `calculatedAt`은 TOP 3 결과가 아니라 스냅샷 테이블의 `calculated_at` 기준으로 반환한다.
 
 ## API
 
@@ -160,6 +191,8 @@ GET /api/v1/leaderboard
   "mySummary": {
     "rank": 15,
     "userId": 10,
+    "nickname": "kim",
+    "departmentName": "운영팀",
     "gradeId": 2,
     "gradeName": "Lv2",
     "gradeImageUrl": null,
@@ -176,14 +209,12 @@ GET /api/v1/leaderboard
 - `user_points.esg_score`에 누적 데이터가 있더라도 `leaderboard_snapshots`에 스냅샷 row가 아직 없으면 빈 응답을 반환한다.
 - 스케줄러가 월요일 오전 9시에 실행되어 스냅샷을 생성한 이후부터 최신 스냅샷 데이터를 반환한다.
 - 스냅샷이 없는 경우 `rankingPeriodStart = null`, `calculatedAt = null`, `topRankers = []`, `mySummary = null`, `totalEsgScore = 0`으로 응답한다.
+- 로그인 사용자가 최신 스냅샷에 없으면 `mySummary = null`로 응답한다.
 
 응답 구조는 남은 1개 파트의 요구사항이 확정되면 함께 확장한다.
 
 ## 구현 전 확인 필요
 
-- 스냅샷 보관 정책: 최신 1건만 유지할지, 주차별 이력을 보관할지 결정 필요
-- 최초 스냅샷이 없는 경우: 빈 목록을 반환할지, 최초 1회 실시간 계산할지 결정 필요
-- 로그인 사용자가 스냅샷에 없는 경우 `mySummary`를 `null`로 반환할지 기본값으로 반환할지 결정 필요
 - 리더보드 세 번째 파트의 데이터 기준 및 응답 구조 확정 필요
 
 ## 현재까지의 결론

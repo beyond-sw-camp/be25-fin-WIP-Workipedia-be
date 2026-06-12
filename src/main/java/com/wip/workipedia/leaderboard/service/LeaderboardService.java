@@ -21,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class LeaderboardService {
 
+    private static final String SNAPSHOT_LOCK_PREFIX = "leaderboard_snapshot:";
+
     private final LeaderboardSnapshotRepository leaderboardSnapshotRepository;
 
     // 최신 주간 스냅샷을 기준으로 TOP 3, 내 요약, 전체 ESG 점수 합계를 한 번에 조회한다.
@@ -36,7 +38,10 @@ public class LeaderboardService {
         Optional<LeaderboardMySummaryProjection> mySummary =
             leaderboardSnapshotRepository.findMySummaryByRankingPeriodStartAndUserId(rankingPeriodStart, userId);
         long totalEsgScore = leaderboardSnapshotRepository.sumEsgScoreByRankingPeriodStart(rankingPeriodStart);
-        return LeaderboardResponse.from(rankingPeriodStart, rankers, mySummary, totalEsgScore);
+        LocalDateTime calculatedAt = leaderboardSnapshotRepository
+            .findCalculatedAtByRankingPeriodStart(rankingPeriodStart)
+            .orElse(null);
+        return LeaderboardResponse.from(rankingPeriodStart, calculatedAt, rankers, mySummary, totalEsgScore);
     }
 
     // 매주 월요일 09:00 기준 전체 활성 사용자 순위를 스냅샷으로 재생성한다.
@@ -44,10 +49,26 @@ public class LeaderboardService {
     public void refreshWeeklySnapshot() {
         LocalDate rankingPeriodStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         LocalDateTime calculatedAt = LocalDateTime.now();
-        List<LeaderboardCandidateProjection> candidates = leaderboardSnapshotRepository.findSnapshotCandidates();
+        String lockName = SNAPSHOT_LOCK_PREFIX + rankingPeriodStart;
 
-        leaderboardSnapshotRepository.deleteByRankingPeriodStart(rankingPeriodStart);
-        leaderboardSnapshotRepository.saveAll(toSnapshots(rankingPeriodStart, calculatedAt, candidates));
+        if (!isLockAcquired(leaderboardSnapshotRepository.getLock(lockName))) {
+            return;
+        }
+
+        try {
+            if (leaderboardSnapshotRepository.existsByRankingPeriodStartAndDeletedAtIsNull(rankingPeriodStart)) {
+                return;
+            }
+
+            List<LeaderboardCandidateProjection> candidates = leaderboardSnapshotRepository.findSnapshotCandidates();
+            leaderboardSnapshotRepository.saveAll(toSnapshots(rankingPeriodStart, calculatedAt, candidates));
+        } finally {
+            leaderboardSnapshotRepository.releaseLock(lockName);
+        }
+    }
+
+    private boolean isLockAcquired(Integer lockResult) {
+        return lockResult != null && lockResult == 1;
     }
 
     private List<LeaderboardSnapshot> toSnapshots(
@@ -62,7 +83,11 @@ public class LeaderboardService {
                 calculatedAt,
                 rank[0]++,
                 candidate.getUserId(),
+                candidate.getNickname(),
+                candidate.getDepartmentName(),
                 candidate.getGradeId(),
+                candidate.getGradeName(),
+                candidate.getGradeImageUrl(),
                 candidate.getEsgScore()
             ))
             .toList();

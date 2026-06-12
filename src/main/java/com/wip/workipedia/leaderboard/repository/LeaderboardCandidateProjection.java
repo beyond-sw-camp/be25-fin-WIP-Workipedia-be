@@ -4,7 +4,15 @@ public interface LeaderboardCandidateProjection {
 
     Long getUserId();
 
+    String getNickname();
+
+    String getDepartmentName();
+
     Integer getGradeId();
+
+    String getGradeName();
+
+    String getGradeImageUrl();
 
     long getEsgScore();
 }

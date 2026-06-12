@@ -22,11 +22,11 @@ public record LeaderboardResponse(
 
     public static LeaderboardResponse from(
         LocalDate rankingPeriodStart,
+        LocalDateTime calculatedAt,
         List<LeaderboardRankerProjection> rankers,
         Optional<LeaderboardMySummaryProjection> mySummary,
         long totalEsgScore
     ) {
-        LocalDateTime calculatedAt = rankers.isEmpty() ? null : rankers.get(0).getCalculatedAt();
         return new LeaderboardResponse(
             rankingPeriodStart,
             calculatedAt,

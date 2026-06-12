@@ -37,8 +37,20 @@ public class LeaderboardSnapshot extends BaseTimeEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(nullable = false, length = 20)
+    private String nickname;
+
+    @Column(name = "department_name", nullable = false, length = 50)
+    private String departmentName;
+
     @Column(name = "grade_id", nullable = false)
     private Integer gradeId;
+
+    @Column(name = "grade_name", nullable = false, length = 20)
+    private String gradeName;
+
+    @Column(name = "grade_image_url", length = 500)
+    private String gradeImageUrl;
 
     @Column(name = "esg_score", nullable = false)
     private long esgScore;
@@ -51,14 +63,22 @@ public class LeaderboardSnapshot extends BaseTimeEntity {
         LocalDateTime calculatedAt,
         int rankNo,
         Long userId,
+        String nickname,
+        String departmentName,
         Integer gradeId,
+        String gradeName,
+        String gradeImageUrl,
         long esgScore
     ) {
         this.rankingPeriodStart = rankingPeriodStart;
         this.calculatedAt = calculatedAt;
         this.rankNo = rankNo;
         this.userId = userId;
+        this.nickname = nickname;
+        this.departmentName = departmentName;
         this.gradeId = gradeId;
+        this.gradeName = gradeName;
+        this.gradeImageUrl = gradeImageUrl;
         this.esgScore = esgScore;
     }
 
@@ -67,9 +87,24 @@ public class LeaderboardSnapshot extends BaseTimeEntity {
         LocalDateTime calculatedAt,
         int rankNo,
         Long userId,
+        String nickname,
+        String departmentName,
         Integer gradeId,
+        String gradeName,
+        String gradeImageUrl,
         long esgScore
     ) {
-        return new LeaderboardSnapshot(rankingPeriodStart, calculatedAt, rankNo, userId, gradeId, esgScore);
+        return new LeaderboardSnapshot(
+            rankingPeriodStart,
+            calculatedAt,
+            rankNo,
+            userId,
+            nickname,
+            departmentName,
+            gradeId,
+            gradeName,
+            gradeImageUrl,
+            esgScore
+        );
     }
 }
