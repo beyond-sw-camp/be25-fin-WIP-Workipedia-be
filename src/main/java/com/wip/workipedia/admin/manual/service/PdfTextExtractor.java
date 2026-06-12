@@ -14,10 +14,8 @@ import org.springframework.web.multipart.MultipartFile;
 @Component
 public class PdfTextExtractor {
 
-    private static final String PDF_CONTENT_TYPE = "application/pdf";
-
     public String extract(MultipartFile file) {
-        validate(file, null);
+        validateReadable(file, null);
 
         try {
             return extract(file, file.getBytes());
@@ -28,7 +26,7 @@ public class PdfTextExtractor {
     }
 
     public String extract(MultipartFile file, byte[] bytes) {
-        validate(file, bytes);
+        validateReadable(file, bytes);
 
         try (PDDocument document = Loader.loadPDF(bytes)) {
             String text = new PDFTextStripper().getText(document).trim();
@@ -44,16 +42,9 @@ public class PdfTextExtractor {
         }
     }
 
-    private void validate(MultipartFile file, byte[] bytes) {
+    private void validateReadable(MultipartFile file, byte[] bytes) {
         if (file == null || file.isEmpty() || bytes != null && bytes.length == 0) {
             throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF file is required.");
-        }
-
-        String filename = file.getOriginalFilename();
-        boolean hasPdfExtension = filename != null && filename.toLowerCase().endsWith(".pdf");
-        boolean hasPdfContentType = PDF_CONTENT_TYPE.equalsIgnoreCase(file.getContentType());
-        if (!hasPdfExtension && !hasPdfContentType) {
-            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "Only PDF files can be uploaded.");
         }
     }
 }
