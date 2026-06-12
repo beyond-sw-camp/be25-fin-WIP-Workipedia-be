@@ -34,7 +34,6 @@ public class AdminDirectDataController {
             @RequestParam(required = false) Boolean isActive,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "false") Boolean includeDeleted,
             @Valid BasePageRequest pageRequest) {
         Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
         return ResponseEntity.ok(adminDirectDataService.findAll(
@@ -42,7 +41,6 @@ public class AdminDirectDataController {
                 isActive,
                 category,
                 keyword,
-                includeDeleted,
                 pageRequest.toPageable(sort)
         ));
     }

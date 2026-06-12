@@ -28,11 +28,11 @@ public class AdminDirectDataService {
     private final UserRepository userRepository;
 
     public PageResponse<AdminDirectDataResponse> findAll(Long actorUserId, Boolean isActive,
-            String category, String keyword, Boolean includeDeleted, Pageable pageable) {
+            String category, String keyword, Pageable pageable) {
         assertSystemAdmin(actorUserId);
 
         return PageResponse.from(directDataRepository
-                .findAll(searchSpec(isActive, category, keyword, includeDeleted), pageable)
+                .findAll(searchSpec(isActive, category, keyword), pageable)
                 .map(this::toResponse));
     }
 
@@ -82,14 +82,11 @@ public class AdminDirectDataService {
         directData.delete(actorUserId);
     }
 
-    private Specification<DirectData> searchSpec(Boolean isActive, String category, String keyword,
-            Boolean includeDeleted) {
+    private Specification<DirectData> searchSpec(Boolean isActive, String category, String keyword) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            if (!Boolean.TRUE.equals(includeDeleted)) {
-                predicates.add(criteriaBuilder.isNull(root.get("deletedAt")));
-            }
+            predicates.add(criteriaBuilder.isNull(root.get("deletedAt")));
             if (isActive != null) {
                 predicates.add(criteriaBuilder.equal(root.get("isActive"), isActive ? "Y" : "N"));
             }
