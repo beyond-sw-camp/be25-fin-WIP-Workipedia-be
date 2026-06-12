@@ -316,6 +316,8 @@ Authorization: Bearer <accessToken>
 | POST   | `/admin/direct-data`             | 수기 지식 등록                             | SYSTEM_ADMIN   |
 | PUT    | `/admin/direct-data/{id}`        | 수기 지식 수정                             | SYSTEM_ADMIN   |
 | DELETE | `/admin/direct-data/{id}`        | 수기 지식 삭제                             | SYSTEM_ADMIN   |
+| GET    | `/direct-data`                   | 활성 수기 지식 목록 조회                     | 필요             |
+| GET    | `/direct-data/{id}`              | 활성 수기 지식 상세 조회                     | 필요             |
 
 
 
