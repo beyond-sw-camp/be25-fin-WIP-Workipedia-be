@@ -237,16 +237,16 @@ Authorization: Bearer <accessToken>
 | GET    | `/me/point-histories` | 포인트 변동 내역 조회 | Access Token 필요 |
 
 
-## 11. ESG Metrics API
+## 11. ESG Metrics & 리더보드 API
 
-담당: 김가영
+담당: 김가영, 이슬이
 
 
 | Method | Path                 | 설명            | 인증                       |
-| ------ | -------------------- | ------------- | ------------------------ |
+| ------ |----------------------|---------------| ------------------------ |
 | GET    | `/esg/metrics/me`    | 내 ESG/기여 지표   | 필요                       |
 | GET    | `/admin/esg/metrics` | 관리자 ESG 운영 지표 | TEAM_ADMIN, SYSTEM_ADMIN |
-
+| GET    | `/leaderboard`       | 리더보드 조회       | Access Token 필요                       |
 
 
 ## 12. Admin API
