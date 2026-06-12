@@ -33,7 +33,7 @@
          └──────────┘    └──────────────┘     └────┬─────┘  └────────┘
                                                    ▼
                                              ┌──────────┐
-                                             │ ChromaDB │
+                                             │ Qdrant │
                                              │ AI RAG   │
                                              └──────────┘
 ```
@@ -46,12 +46,12 @@
 | ORM | JPA(Hibernate) |
 | RDB | MariaDB/MySQL 계열 |
 | BE 검색 엔진 | Elasticsearch 8.15.3 (전문 검색·BE 검색 기능) — ADR 009 참조 |
-| AI Vector Store | ChromaDB persistent (RAG·라우팅 후보 검색) |
+| AI Vector Store | Qdrant persistent (RAG·라우팅 후보 검색) |
 | 인증 | JWT (Access + Refresh), 비밀번호 BCrypt |
 | 세션/임시 메시지 저장 | Redis (Refresh Token, Flash Chat TTL 메시지 저장) — ADR 003 참조 |
 | LLM | 고객사 배포 설정에 따라 로컬 또는 클라우드 provider 선택 |
 | Embedding | 고객사 배포 설정에 따라 로컬 또는 클라우드 provider 선택 |
-| 메시지 브로커 | Kafka (이벤트 기반 알림 등) |
+| 메시지 브로커 | RabbitMQ (알림·포인트·ESG 비동기 이벤트, 재시도·DLQ) — ADR 010 참조 |
 | 실시간 통신 | Spring WebSocket + STOMP (Flash Chat), SSE/폴링 fallback (알림) |
 | Object Storage | `StoragePort` 기반 Cloudflare R2 / AWS S3 / MinIO — ADR 013 참조 |
 | 배치 | Spring Scheduler (`@Scheduled`) |
@@ -60,15 +60,17 @@
 
 ### 2.3 RAG 파이프라인
 
-1. **인덱싱(이벤트 기반 + 일일 정합성 점검)** — KNOIT_006
-   - 매뉴얼·워키·수기 지식·승인 지식·라우팅 사례의 생성/수정/삭제 이벤트 수신
+1. **인덱싱(`ai_sync_jobs` + 일일 정합성 점검)** — KNOIT_006
+   - 매뉴얼·워키·수기 지식·승인 지식·라우팅 사례 변경 시 같은 트랜잭션으로 `ai_sync_jobs` 생성
    - AI 서버가 문서 유형별로 chunking
-   - 선택된 Embedding provider로 임베딩 생성 → ChromaDB에 upsert
-   - 일일 배치는 누락·실패 데이터 재처리와 RDB/ChromaDB 정합성 점검에 사용
+   - 선택된 Embedding provider로 임베딩 생성 → Qdrant에 upsert
+   - 일일 배치는 누락·실패 데이터 재처리와 RDB/Qdrant 정합성 점검에 사용
+
+RabbitMQ는 알림·포인트·ESG 같은 비동기 도메인 이벤트에 사용한다. AI 인덱싱 재시도는 RabbitMQ가 아니라 `ai_sync_jobs`와 `@Scheduled` 워커가 담당한다.
 
 2. **질의 처리(실시간)** — KNOIT_001~003
    - 사용자 질문 → 민감정보 탐지 및 마스킹(KNOIT_007/008)
-   - 마스킹된 질문 임베딩 → ChromaDB 유사도 검색(top-k)
+   - 마스킹된 질문 임베딩 → Qdrant 유사도 검색(top-k)
    - 검색 후보를 Cross-Encoder로 재정렬
    - 검색된 chunk + 원본 매뉴얼/워키 메타 → LLM 프롬프트 컨텍스트 구성
    - LLM 응답 생성 + 출처 메타 함께 반환(KNOIT_003)
@@ -80,19 +82,21 @@
    - 사용자 불만족 피드백 → 워키 질문 등록 흐름으로 분기
    - 실제 처리나 공식 확인이 필요한 경우 → 요청 티켓 생성 흐름으로 분기, 챗봇 입력 내용을 요청 초안으로 전달
 
-4. **A→B→C→D→E 폴백 오케스트레이션**
+4. **A→B→C→D 폴백 오케스트레이션**
    - A: 매뉴얼 RAG
    - B: 워키 RAG
-   - C: TEAM_ADMIN 승인 지식화 게시판 RAG
+   - C: 지식 RAG
+     - TEAM_ADMIN 승인 지식화 게시판(`KNOWLEDGE_DATA`)
+     - SYSTEM_ADMIN 수기 지식(`MANUAL_KNOWLEDGE`)
    - D: 등록된 API 또는 승인 DB Query Tool
-   - E: SYSTEM_ADMIN 수기 지식 RAG
    - 모든 단계 실패 시 요청 티켓 생성 전환 액션 반환
+   - `knowledge_data`와 `manual_knowledge`는 DB·`sourceType`·collection을 분리하고 C단계 검색 결과만 통합 reranking
    - LangGraph 없이 명시적인 Python `for` loop와 `if-else`로 구현
 
 5. **지식화 발행과 Vector Store 동기화**
    - TEAM_ADMIN 승인 트랜잭션에서 지식 문서와 `ai_sync_jobs` 작업을 함께 저장
    - 커밋 후 `@Scheduled` 워커가 AI 서버에 동기화 요청
-   - AI 서버가 마스킹, chunking, embedding, ChromaDB upsert 수행
+   - AI 서버가 마스킹, chunking, embedding, Qdrant upsert 수행
    - 작업 상태는 `PENDING`, `PROCESSING`, `SYNCED`, `FAILED`로 관리하고 실패 건을 재시도
 
 ### 2.4 Flash Chat 흐름

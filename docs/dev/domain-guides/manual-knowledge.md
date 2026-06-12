@@ -14,11 +14,11 @@
 SYSTEM_ADMIN 등록·수정
 → BE가 원문과 동기화 작업을 같은 트랜잭션으로 저장
 → `@Scheduled` 워커가 PENDING 동기화 작업을 AI 서버에 전달
-→ AI가 민감정보 마스킹 후 chunking/embedding/ChromaDB upsert
+→ AI가 민감정보 마스킹 후 chunking/embedding/Qdrant upsert
 → SYNCED 또는 FAILED
 ```
 
-삭제 시에도 RDB soft delete 후 ChromaDB 문서를 비동기 제거한다.
+삭제 시에도 RDB soft delete 후 Qdrant 문서를 비동기 제거한다.
 
 ## BE 책임
 
@@ -29,8 +29,8 @@ SYSTEM_ADMIN 등록·수정
 
 ## AI 책임
 
-- 모델 호출 전과 ChromaDB 저장 전 민감정보 마스킹
-- chunking, embedding, ChromaDB upsert/delete
+- 모델 호출 전과 Qdrant 저장 전 민감정보 마스킹
+- chunking, embedding, Qdrant upsert/delete
 - 출처 제목과 수정일 메타데이터 구성
 
 ## 구현 전 migration

@@ -17,7 +17,7 @@ Flash Chat은 전사 단일 공개 채널에서 실시간 메시지를 브로드
 
 ## Decision
 
-**STOMP + Spring Simple Broker**로 구현한다. 스케일아웃 필요 시 RabbitMQ로 전환한다.
+**STOMP + Spring Simple Broker**로 구현한다. RabbitMQ는 일반 비동기 도메인 이벤트에 사용하되, Flash Chat은 스케일아웃이 필요해질 때 RabbitMQ STOMP Broker Relay에 연결한다.
 
 ## Rationale
 
