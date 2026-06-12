@@ -47,6 +47,9 @@ public enum ErrorType {
 	MANUAL_FORBIDDEN("manual-002", "매뉴얼 관리 권한이 없습니다.", HttpStatus.FORBIDDEN),
 	MANUAL_INVALID_FILE("manual-003", "매뉴얼 파일이 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
 
+	DIRECT_DATA_NOT_FOUND("direct-data-001", "수기 지식을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+	DIRECT_DATA_ALREADY_DELETED("direct-data-002", "이미 삭제된 수기 지식입니다.", HttpStatus.CONFLICT),
+
 	// notification
 	NOTIFICATION_NOT_FOUND("notification-001", "알림을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 	NOTIFICATION_FORBIDDEN("notification-002", "본인 알림이 아닙니다.", HttpStatus.FORBIDDEN),
