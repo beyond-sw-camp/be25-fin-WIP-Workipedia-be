@@ -23,6 +23,9 @@ import com.wip.workipedia.user.repository.UserRepository;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -49,6 +52,7 @@ public class AdminManualService {
     private final UserRepository userRepository;
     private final PdfTextExtractor pdfTextExtractor;
     private final StorageService storageService;
+    private final Executor applicationTaskExecutor;
 
     public PageResponse<ManualSummaryResponse> findAll(Long actorUserId, ManualStatus status, Pageable pageable) {
         assertSystemAdmin(actorUserId);
@@ -195,23 +199,42 @@ public class AdminManualService {
     }
 
     private List<StoredObject> uploadPdfFiles(List<PdfUpload> uploads) {
-        List<StoredObject> storedObjects = new ArrayList<>();
+        List<CompletableFuture<StoredObject>> uploadFutures = uploads.stream()
+                .map(upload -> CompletableFuture.supplyAsync(() -> uploadPdfFile(upload), applicationTaskExecutor))
+                .toList();
+
         try {
-            for (PdfUpload upload : uploads) {
-                StoredObject stored = storageService.upload(
-                        upload.bytes(),
-                        MANUAL_PDF_KEY_PREFIX,
-                        upload.file().getOriginalFilename(),
-                        PDF_CONTENT_TYPE
-                );
-                deleteStoredFileAfterRollback(stored.objectKey());
-                storedObjects.add(stored);
-            }
-        } catch (RuntimeException exception) {
+            CompletableFuture.allOf(uploadFutures.toArray(CompletableFuture[]::new)).join();
+            List<StoredObject> storedObjects = uploadFutures.stream()
+                    .map(CompletableFuture::join)
+                    .toList();
+            storedObjects.forEach(storedObject -> deleteStoredFileAfterRollback(storedObject.objectKey()));
+            return storedObjects;
+        } catch (CompletionException exception) {
+            List<StoredObject> storedObjects = uploadFutures.stream()
+                    .filter(future -> future.isDone() && !future.isCompletedExceptionally() && !future.isCancelled())
+                    .map(CompletableFuture::join)
+                    .toList();
             storedObjects.forEach(storedObject -> deleteStoredFile(storedObject.objectKey()));
-            throw exception;
+            throw unwrapCompletionException(exception);
         }
-        return storedObjects;
+    }
+
+    private StoredObject uploadPdfFile(PdfUpload upload) {
+        return storageService.upload(
+                upload.bytes(),
+                MANUAL_PDF_KEY_PREFIX,
+                upload.file().getOriginalFilename(),
+                PDF_CONTENT_TYPE
+        );
+    }
+
+    private RuntimeException unwrapCompletionException(CompletionException exception) {
+        Throwable cause = exception.getCause();
+        if (cause instanceof RuntimeException runtimeException) {
+            return runtimeException;
+        }
+        return exception;
     }
 
     private List<PdfUpload> readPdfUploads(List<MultipartFile> files) {
