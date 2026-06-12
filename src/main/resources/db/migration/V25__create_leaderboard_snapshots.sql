@@ -22,7 +22,7 @@ CREATE TABLE leaderboard_snapshots (
     CONSTRAINT uk_leaderboard_snapshots_period_user
         UNIQUE (ranking_period_start, user_id),
     CONSTRAINT ck_leaderboard_snapshots_rank_no
-        CHECK (rank_no BETWEEN 1 AND 3),
+        CHECK (rank_no >= 1),
     CONSTRAINT ck_leaderboard_snapshots_esg_score
         CHECK (esg_score >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

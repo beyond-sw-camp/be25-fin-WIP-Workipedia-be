@@ -10,8 +10,6 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface LeaderboardSnapshotRepository extends JpaRepository<LeaderboardSnapshot, Long> {
 
-    List<LeaderboardSnapshot> findByRankingPeriodStartAndDeletedAtIsNullOrderByRankNoAsc(LocalDate rankingPeriodStart);
-
     @Query(
         value = """
                 SELECT
@@ -25,11 +23,10 @@ public interface LeaderboardSnapshotRepository extends JpaRepository<Leaderboard
                     AND u.deleted_at IS NULL
                     AND u.status = 'ACTIVE'
                 ORDER BY up.esg_score DESC, up.user_id ASC
-                LIMIT 3
                 """,
         nativeQuery = true
     )
-    List<LeaderboardCandidateProjection> findTop3Candidates();
+    List<LeaderboardCandidateProjection> findSnapshotCandidates();
 
     @Query(
         value = """
@@ -52,6 +49,7 @@ public interface LeaderboardSnapshotRepository extends JpaRepository<Leaderboard
                     ON l.grade_id = eg.grade_id
                 WHERE l.ranking_period_start = :rankingPeriodStart
                     AND l.deleted_at IS NULL
+                    AND l.rank_no <= 3
                     AND u.deleted_at IS NULL
                     AND u.status = 'ACTIVE'
                     AND d.deleted_at IS NULL
@@ -61,6 +59,46 @@ public interface LeaderboardSnapshotRepository extends JpaRepository<Leaderboard
         nativeQuery = true
     )
     List<LeaderboardRankerProjection> findRankersByRankingPeriodStart(LocalDate rankingPeriodStart);
+
+    @Query(
+        value = """
+                SELECT
+                    l.rank_no AS rankNo,
+                    l.user_id AS userId,
+                    l.grade_id AS gradeId,
+                    eg.grade_name AS gradeName,
+                    eg.grade_image_url AS gradeImageUrl,
+                    l.esg_score AS esgScore,
+                    COUNT(wa.answer_id) AS answerCount,
+                    COALESCE(SUM(CASE WHEN wa.accepted = TRUE THEN 1 ELSE 0 END), 0) AS acceptedAnswerCount
+                FROM leaderboard_snapshots l
+                JOIN users u
+                    ON l.user_id = u.user_id
+                JOIN esg_grade eg
+                    ON l.grade_id = eg.grade_id
+                LEFT JOIN worki_answers wa
+                    ON wa.author_id = l.user_id
+                    AND wa.deleted_at IS NULL
+                WHERE l.ranking_period_start = :rankingPeriodStart
+                    AND l.user_id = :userId
+                    AND l.deleted_at IS NULL
+                    AND u.deleted_at IS NULL
+                    AND u.status = 'ACTIVE'
+                    AND eg.deleted_at IS NULL
+                GROUP BY
+                    l.rank_no,
+                    l.user_id,
+                    l.grade_id,
+                    eg.grade_name,
+                    eg.grade_image_url,
+                    l.esg_score
+                """,
+        nativeQuery = true
+    )
+    Optional<LeaderboardMySummaryProjection> findMySummaryByRankingPeriodStartAndUserId(
+        LocalDate rankingPeriodStart,
+        Long userId
+    );
 
     @Query("""
             SELECT MAX(l.rankingPeriodStart)
