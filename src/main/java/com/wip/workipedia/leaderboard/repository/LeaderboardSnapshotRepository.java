@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface LeaderboardSnapshotRepository extends JpaRepository<LeaderboardSnapshot, Long> {
 
+    // 스냅샷 생성 대상은 TOP 3가 아니라 전체 활성 사용자다. 그래야 TOP 3 밖의 내 순위도 조회할 수 있다.
     @Query(
         value = """
                 SELECT
@@ -99,6 +100,17 @@ public interface LeaderboardSnapshotRepository extends JpaRepository<Leaderboard
         LocalDate rankingPeriodStart,
         Long userId
     );
+
+    @Query(
+        value = """
+                SELECT COALESCE(SUM(l.esg_score), 0)
+                FROM leaderboard_snapshots l
+                WHERE l.ranking_period_start = :rankingPeriodStart
+                    AND l.deleted_at IS NULL
+                """,
+        nativeQuery = true
+    )
+    long sumEsgScoreByRankingPeriodStart(LocalDate rankingPeriodStart);
 
     @Query("""
             SELECT MAX(l.rankingPeriodStart)

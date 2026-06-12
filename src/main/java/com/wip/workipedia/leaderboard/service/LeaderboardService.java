@@ -23,6 +23,7 @@ public class LeaderboardService {
 
     private final LeaderboardSnapshotRepository leaderboardSnapshotRepository;
 
+    // 최신 주간 스냅샷을 기준으로 TOP 3, 내 요약, 전체 ESG 점수 합계를 한 번에 조회한다.
     public LeaderboardResponse getLeaderboard(Long userId) {
         return leaderboardSnapshotRepository.findLatestRankingPeriodStart()
             .map(rankingPeriodStart -> getLeaderboardByPeriod(rankingPeriodStart, userId))
@@ -34,9 +35,11 @@ public class LeaderboardService {
             leaderboardSnapshotRepository.findRankersByRankingPeriodStart(rankingPeriodStart);
         Optional<LeaderboardMySummaryProjection> mySummary =
             leaderboardSnapshotRepository.findMySummaryByRankingPeriodStartAndUserId(rankingPeriodStart, userId);
-        return LeaderboardResponse.from(rankingPeriodStart, rankers, mySummary);
+        long totalEsgScore = leaderboardSnapshotRepository.sumEsgScoreByRankingPeriodStart(rankingPeriodStart);
+        return LeaderboardResponse.from(rankingPeriodStart, rankers, mySummary, totalEsgScore);
     }
 
+    // 매주 월요일 09:00 기준 전체 활성 사용자 순위를 스냅샷으로 재생성한다.
     @Transactional
     public void refreshWeeklySnapshot() {
         LocalDate rankingPeriodStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));

@@ -19,6 +19,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class LeaderboardSnapshot extends BaseTimeEntity {
 
+    // 특정 주차에 계산된 사용자별 순위와 당시 ESG 점수를 고정 저장한다.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "leaderboard_snapshot_id")

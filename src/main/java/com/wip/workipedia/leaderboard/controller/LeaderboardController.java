@@ -16,6 +16,7 @@ public class LeaderboardController {
 
     private final LeaderboardService leaderboardService;
 
+    // 리더보드 조회
     @GetMapping
     public ResponseEntity<LeaderboardResponse> getLeaderboard(@AuthenticationPrincipal Long userId) {
         return ResponseEntity.ok(leaderboardService.getLeaderboard(userId));
