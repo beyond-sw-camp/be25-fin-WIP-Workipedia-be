@@ -6,6 +6,10 @@ public interface LeaderboardMySummaryProjection {
 
     Long getUserId();
 
+    String getNickname();
+
+    String getDepartmentName();
+
     Integer getGradeId();
 
     String getGradeName();

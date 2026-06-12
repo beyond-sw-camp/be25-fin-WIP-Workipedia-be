@@ -66,6 +66,8 @@ public record LeaderboardResponse(
     public record LeaderboardMySummaryResponse(
         int rank,
         Long userId,
+        String nickname,
+        String departmentName,
         Integer gradeId,
         String gradeName,
         String gradeImageUrl,
@@ -78,6 +80,8 @@ public record LeaderboardResponse(
             return new LeaderboardMySummaryResponse(
                 projection.getRankNo(),
                 projection.getUserId(),
+                projection.getNickname(),
+                projection.getDepartmentName(),
                 projection.getGradeId(),
                 projection.getGradeName(),
                 projection.getGradeImageUrl(),
