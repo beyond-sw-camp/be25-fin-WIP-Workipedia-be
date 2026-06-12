@@ -26,8 +26,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -37,7 +37,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AdminManualService {
 
@@ -52,7 +51,27 @@ public class AdminManualService {
     private final UserRepository userRepository;
     private final PdfTextExtractor pdfTextExtractor;
     private final StorageService storageService;
-    private final Executor applicationTaskExecutor;
+    private final Executor manualPdfUploadExecutor;
+
+    public AdminManualService(
+            ManualRepository manualRepository,
+            ManualFileRepository manualFileRepository,
+            ManualVersionRepository manualVersionRepository,
+            DepartmentRepository departmentRepository,
+            UserRepository userRepository,
+            PdfTextExtractor pdfTextExtractor,
+            StorageService storageService,
+            @Qualifier("manualPdfUploadExecutor") Executor manualPdfUploadExecutor
+    ) {
+        this.manualRepository = manualRepository;
+        this.manualFileRepository = manualFileRepository;
+        this.manualVersionRepository = manualVersionRepository;
+        this.departmentRepository = departmentRepository;
+        this.userRepository = userRepository;
+        this.pdfTextExtractor = pdfTextExtractor;
+        this.storageService = storageService;
+        this.manualPdfUploadExecutor = manualPdfUploadExecutor;
+    }
 
     public PageResponse<ManualSummaryResponse> findAll(Long actorUserId, ManualStatus status, Pageable pageable) {
         assertSystemAdmin(actorUserId);
@@ -200,7 +219,7 @@ public class AdminManualService {
 
     private List<StoredObject> uploadPdfFiles(List<PdfUpload> uploads) {
         List<CompletableFuture<StoredObject>> uploadFutures = uploads.stream()
-                .map(upload -> CompletableFuture.supplyAsync(() -> uploadPdfFile(upload), applicationTaskExecutor))
+                .map(upload -> CompletableFuture.supplyAsync(() -> uploadPdfFile(upload), manualPdfUploadExecutor))
                 .toList();
 
         try {
