@@ -144,14 +144,14 @@ Authorization: Bearer <accessToken>
 
 | Method | Path                                    | 설명     | 인증  |
 | ------ | --------------------------------------- | ------ | --- |
-| GET    | `/worki/questions`                      | 질문 목록  | 필요  |
-| POST   | `/worki/questions`                      | 질문 등록  | 필요  |
-| GET    | `/worki/questions/{questionId}`         | 질문 상세  | 필요  |
-| PATCH  | `/worki/questions/{questionId}`         | 질문 수정  | 필요  |
-| POST   | `/worki/questions/{questionId}/answers` | 답변 등록  | 필요  |
-| POST   | `/worki/answers/{answerId}/accept`      | 답변 채택  | 필요  |
-| POST   | `/worki/questions/{questionId}/like`    | 좋아요    | 필요  |
-| DELETE | `/worki/questions/{questionId}/like`    | 좋아요 취소 | 필요  |
+| GET    | `/worki/questions`                      | 질문 목록  | USER  |
+| POST   | `/worki/questions`                      | 질문 등록  | USER  |
+| GET    | `/worki/questions/{questionId}`         | 질문 상세  | USER  |
+| PATCH  | `/worki/questions/{questionId}`         | 질문 수정  | USER  |
+| POST   | `/worki/questions/{questionId}/answers` | 답변 등록  | USER  |
+| POST   | `/worki/answers/{answerId}/accept`      | 답변 채택  | USER  |
+| POST   | `/worki/questions/{questionId}/like`    | 좋아요    | USER  |
+| DELETE | `/worki/questions/{questionId}/like`    | 좋아요 취소 | USER  |
 
 
 ## 7. Ticket API
@@ -189,9 +189,9 @@ Authorization: Bearer <accessToken>
 
 | Method | Path                   | 설명        | 인증  |
 | ------ | ---------------------- | --------- | --- |
-| GET    | `/faq/worki/popular`   | 인기 워키     | 필요  |
-| GET    | `/faq/manuals/popular` | 인기 매뉴얼    | 필요  |
-| GET    | `/faq/manuals/recent`  | 최근 등록 매뉴얼 | 필요  |
+| GET    | `/faq/worki/popular`   | 인기 워키     | USER  |
+| GET    | `/faq/manuals/popular` | 인기 매뉴얼    | USER  |
+| GET    | `/faq/manuals/recent`  | 최근 등록 매뉴얼 | USER  |
 
 
 ## 9. Notification API
@@ -201,11 +201,11 @@ Authorization: Bearer <accessToken>
 
 | Method | Path                                   | 설명        | 인증  |
 | ------ | -------------------------------------- | --------- | --- |
-| GET    | `/notifications`                       | 알림 목록     | 필요  |
-| GET    | `/notifications/unread-count`          | 미읽은 알림 갯수 | 필요  |
-| PATCH  | `/notifications/{notificationId}/read` | 개별 읽음     | 필요  |
-| PATCH  | `/notifications/read-all`              | 모두 읽음     | 필요  |
-| DELETE | `/notifications/{notificationId}`      | 알림 삭제     | 필요  |
+| GET    | `/notifications`                       | 알림 목록     | USER  |
+| GET    | `/notifications/unread-count`          | 미읽은 알림 갯수 | USER  |
+| PATCH  | `/notifications/{notificationId}/read` | 개별 읽음     | USER  |
+| PATCH  | `/notifications/read-all`              | 모두 읽음     | USER  |
+| DELETE | `/notifications/{notificationId}`      | 알림 삭제     | USER  |
 
 
 > Phase 2: `GET /notifications/stream` (SSE 실시간 알림) — MVP는 DB 저장 + 조회 API 기반으로 시작 (ADR 007)
@@ -316,27 +316,41 @@ Authorization: Bearer <accessToken>
 | POST   | `/admin/direct-data`             | 수기 지식 등록                             | SYSTEM_ADMIN   |
 | PUT    | `/admin/direct-data/{id}`        | 수기 지식 수정                             | SYSTEM_ADMIN   |
 | DELETE | `/admin/direct-data/{id}`        | 수기 지식 삭제                             | SYSTEM_ADMIN   |
-| GET    | `/direct-data`                   | 활성 수기 지식 목록 조회                     | 필요             |
-| GET    | `/direct-data/{id}`              | 활성 수기 지식 상세 조회                     | 필요             |
+
 
 
 
 
 ## 13.매뉴얼 (Manual)
 
+담당: 김가영
+
 | Method | Path                            | 설명                | 인증           |
 | ------ | ------------------------------- | ----------------- | ------------ |
-| GET    | `/admin/manuals`                | 매뉴얼 목록 조회         | SYSTEM_ADMIN |
-| POST   | `/admin/manuals`                | 매뉴얼 등록 (본문 직접 입력) | SYSTEM_ADMIN |
-| POST   | `/admin/manuals/pdf`            | 매뉴얼 등록 (PDF 업로드)  | SYSTEM_ADMIN |
-| GET    | `/admin/manuals/{manualId}`     | 매뉴얼 상세 조회         | SYSTEM_ADMIN |
-| PATCH  | `/admin/manuals/{manualId}`     | 매뉴얼 수정 (부분 수정)    | SYSTEM_ADMIN |
-| PATCH  | `/admin/manuals/{manualId}/pdf` | 매뉴얼 본문 PDF 교체     | SYSTEM_ADMIN |
-| DELETE | `/admin/manuals/{manualId}`     | 매뉴얼 삭제            | SYSTEM_ADMIN |
+| GET    | `/manuals`                | 매뉴얼 목록 조회         | USER |
+| GET    | `/manuals/{manualId}`     | 매뉴얼 상세 조회         | USER |
 
 
+## 14.수기지식 게시판 
 
-## 14. 미정 항목
+담당: 김가영
+
+| Method | Path                            | 설명                | 인증           |
+| ------ | ------------------------------- | ----------------- | ------------ |
+| GET    | `/direct-data`                   | 활성 수기 지식 목록 조회                     | USER             |
+| GET    | `/direct-data/{id}`              | 활성 수기 지식 상세 조회                     | USER             |
+
+
+## 15. 지식화 게시판
+
+담당: 김가영
+
+| Method | Path                            | 설명                | 인증           |
+| ------ | ------------------------------- | ----------------- | ------------ |
+| GET    | `/knowledge-data`                   | 지식화 게시판 목록 조회                     | USER             |
+| GET    | `/knowledge-data/{id}`              | 지식화 게시판 상세 조회                     | USER             |
+
+## 16. 미정 항목
 
 
 | 항목                               | 상태                      | 결정 필요자    |
