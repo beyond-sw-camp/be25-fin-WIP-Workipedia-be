@@ -14,6 +14,7 @@ import com.wip.workipedia.department.dto.DepartmentResponse;
 import com.wip.workipedia.department.dto.RoutingPromptEditRequest;
 import com.wip.workipedia.department.repository.DepartmentRepository;
 import com.wip.workipedia.department.repository.RoutingPromptRepository;
+import com.wip.workipedia.user.domain.UserStatus;
 import com.wip.workipedia.user.repository.UserRepository.DepartmentMemberCountProjection;
 import com.wip.workipedia.user.repository.UserRepository;
 import java.util.List;
@@ -76,7 +77,7 @@ public class DepartmentService {
 		return AdminDepartmentResponse.from(
 			department,
 			findPromptContent(departmentId),
-			userRepository.countByDepartment_DepartmentId(departmentId)
+			userRepository.countByDepartment_DepartmentIdAndDeletedAtIsNullAndStatus(departmentId, UserStatus.ACTIVE)
 		);
 	}
 
@@ -149,7 +150,7 @@ public class DepartmentService {
 			.map(Department::getDepartmentId)
 			.toList();
 
-		return userRepository.countMembersByDepartmentIds(departmentIds)
+		return userRepository.countMembersByDepartmentIds(departmentIds, UserStatus.ACTIVE)
 			.stream()
 			.collect(Collectors.toMap(
 				DepartmentMemberCountProjection::getDepartmentId,

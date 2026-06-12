@@ -35,7 +35,7 @@ public class AdminPointService {
 	// 관리자 화면에서 전체 사용자 포인트 목록을 조회한다.
 	@Transactional(readOnly = true)
 	public PageResponse<AdminPointResponse> findAll(Pageable pageable) {
-		Page<User> users = userRepository.findAll(pageable);
+		Page<User> users = userRepository.findByDeletedAtIsNull(pageable);
 		Map<Long, UserPoint> pointMap = findUserPointMap(users.getContent());
 
 		return PageResponse.from(users.map(user -> AdminPointResponse.of(

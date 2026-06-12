@@ -21,7 +21,7 @@ public class AdminUserService {
 
 	@Transactional(readOnly = true)
 	public PageResponse<AdminUserResponse> findAll(Pageable pageable) {
-		return PageResponse.from(userRepository.findAll(pageable).map(AdminUserResponse::from));
+		return PageResponse.from(userRepository.findByDeletedAtIsNull(pageable).map(AdminUserResponse::from));
 	}
 
 	@Transactional(readOnly = true)
