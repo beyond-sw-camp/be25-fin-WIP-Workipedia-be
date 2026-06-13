@@ -88,12 +88,7 @@ public class NotificationService {
                         "/me/tickets/" + ticket.getTicketId()
                 )));
     }
-
     public void createWorkiQuestionCreated(Long userId, Long questionId, String questionTitle) {
-        createWorkiQuestionCreated(userId, questionId, questionTitle, null);
-    }
-
-    public void createWorkiQuestionCreated(Long userId, Long questionId, String questionTitle, Integer pointAmount) {
         createAfterCommit("worki question created notification", () ->
                 notificationRepository.save(Notification.create(
                         userId,
@@ -102,16 +97,10 @@ public class NotificationService {
                         questionTitle,
                         NotificationTargetType.WORKI_QUESTION,
                         questionId,
-                        "/worki/questions/" + questionId,
-                        pointAmount
+                        "/worki/questions/" + questionId
                 )));
     }
-
     public void createWorkiQuestionAnswered(Long userId, Long questionId, String questionTitle) {
-        createWorkiQuestionAnswered(userId, questionId, questionTitle, null);
-    }
-
-    public void createWorkiQuestionAnswered(Long userId, Long questionId, String questionTitle, Integer pointAmount) {
         createAfterCommit("worki question answered notification", () ->
                 notificationRepository.save(Notification.create(
                         userId,
@@ -120,22 +109,10 @@ public class NotificationService {
                         questionTitle,
                         NotificationTargetType.WORKI_QUESTION,
                         questionId,
-                        "/worki/questions/" + questionId,
-                        pointAmount
+                        "/worki/questions/" + questionId
                 )));
     }
-
     public void createWorkiAnswerAccepted(Long userId, Long answerId, Long questionId, String questionTitle) {
-        createWorkiAnswerAccepted(userId, answerId, questionId, questionTitle, null);
-    }
-
-    public void createWorkiAnswerAccepted(
-            Long userId,
-            Long answerId,
-            Long questionId,
-            String questionTitle,
-            Integer pointAmount
-    ) {
         createAfterCommit("worki answer accepted notification", () ->
                 notificationRepository.save(Notification.create(
                         userId,
@@ -144,8 +121,7 @@ public class NotificationService {
                         questionTitle,
                         NotificationTargetType.WORKI_ANSWER,
                         answerId,
-                        "/worki/questions/" + questionId,
-                        pointAmount
+                        "/worki/questions/" + questionId
                 )));
     }
 

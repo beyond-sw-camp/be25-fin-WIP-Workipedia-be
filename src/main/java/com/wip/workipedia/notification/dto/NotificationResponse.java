@@ -14,7 +14,6 @@ public record NotificationResponse(
         Long targetId,
         // 프론트는 알림 클릭 시 이 경로로 라우팅한다.
         String targetUrl,
-        Integer pointAmount,
         LocalDateTime readAt,
         LocalDateTime createdAt
 ) {
@@ -27,7 +26,6 @@ public record NotificationResponse(
                 n.getTargetType(),
                 n.getTargetId(),
                 n.getTargetUrl(),
-                n.getPointAmount(),
                 n.getReadAt(),
                 n.getCreatedAt()
         );
