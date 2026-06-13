@@ -37,6 +37,13 @@ public enum ErrorType {
 	// ticket
 	TICKET_NOT_FOUND("ticket-001", "티켓을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 
+	TICKET_FORBIDDEN("ticket-002", "티켓 처리 권한이 없습니다.", HttpStatus.FORBIDDEN),
+	TICKET_INVALID_TRANSFER("ticket-003", "현재 상태에서는 티켓을 이관할 수 없습니다.", HttpStatus.CONFLICT),
+	TICKET_TRANSFER_REASON_REQUIRED("ticket-004", "티켓 이관 사유는 필수입니다.", HttpStatus.BAD_REQUEST),
+	TICKET_INVALID_ANSWER("ticket-005", "현재 상태에서는 티켓 답변을 등록할 수 없습니다.", HttpStatus.CONFLICT),
+	TICKET_INVALID_ASSIGNMENT("ticket-006", "현재 상태에서는 티켓을 배정할 수 없습니다.", HttpStatus.CONFLICT),
+	TICKET_INVALID_ATTACHMENT("ticket-007", "티켓 답변 첨부파일이 유효하지 않습니다.", HttpStatus.BAD_REQUEST),
+
 	// worki
 	WORKI_NOT_FOUND("worki-001", "워키 리소스를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 	WORKI_FORBIDDEN("worki-002", "해당 작업에 대한 권한이 없습니다.", HttpStatus.FORBIDDEN),
