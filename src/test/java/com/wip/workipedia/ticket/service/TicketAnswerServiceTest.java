@@ -88,6 +88,21 @@ class TicketAnswerServiceTest {
 	}
 
 	@Test
+	void createOfficialAnswer_rejectsUserWithoutDepartment() {
+		TicketAnswerService service = new TicketAnswerService(
+			ticketRepository, ticketAnswerRepository, userRepository, notificationService, storageService);
+		User actor = mock(User.class);
+		when(actor.getDepartment()).thenReturn(null);
+		when(userRepository.findById(1L)).thenReturn(Optional.of(actor));
+		when(ticketRepository.findActiveByTicketIdForUpdate(100L)).thenReturn(Optional.of(assignedTicket(100L, 10L)));
+
+		assertThatThrownBy(() -> service.createOfficialAnswer(1L, 100L, new TicketAnswerCreateRequest("답변")))
+			.isInstanceOf(CustomException.class)
+			.extracting("errorType")
+			.isEqualTo(ErrorType.TICKET_FORBIDDEN);
+	}
+
+	@Test
 	void createOfficialAnswer_rejectsCompletedTicket() {
 		TicketAnswerService service = new TicketAnswerService(
 			ticketRepository, ticketAnswerRepository, userRepository, notificationService, storageService);

@@ -89,6 +89,9 @@ public class TicketAnswerService {
 	}
 
 	private void assertAssignedDepartmentMember(User actor, Ticket ticket) {
+		if (actor.getDepartment() == null) {
+			throw new CustomException(ErrorType.TICKET_FORBIDDEN);
+		}
 		Long actorDepartmentId = actor.getDepartment().getDepartmentId();
 		if (!actorDepartmentId.equals(ticket.getAssignedDepartmentId())) {
 			throw new CustomException(ErrorType.TICKET_FORBIDDEN);
