@@ -5,6 +5,7 @@ import com.wip.workipedia.storage.dto.PresignedDownloadResponse;
 import com.wip.workipedia.storage.dto.PresignedUploadRequest;
 import com.wip.workipedia.storage.dto.PresignedUploadResponse;
 import com.wip.workipedia.storage.dto.StoredObject;
+import com.wip.workipedia.storage.dto.StoredObjectMetadata;
 import com.wip.workipedia.storage.port.StoragePort;
 import java.time.Duration;
 import java.util.UUID;
@@ -15,6 +16,8 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
@@ -84,6 +87,21 @@ public class S3StorageAdapter implements StoragePort {
     }
 
     @Override
+    public StoredObjectMetadata getObjectMetadata(String objectKey) {
+        HeadObjectResponse response = s3Client.headObject(HeadObjectRequest.builder()
+            .bucket(bucket)
+            .key(objectKey)
+            .build());
+        return new StoredObjectMetadata(
+            objectKey,
+            buildPublicUrl(objectKey),
+            extractFileName(objectKey),
+            response.contentType(),
+            response.contentLength()
+        );
+    }
+
+    @Override
     public PresignedDownloadResponse createPresignedDownloadUrl(String objectKey) {
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
             .bucket(bucket)
@@ -112,5 +130,10 @@ public class S3StorageAdapter implements StoragePort {
             ? publicBaseUrl.substring(0, publicBaseUrl.length() - 1)
             : publicBaseUrl;
         return base + "/" + objectKey;
+    }
+
+    private String extractFileName(String objectKey) {
+        int lastSlashIndex = objectKey.lastIndexOf('/');
+        return lastSlashIndex >= 0 ? objectKey.substring(lastSlashIndex + 1) : objectKey;
     }
 }

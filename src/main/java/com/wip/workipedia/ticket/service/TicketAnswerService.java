@@ -3,6 +3,8 @@ package com.wip.workipedia.ticket.service;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.notification.service.NotificationService;
+import com.wip.workipedia.storage.dto.StoredObjectMetadata;
+import com.wip.workipedia.storage.service.StorageService;
 import com.wip.workipedia.ticket.domain.Ticket;
 import com.wip.workipedia.ticket.domain.TicketAnswer;
 import com.wip.workipedia.ticket.domain.TicketStatus;
@@ -21,10 +23,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class TicketAnswerService {
 
+	private static final String TICKET_REPLY_FILE_PREFIX = "tickets/replies/";
+
 	private final TicketRepository ticketRepository;
 	private final TicketAnswerRepository ticketAnswerRepository;
 	private final UserRepository userRepository;
 	private final NotificationService notificationService;
+	private final StorageService storageService;
 
 	@Transactional
 	public TicketAnswerResponse createOfficialAnswer(Long actorUserId, Long ticketId, TicketAnswerCreateRequest request) {
@@ -33,17 +38,18 @@ public class TicketAnswerService {
 			.orElseThrow(() -> new CustomException(ErrorType.TICKET_NOT_FOUND));
 		assertAssignedDepartmentMember(actor, ticket);
 		validateAnswerable(ticket);
+		StoredObjectMetadata attachment = resolveAttachment(request.fileKey());
 
 		TicketAnswer answer = ticketAnswerRepository.save(
 			TicketAnswer.create(
 				ticket.getTicketId(),
 				actor.getUserId(),
 				request.content().trim(),
-				request.fileKey(),
-				request.fileUrl(),
-				request.fileName(),
-				request.fileContentType(),
-				request.fileSize()
+				attachment == null ? null : attachment.objectKey(),
+				attachment == null ? null : attachment.publicUrl(),
+				attachment == null ? null : attachment.fileName(),
+				attachment == null ? null : attachment.contentType(),
+				attachment == null ? null : attachment.contentLength()
 			)
 		);
 		ticket.complete();
@@ -60,6 +66,21 @@ public class TicketAnswerService {
 			.orElseThrow(() -> new CustomException(ErrorType.TICKET_NOT_FOUND, "Ticket answer not found."));
 		User author = userRepository.findById(answer.getAuthorId()).orElse(null);
 		return TicketAnswerResponse.from(answer, author);
+	}
+
+	private StoredObjectMetadata resolveAttachment(String objectKey) {
+		if (objectKey == null || objectKey.isBlank()) {
+			return null;
+		}
+		String normalizedKey = objectKey.trim();
+		if (!normalizedKey.startsWith(TICKET_REPLY_FILE_PREFIX)) {
+			throw new CustomException(ErrorType.TICKET_INVALID_ATTACHMENT);
+		}
+		try {
+			return storageService.getObjectMetadata(normalizedKey);
+		} catch (RuntimeException e) {
+			throw new CustomException(ErrorType.TICKET_INVALID_ATTACHMENT);
+		}
 	}
 
 	private User getUser(Long userId) {

@@ -11,6 +11,8 @@ import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.department.domain.Department;
 import com.wip.workipedia.notification.service.NotificationService;
+import com.wip.workipedia.storage.dto.StoredObjectMetadata;
+import com.wip.workipedia.storage.service.StorageService;
 import com.wip.workipedia.ticket.domain.RoutingDecision;
 import com.wip.workipedia.ticket.domain.Ticket;
 import com.wip.workipedia.ticket.domain.TicketAnswer;
@@ -44,10 +46,13 @@ class TicketAnswerServiceTest {
 	@Mock
 	private NotificationService notificationService;
 
+	@Mock
+	private StorageService storageService;
+
 	@Test
 	void createOfficialAnswer_savesAnswerAndCompletesTicket() {
 		TicketAnswerService service = new TicketAnswerService(
-			ticketRepository, ticketAnswerRepository, userRepository, notificationService);
+			ticketRepository, ticketAnswerRepository, userRepository, notificationService, storageService);
 		User actor = user(1L, 10L);
 		Ticket ticket = assignedTicket(100L, 10L);
 		when(userRepository.findById(1L)).thenReturn(Optional.of(actor));
@@ -71,7 +76,7 @@ class TicketAnswerServiceTest {
 	@Test
 	void createOfficialAnswer_rejectsOtherDepartmentUser() {
 		TicketAnswerService service = new TicketAnswerService(
-			ticketRepository, ticketAnswerRepository, userRepository, notificationService);
+			ticketRepository, ticketAnswerRepository, userRepository, notificationService, storageService);
 		User actor = user(1L, 20L);
 		when(userRepository.findById(1L)).thenReturn(Optional.of(actor));
 		when(ticketRepository.findActiveByTicketIdForUpdate(100L)).thenReturn(Optional.of(assignedTicket(100L, 10L)));
@@ -85,7 +90,7 @@ class TicketAnswerServiceTest {
 	@Test
 	void createOfficialAnswer_rejectsCompletedTicket() {
 		TicketAnswerService service = new TicketAnswerService(
-			ticketRepository, ticketAnswerRepository, userRepository, notificationService);
+			ticketRepository, ticketAnswerRepository, userRepository, notificationService, storageService);
 		Ticket ticket = assignedTicket(100L, 10L);
 		ticket.complete();
 		User actor = user(1L, 10L);
@@ -96,6 +101,48 @@ class TicketAnswerServiceTest {
 			.isInstanceOf(CustomException.class)
 			.extracting("errorType")
 			.isEqualTo(ErrorType.TICKET_INVALID_ANSWER);
+	}
+
+	@Test
+	void createOfficialAnswer_resolvesAttachmentMetadataFromStorage() {
+		TicketAnswerService service = new TicketAnswerService(
+			ticketRepository, ticketAnswerRepository, userRepository, notificationService, storageService);
+		User actor = user(1L, 10L);
+		Ticket ticket = assignedTicket(100L, 10L);
+		String objectKey = "tickets/replies/uuid/guide.pdf";
+		when(userRepository.findById(1L)).thenReturn(Optional.of(actor));
+		when(ticketRepository.findActiveByTicketIdForUpdate(100L)).thenReturn(Optional.of(ticket));
+		when(storageService.getObjectMetadata(objectKey)).thenReturn(
+			new StoredObjectMetadata(objectKey, "https://r2.example.com/" + objectKey, "guide.pdf", "application/pdf", 1234L)
+		);
+		when(ticketAnswerRepository.save(org.mockito.ArgumentMatchers.any(TicketAnswer.class)))
+			.thenAnswer(invocation -> {
+				TicketAnswer answer = invocation.getArgument(0);
+				ReflectionTestUtils.setField(answer, "ticketAnswerId", 500L);
+				return answer;
+			});
+
+		var response = service.createOfficialAnswer(1L, 100L, new TicketAnswerCreateRequest("답변", objectKey));
+
+		assertThat(response.fileKey()).isEqualTo(objectKey);
+		assertThat(response.fileUrl()).isEqualTo("https://r2.example.com/" + objectKey);
+		assertThat(response.fileName()).isEqualTo("guide.pdf");
+		assertThat(response.fileContentType()).isEqualTo("application/pdf");
+		assertThat(response.fileSize()).isEqualTo(1234L);
+	}
+
+	@Test
+	void createOfficialAnswer_rejectsAttachmentOutsideTicketReplyPrefix() {
+		TicketAnswerService service = new TicketAnswerService(
+			ticketRepository, ticketAnswerRepository, userRepository, notificationService, storageService);
+		User actor = user(1L, 10L);
+		when(userRepository.findById(1L)).thenReturn(Optional.of(actor));
+		when(ticketRepository.findActiveByTicketIdForUpdate(100L)).thenReturn(Optional.of(assignedTicket(100L, 10L)));
+
+		assertThatThrownBy(() -> service.createOfficialAnswer(1L, 100L, new TicketAnswerCreateRequest("답변", "manuals/uuid/file.pdf")))
+			.isInstanceOf(CustomException.class)
+			.extracting("errorType")
+			.isEqualTo(ErrorType.TICKET_INVALID_ATTACHMENT);
 	}
 
 	private Ticket assignedTicket(Long ticketId, Long departmentId) {

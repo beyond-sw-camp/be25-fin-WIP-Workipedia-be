@@ -42,6 +42,7 @@ public enum ErrorType {
 	TICKET_TRANSFER_REASON_REQUIRED("ticket-004", "티켓 이관 사유는 필수입니다.", HttpStatus.BAD_REQUEST),
 	TICKET_INVALID_ANSWER("ticket-005", "현재 상태에서는 티켓 답변을 등록할 수 없습니다.", HttpStatus.CONFLICT),
 	TICKET_INVALID_ASSIGNMENT("ticket-006", "현재 상태에서는 티켓을 배정할 수 없습니다.", HttpStatus.CONFLICT),
+	TICKET_INVALID_ATTACHMENT("ticket-007", "티켓 답변 첨부파일이 유효하지 않습니다.", HttpStatus.BAD_REQUEST),
 
 	// worki
 	WORKI_NOT_FOUND("worki-001", "워키 리소스를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
