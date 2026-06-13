@@ -79,7 +79,7 @@ public class Ticket {
 		ticket.priority = priority;
 		ticket.title = title;
 		ticket.content = content;
-		ticket.status = TicketStatus.RECEIVED;
+		ticket.status = TicketStatus.COMMON_QUEUE;
 		ticket.createdAt = now;
 		ticket.updatedAt = now;
 		return ticket;
@@ -101,6 +101,30 @@ public class Ticket {
 
 	public void assignTo(Long assigneeId) {
 		this.assigneeId = assigneeId;
+		touch();
+	}
+
+	public void assignDepartment(Long departmentId) {
+		this.assignedDepartmentId = departmentId;
+		this.assigneeId = null;
+		this.assignedAt = LocalDateTime.now();
+		this.routingDecision = RoutingDecision.ADMIN_REVIEW;
+		this.status = TicketStatus.ASSIGNED;
+		touch();
+	}
+
+	public void transferToCommonQueue() {
+		this.assigneeId = null;
+		this.assignedDepartmentId = null;
+		this.assignedAt = null;
+		this.routingDecision = RoutingDecision.COMMON_QUEUE;
+		this.status = TicketStatus.COMMON_QUEUE;
+		touch();
+	}
+
+	public void complete() {
+		this.status = TicketStatus.COMPLETED;
+		this.completedAt = LocalDateTime.now();
 		touch();
 	}
 
