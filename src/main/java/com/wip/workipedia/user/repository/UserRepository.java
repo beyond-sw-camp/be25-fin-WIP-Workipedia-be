@@ -18,6 +18,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
 	Page<User> findByDeletedAtIsNull(Pageable pageable);
 
+	List<User> findByDeletedAtIsNullAndStatus(UserStatus status);
+
 	Optional<User> findByEmployeeIdAndEmail(String employeeId, String email);
 
 	boolean existsByEmployeeId(String employeeId);

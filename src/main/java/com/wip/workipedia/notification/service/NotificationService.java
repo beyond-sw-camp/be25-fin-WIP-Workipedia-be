@@ -150,19 +150,33 @@ public class NotificationService {
     }
 
     public void createManualUpdated(Long userId, Long manualId, String manualTitle) {
-        createManualUpdated(userId, manualId, manualTitle, null);
+        createManualUpdated(userId, manualId, manualTitle, null, null);
     }
 
     public void createManualUpdated(Long userId, Long manualId, String manualTitle, String manualVersion) {
+        createManualUpdated(userId, manualId, manualTitle, manualVersion, null);
+    }
+
+    // 매뉴얼 업데이트 알림은 알림창에서 버전 정보와 수정 요약을 함께 보여준다.
+    public void createManualUpdated(
+            Long userId,
+            Long manualId,
+            String manualTitle,
+            String manualVersion,
+            String updateSummary
+    ) {
         String versionText = manualVersion == null || manualVersion.isBlank()
                 ? "새 버전"
                 : manualVersion;
+        String summaryText = updateSummary == null || updateSummary.isBlank()
+                ? ""
+                : " 수정 내용: " + updateSummary;
         createAfterCommit("manual updated notification", () ->
                 notificationRepository.save(Notification.create(
                         userId,
                         NotificationType.MANUAL_UPDATED,
                         "매뉴얼이 업데이트되었습니다",
-                        manualTitle + " 매뉴얼이 " + versionText + "으로 업데이트 되었습니다.",
+                        manualTitle + " 매뉴얼이 " + versionText + "으로 업데이트 되었습니다." + summaryText,
                         NotificationTargetType.MANUAL,
                         manualId,
                         "/manuals/" + manualId
