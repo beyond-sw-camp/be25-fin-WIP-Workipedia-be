@@ -64,3 +64,22 @@
 - 게시판 탭은 `target_type`이 `WORKI_QUESTION` 또는 `WORKI_ANSWER`이고 타입이 게시판 알림 타입인 알림만 조회한다.
 - 매뉴얼 탭은 `target_type = MANUAL`이고 타입이 `MANUAL_UPDATED`인 알림만 조회한다.
 - 삭제된 알림은 `deleted_at`이 존재하므로 알림창 목록에서 제외한다.
+
+## 관리자 수기 지식 알림
+
+관리자 수기 지식 알림은 별도 탭을 만들지 않고 기존 매뉴얼 탭에 함께 노출한다.
+
+| 상황 | 도메인 기준 | 알림 타입 | 이동 경로 |
+| --- | --- | --- | --- |
+| 수기 지식이 활성 상태로 등록된 경우 | `direct_data.is_active = 'Y'` | `notifications.type = DIRECT_DATA_ACTIVATED` | `/direct-data/{directDataId}` |
+| 비활성 수기 지식이 활성화된 경우 | `direct_data.is_active = 'N'` -> `'Y'` | `notifications.type = DIRECT_DATA_ACTIVATED` | `/direct-data/{directDataId}` |
+
+### 생성 기준
+
+- 관리자 수기 지식 `create()`에서 저장 결과가 활성 상태이면 알림을 생성한다.
+- 관리자 수기 지식 `update()`에서 기존 비활성 데이터가 활성 상태로 바뀌면 알림을 생성한다.
+- 비활성 상태로 등록되거나, 이미 활성 상태인 데이터를 수정하는 경우에는 중복 알림을 생성하지 않는다.
+- 알림 수신자는 삭제되지 않은 전체 활성 사용자다.
+- 알림 생성은 `notification_settings`와 무관하게 알림창 이력 생성을 위해 `notifications`에 저장한다.
+- 매뉴얼 탭 조회는 `MANUAL_UPDATED` 알림과 `DIRECT_DATA_ACTIVATED` 알림을 함께 반환한다.
+- 수기 지식 알림은 현재 활성 상태이고 삭제되지 않은 `direct_data`만 매뉴얼 탭에 노출한다.

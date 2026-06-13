@@ -183,6 +183,22 @@ public class NotificationService {
                 )));
     }
 
+    // 활성화된 관리자 수기 지식은 매뉴얼 탭에서 함께 조회되는 지식성 콘텐츠 알림으로 생성한다.
+    public void createDirectDataActivated(Long userId, Long directDataId, String directDataTitle) {
+        // 수기 지식은 별도 탭을 만들지 않고 매뉴얼 탭에서 함께 조회되는 지식성 알림으로 저장한다.
+        createAfterCommit("direct data activated notification", () ->
+                notificationRepository.save(Notification.create(
+                        userId,
+                        NotificationType.DIRECT_DATA_ACTIVATED,
+                        "관리자 수기 지식 등록",
+                        directDataTitle,
+                        NotificationTargetType.DIRECT_DATA,
+                        directDataId,
+                        // 프론트는 알림 클릭 시 이 경로로 활성화된 수기 지식 상세 화면을 라우팅한다.
+                        "/direct-data/" + directDataId
+                )));
+    }
+
     @Transactional
     public void markAsRead(Long actorUserId, Long notificationId) {
         Notification notification = getOwnedNotification(actorUserId, notificationId);

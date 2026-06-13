@@ -63,6 +63,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
                 NotificationType.MANUAL_UPDATED,
                 NotificationTargetType.MANUAL,
                 ManualStatus.PUBLISHED,
+                NotificationType.DIRECT_DATA_ACTIVATED,
+                NotificationTargetType.DIRECT_DATA,
                 pageable
         );
     }
@@ -72,21 +74,39 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
               FROM Notification n
              WHERE n.userId = :userId
                AND n.deletedAt IS NULL
-               AND n.type = :type
-               AND n.targetType = :targetType
-               AND EXISTS (
-                   SELECT m.manualId
-                     FROM Manual m
-                    WHERE m.manualId = n.targetId
-                      AND m.status = :manualStatus
+               AND (
+                   (
+                       n.type = :manualType
+                       AND n.targetType = :manualTargetType
+                       AND EXISTS (
+                           SELECT m.manualId
+                             FROM Manual m
+                            WHERE m.manualId = n.targetId
+                              AND m.status = :manualStatus
+                       )
+                   )
+                   OR
+                   (
+                       n.type = :directDataType
+                       AND n.targetType = :directDataTargetType
+                       AND EXISTS (
+                           SELECT d.directDataId
+                             FROM DirectData d
+                            WHERE d.directDataId = n.targetId
+                              AND d.deletedAt IS NULL
+                              AND d.isActive = 'Y'
+                       )
+                   )
                )
              ORDER BY n.createdAt DESC
             """)
     Page<Notification> findManualTabNotifications(
             @Param("userId") Long userId,
-            @Param("type") NotificationType type,
-            @Param("targetType") NotificationTargetType targetType,
+            @Param("manualType") NotificationType manualType,
+            @Param("manualTargetType") NotificationTargetType manualTargetType,
             @Param("manualStatus") ManualStatus manualStatus,
+            @Param("directDataType") NotificationType directDataType,
+            @Param("directDataTargetType") NotificationTargetType directDataTargetType,
             Pageable pageable
     );
 
