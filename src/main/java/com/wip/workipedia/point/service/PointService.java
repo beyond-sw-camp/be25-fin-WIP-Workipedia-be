@@ -5,6 +5,7 @@ import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.response.PageResponse;
 import com.wip.workipedia.point.domain.PointHistory;
 import com.wip.workipedia.point.domain.PointHistoryType;
+import com.wip.workipedia.point.domain.PointReasonType;
 import com.wip.workipedia.point.domain.PointsDailyLimit;
 import com.wip.workipedia.point.domain.UserPoint;
 import com.wip.workipedia.point.dto.MyPointResponse;
@@ -26,7 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class PointService {
 	private static final int DAILY_EARN_LIMIT = 50;
 	private static final int LOGIN_POINT = 1;
-	private static final String LOGIN_REASON_TYPE = "LOGIN";
 	private static final String USER_RELATED_TYPE = "USER";
 
 	private final UserPointRepository userPointRepository;
@@ -66,13 +66,20 @@ public class PointService {
 		);
 	}
 
-	// 동일 도메인 이벤트가 재처리되어도 포인트가 중복 적립되지 않도록 막는다.
+	// 사용자의 특정 포인트 적립 이력이 있는지 확인한다.
+	@Transactional(readOnly = true)
+	public boolean hasEarnedPoint(Long userId, PointReasonType reasonType) {
+		return pointHistoryRepository.existsByUserIdAndReasonTypeAndTypeAndDeletedAtIsNull(
+			userId, reasonType.name(), PointHistoryType.EARN);
+	}
+
 	@Transactional
-	public void earnPoint(Long userId, int amount, String reasonType, String relatedType, Long relatedId) {
-		if (isDuplicateEarnEvent(reasonType, relatedType, relatedId)) {
+	public void earnPoint(Long userId, int amount, PointReasonType reasonType, String relatedType, Long relatedId) {
+		String reasonTypeName = reasonType.name();
+		if (isDuplicateEarnEvent(reasonTypeName, relatedType, relatedId)) {
 			return;
 		}
-		earnPointInternal(userId, amount, reasonType, relatedType, relatedId);
+		earnPointInternal(userId, amount, reasonTypeName, relatedType, relatedId);
 	}
 
 	// 일일 적립 한도를 초과하면 잔여 한도만큼만 적립하고, 한도가 없으면 아무 것도 저장하지 않는다.
@@ -93,7 +100,7 @@ public class PointService {
 		if (hasEarnedLoginPointToday(userId)) {
 			return;
 		}
-		earnPointInternal(userId, LOGIN_POINT, LOGIN_REASON_TYPE, USER_RELATED_TYPE, userId);
+		earnPointInternal(userId, LOGIN_POINT, PointReasonType.LOGIN.name(), USER_RELATED_TYPE, userId);
 	}
 
 	@Transactional
@@ -149,7 +156,7 @@ public class PointService {
 		return pointHistoryRepository
 			.existsByUserIdAndReasonTypeAndRelatedTypeAndRelatedIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThanAndDeletedAtIsNull(
 				userId,
-				LOGIN_REASON_TYPE,
+				PointReasonType.LOGIN.name(),
 				USER_RELATED_TYPE,
 				userId,
 				startAt,

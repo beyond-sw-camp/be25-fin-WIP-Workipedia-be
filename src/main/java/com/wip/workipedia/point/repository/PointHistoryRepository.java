@@ -29,6 +29,12 @@ public interface PointHistoryRepository extends JpaRepository<PointHistory, Long
 		LocalDateTime endAt
 	);
 
+	boolean existsByUserIdAndReasonTypeAndTypeAndDeletedAtIsNull(
+		Long userId,
+		String reasonType,
+		PointHistoryType type
+	);
+
 	boolean existsByReasonTypeAndRelatedTypeAndRelatedIdAndTypeAndDeletedAtIsNull(
 		String reasonType,
 		String relatedType,
