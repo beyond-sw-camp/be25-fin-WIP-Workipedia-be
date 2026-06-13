@@ -12,6 +12,7 @@ public record NotificationResponse(
         String message,
         NotificationTargetType targetType,
         Long targetId,
+        // 프론트는 알림 클릭 시 이 경로로 라우팅한다.
         String targetUrl,
         Integer pointAmount,
         LocalDateTime readAt,

@@ -207,6 +207,8 @@ public class NotificationService {
         };
     }
 
+    // 알림은 핵심 도메인 트랜잭션이 성공적으로 커밋된 뒤 생성한다.
+    // 알림 저장 실패가 답변 등록 및 티켓 상태 변경 같은 본 기능을 롤백시키지 않도록 분리한다.
     private void createAfterCommit(String context, Runnable notificationCreation) {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
             createInNewTransaction(context, notificationCreation);
@@ -221,6 +223,8 @@ public class NotificationService {
         });
     }
 
+    // 알림 저장은 별도 트랜잭션에서 수행하고, 실패 시 로그만 남긴다.
+    // 알림은 부가 기능이므로 저장 실패를 호출 도메인으로 전파하지 않는다.
     private void createInNewTransaction(String context, Runnable notificationCreation) {
         try {
             TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
