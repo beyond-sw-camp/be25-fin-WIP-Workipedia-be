@@ -12,6 +12,7 @@ import com.wip.workipedia.ticket.dto.TicketResponse;
 import com.wip.workipedia.ticket.repository.TicketRepository;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.repository.UserRepository;
+import java.time.LocalDateTime;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,7 @@ public class TeamTicketService {
 		TicketStatus.ASSIGNED,
 		TicketStatus.COMPLETED
 	);
+	private static final int COMPLETED_TICKET_VISIBLE_HOURS = 48;
 
 	private final TicketRepository ticketRepository;
 	private final UserRepository userRepository;
@@ -54,9 +56,12 @@ public class TeamTicketService {
 	public PageResponse<TicketResponse> findTickets(Long actorUserId, TicketStatus status, Pageable pageable) {
 		User actor = getTeamMember(actorUserId);
 		Long departmentId = actor.getDepartment().getDepartmentId();
-		Page<Ticket> tickets = status == null
-			? ticketRepository.findByAssignedDepartmentIdAndDeletedAtIsNull(departmentId, pageable)
-			: ticketRepository.findByStatusAndAssignedDepartmentIdAndDeletedAtIsNull(status, departmentId, pageable);
+		Page<Ticket> tickets = ticketRepository.findVisibleTeamTickets(
+			departmentId,
+			status,
+			completedVisibleAfter(),
+			pageable
+		);
 		return PageResponse.from(tickets.map(ticket -> TicketResponse.from(ticket, emptyRoutingResult())));
 	}
 
@@ -86,9 +91,13 @@ public class TeamTicketService {
 
 	private Map<TicketStatus, Long> countByStatus(Long departmentId) {
 		Map<TicketStatus, Long> counts = new EnumMap<>(TicketStatus.class);
-		ticketRepository.countByStatusInDepartment(departmentId, SUMMARY_STATUSES)
+		ticketRepository.countVisibleByStatusInDepartment(departmentId, SUMMARY_STATUSES, completedVisibleAfter())
 			.forEach(projection -> counts.put(projection.getStatus(), projection.getCount()));
 		return counts;
+	}
+
+	private LocalDateTime completedVisibleAfter() {
+		return LocalDateTime.now().minusHours(COMPLETED_TICKET_VISIBLE_HOURS);
 	}
 
 	private RoutingResult emptyRoutingResult() {
