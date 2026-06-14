@@ -9,11 +9,9 @@ import com.wip.workipedia.ticket.domain.Ticket;
 import com.wip.workipedia.ticket.domain.TicketStatus;
 import com.wip.workipedia.ticket.dto.RoutingResult;
 import com.wip.workipedia.ticket.dto.TicketResponse;
-import com.wip.workipedia.ticket.repository.TicketAnswerRepository;
 import com.wip.workipedia.ticket.repository.TicketRepository;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.repository.UserRepository;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.EnumMap;
 import java.util.List;
@@ -36,7 +34,6 @@ public class TeamTicketService {
 	private static final int COMPLETED_TICKET_VISIBLE_HOURS = 48;
 
 	private final TicketRepository ticketRepository;
-	private final TicketAnswerRepository ticketAnswerRepository;
 	private final UserRepository userRepository;
 
 	public TeamTicketSummaryResponse getSummary(Long actorUserId) {
@@ -46,21 +43,11 @@ public class TeamTicketService {
 		Map<TicketStatus, Long> counts = countByStatus(departmentId);
 		long assignedCount = counts.getOrDefault(TicketStatus.ASSIGNED, 0L);
 		long completedCount = counts.getOrDefault(TicketStatus.COMPLETED, 0L);
-		long yearlyAssignedCount = ticketRepository.countByAssignedDepartmentIdAndAssignedAtGreaterThanEqualAndAssignedAtLessThanAndDeletedAtIsNull(
-			departmentId,
-			startOfCurrentYear(),
-			startOfNextYear()
-		);
-		long myVisibleAnsweredCount = ticketAnswerRepository.countVisibleAnsweredTicketsByAuthorInDepartment(
-			actor.getUserId(),
-			departmentId
-		);
 
 		return new TeamTicketSummaryResponse(
 			departmentId,
 			department.getDepartmentName(),
-			yearlyAssignedCount,
-			myVisibleAnsweredCount,
+			assignedCount + completedCount,
 			assignedCount,
 			completedCount
 		);
@@ -111,14 +98,6 @@ public class TeamTicketService {
 
 	private LocalDateTime completedVisibleAfter() {
 		return LocalDateTime.now().minusHours(COMPLETED_TICKET_VISIBLE_HOURS);
-	}
-
-	private LocalDateTime startOfCurrentYear() {
-		return LocalDate.now().withDayOfYear(1).atStartOfDay();
-	}
-
-	private LocalDateTime startOfNextYear() {
-		return LocalDate.now().plusYears(1).withDayOfYear(1).atStartOfDay();
 	}
 
 	private RoutingResult emptyRoutingResult() {

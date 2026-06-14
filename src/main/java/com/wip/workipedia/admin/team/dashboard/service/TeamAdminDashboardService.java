@@ -2,9 +2,12 @@ package com.wip.workipedia.admin.team.dashboard.service;
 
 import com.wip.workipedia.admin.team.dashboard.dto.MonthlyTrendResponse;
 import com.wip.workipedia.admin.team.dashboard.dto.MonthlyTrendResponse.MonthlyPoint;
+import com.wip.workipedia.admin.team.dashboard.dto.TeamDashboardSummaryResponse;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.knowledge.repository.KnowledgeDataRepository;
+import com.wip.workipedia.ticket.domain.TicketStatus;
+import com.wip.workipedia.ticket.repository.TicketAnswerRepository;
 import com.wip.workipedia.ticket.repository.TicketRepository;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.domain.UserRole;
@@ -13,6 +16,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,11 +33,43 @@ public class TeamAdminDashboardService {
 	private static final int DEFAULT_MONTHS = 6;
 	private static final int MIN_MONTHS = 1;
 	private static final int MAX_MONTHS = 12;
+	private static final int COMPLETED_TICKET_VISIBLE_HOURS = 48;
 	private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM");
+	private static final List<TicketStatus> SUMMARY_STATUSES = List.of(
+		TicketStatus.ASSIGNED,
+		TicketStatus.COMPLETED
+	);
 
 	private final KnowledgeDataRepository knowledgeDataRepository;
 	private final TicketRepository ticketRepository;
+	private final TicketAnswerRepository ticketAnswerRepository;
 	private final UserRepository userRepository;
+
+	public TeamDashboardSummaryResponse getSummary(Long actorUserId) {
+		User actor = getTeamAdmin(actorUserId);
+		Long departmentId = actor.getDepartment().getDepartmentId();
+		Map<TicketStatus, Long> statusCounts = countVisibleByStatus(departmentId);
+		long assignedCount = statusCounts.getOrDefault(TicketStatus.ASSIGNED, 0L);
+		long completedCount = statusCounts.getOrDefault(TicketStatus.COMPLETED, 0L);
+		long yearlyAssignedCount = ticketRepository.countByAssignedDepartmentIdAndAssignedAtGreaterThanEqualAndAssignedAtLessThanAndDeletedAtIsNull(
+			departmentId,
+			startOfCurrentYear(),
+			startOfNextYear()
+		);
+		long myVisibleAnsweredCount = ticketAnswerRepository.countVisibleAnsweredTicketsByAuthorInDepartment(
+			actor.getUserId(),
+			departmentId
+		);
+
+		return new TeamDashboardSummaryResponse(
+			departmentId,
+			actor.getDepartment().getDepartmentName(),
+			yearlyAssignedCount,
+			myVisibleAnsweredCount,
+			assignedCount,
+			completedCount
+		);
+	}
 
 	public MonthlyTrendResponse getKnowledgeTrend(Long actorUserId, Integer months) {
 		User actor = getTeamAdmin(actorUserId);
@@ -92,6 +128,25 @@ public class TeamAdminDashboardService {
 		YearMonth endMonth = YearMonth.from(LocalDate.now()).plusMonths(1);
 		YearMonth startMonth = endMonth.minusMonths(months);
 		return new Range(startMonth.atDay(1).atStartOfDay(), endMonth.atDay(1).atStartOfDay());
+	}
+
+	private Map<TicketStatus, Long> countVisibleByStatus(Long departmentId) {
+		Map<TicketStatus, Long> counts = new EnumMap<>(TicketStatus.class);
+		ticketRepository.countVisibleByStatusInDepartment(departmentId, SUMMARY_STATUSES, completedVisibleAfter())
+			.forEach(projection -> counts.put(projection.getStatus(), projection.getCount()));
+		return counts;
+	}
+
+	private LocalDateTime completedVisibleAfter() {
+		return LocalDateTime.now().minusHours(COMPLETED_TICKET_VISIBLE_HOURS);
+	}
+
+	private LocalDateTime startOfCurrentYear() {
+		return LocalDate.now().withDayOfYear(1).atStartOfDay();
+	}
+
+	private LocalDateTime startOfNextYear() {
+		return LocalDate.now().plusYears(1).withDayOfYear(1).atStartOfDay();
 	}
 
 	private MonthlyTrendResponse trendResponse(User actor, int months, Map<String, Long> counts) {

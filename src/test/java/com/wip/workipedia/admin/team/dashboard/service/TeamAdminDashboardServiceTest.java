@@ -11,6 +11,8 @@ import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.department.domain.Department;
 import com.wip.workipedia.knowledge.repository.KnowledgeDataRepository;
+import com.wip.workipedia.ticket.domain.TicketStatus;
+import com.wip.workipedia.ticket.repository.TicketAnswerRepository;
 import com.wip.workipedia.ticket.repository.TicketRepository;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.domain.UserRole;
@@ -34,7 +36,33 @@ class TeamAdminDashboardServiceTest {
 	private TicketRepository ticketRepository;
 
 	@Mock
+	private TicketAnswerRepository ticketAnswerRepository;
+
+	@Mock
 	private UserRepository userRepository;
+
+	@Test
+	void getSummary_returnsDashboardOnlyCounts() {
+		TeamAdminDashboardService service = service();
+		User actor = user(UserRole.TEAM_ADMIN, 10L);
+		when(actor.getUserId()).thenReturn(1L);
+		when(userRepository.findById(1L)).thenReturn(Optional.of(actor));
+		when(ticketRepository.countVisibleByStatusInDepartment(any(), any(), any())).thenReturn(List.of(
+			statusCount(TicketStatus.ASSIGNED, 2L),
+			statusCount(TicketStatus.COMPLETED, 1L)
+		));
+		when(ticketRepository.countByAssignedDepartmentIdAndAssignedAtGreaterThanEqualAndAssignedAtLessThanAndDeletedAtIsNull(any(), any(), any()))
+			.thenReturn(4L);
+		when(ticketAnswerRepository.countVisibleAnsweredTicketsByAuthorInDepartment(1L, 10L)).thenReturn(2L);
+
+		var response = service.getSummary(1L);
+
+		assertThat(response.departmentId()).isEqualTo(10L);
+		assertThat(response.yearlyAssignedCount()).isEqualTo(4L);
+		assertThat(response.myVisibleAnsweredCount()).isEqualTo(2L);
+		assertThat(response.assignedCount()).isEqualTo(2L);
+		assertThat(response.completedCount()).isEqualTo(1L);
+	}
 
 	@Test
 	void getKnowledgeTrend_fillsMissingMonthsWithZero() {
@@ -95,17 +123,32 @@ class TeamAdminDashboardServiceTest {
 	}
 
 	private TeamAdminDashboardService service() {
-		return new TeamAdminDashboardService(knowledgeDataRepository, ticketRepository, userRepository);
+		return new TeamAdminDashboardService(knowledgeDataRepository, ticketRepository, ticketAnswerRepository, userRepository);
 	}
 
 	private User user(UserRole role, Long departmentId) {
 		User user = mock(User.class);
 		Department department = mock(Department.class);
+		lenient().when(user.getUserId()).thenReturn(1L);
 		lenient().when(user.getRole()).thenReturn(role);
 		lenient().when(user.getDepartment()).thenReturn(department);
 		lenient().when(department.getDepartmentId()).thenReturn(departmentId);
 		lenient().when(department.getDepartmentName()).thenReturn("department-" + departmentId);
 		return user;
+	}
+
+	private TicketRepository.TicketStatusCountProjection statusCount(TicketStatus status, long count) {
+		return new TicketRepository.TicketStatusCountProjection() {
+			@Override
+			public TicketStatus getStatus() {
+				return status;
+			}
+
+			@Override
+			public long getCount() {
+				return count;
+			}
+		};
 	}
 
 	private KnowledgeDataRepository.MonthlyCountProjection monthlyKnowledgeCount(String month, long count) {

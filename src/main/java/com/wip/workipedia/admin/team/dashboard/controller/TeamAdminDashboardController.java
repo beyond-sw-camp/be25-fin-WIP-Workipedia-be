@@ -1,9 +1,8 @@
 package com.wip.workipedia.admin.team.dashboard.controller;
 
 import com.wip.workipedia.admin.team.dashboard.dto.MonthlyTrendResponse;
+import com.wip.workipedia.admin.team.dashboard.dto.TeamDashboardSummaryResponse;
 import com.wip.workipedia.admin.team.dashboard.service.TeamAdminDashboardService;
-import com.wip.workipedia.team.dto.TeamTicketSummaryResponse;
-import com.wip.workipedia.team.service.TeamTicketService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,13 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class TeamAdminDashboardController {
 
 	private final TeamAdminDashboardService teamAdminDashboardService;
-	private final TeamTicketService teamTicketService;
 
 	@GetMapping("/summary")
-	public ResponseEntity<TeamTicketSummaryResponse> summary(
+	public ResponseEntity<TeamDashboardSummaryResponse> summary(
 		@AuthenticationPrincipal Long actorUserId
 	) {
-		return ResponseEntity.ok(teamTicketService.getSummary(actorUserId));
+		return ResponseEntity.ok(teamAdminDashboardService.getSummary(actorUserId));
 	}
 
 	@GetMapping("/knowledge-trend")
