@@ -41,7 +41,7 @@ class TeamTicketServiceTest {
 		TeamTicketService service = new TeamTicketService(ticketRepository, userRepository);
 		User actor = user(UserRole.USER, 10L);
 		when(userRepository.findById(1L)).thenReturn(Optional.of(actor));
-		when(ticketRepository.countByStatusInDepartment(any(), any())).thenReturn(List.of(
+		when(ticketRepository.countVisibleByStatusInDepartment(any(), any(), any())).thenReturn(List.of(
 			statusCount(TicketStatus.ASSIGNED, 2L),
 			statusCount(TicketStatus.COMPLETED, 1L)
 		));

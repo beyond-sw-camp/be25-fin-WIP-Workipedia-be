@@ -54,6 +54,13 @@ public class Ticket {
 
 	private LocalDateTime completedAt;
 
+	@Enumerated(EnumType.STRING)
+	@Column(length = 20)
+	private KnowledgeReviewStatus knowledgeReviewStatus;
+
+	private Long knowledgeReviewedBy;
+	private LocalDateTime knowledgeReviewedAt;
+
 	@Column(nullable = false)
 	private LocalDateTime createdAt;
 
@@ -125,6 +132,20 @@ public class Ticket {
 	public void complete() {
 		this.status = TicketStatus.COMPLETED;
 		this.completedAt = LocalDateTime.now();
+		touch();
+	}
+
+	public void approveKnowledgeReview(Long reviewerId) {
+		this.knowledgeReviewStatus = KnowledgeReviewStatus.APPROVED;
+		this.knowledgeReviewedBy = reviewerId;
+		this.knowledgeReviewedAt = LocalDateTime.now();
+		touch();
+	}
+
+	public void rejectKnowledgeReview(Long reviewerId) {
+		this.knowledgeReviewStatus = KnowledgeReviewStatus.REJECTED;
+		this.knowledgeReviewedBy = reviewerId;
+		this.knowledgeReviewedAt = LocalDateTime.now();
 		touch();
 	}
 

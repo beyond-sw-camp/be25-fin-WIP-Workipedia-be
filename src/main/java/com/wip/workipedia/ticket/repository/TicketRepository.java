@@ -3,6 +3,7 @@ package com.wip.workipedia.ticket.repository;
 import com.wip.workipedia.ticket.domain.Ticket;
 import com.wip.workipedia.ticket.domain.TicketStatus;
 import jakarta.persistence.LockModeType;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +25,24 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
 	Page<Ticket> findByStatusAndAssignedDepartmentIdAndDeletedAtIsNull(TicketStatus status, Long assignedDepartmentId, Pageable pageable);
 
+	@Query("""
+		SELECT t
+		FROM Ticket t
+		WHERE t.assignedDepartmentId = :departmentId
+		  AND t.deletedAt IS NULL
+		  AND (:status IS NULL OR t.status = :status)
+		  AND (
+		    t.status <> com.wip.workipedia.ticket.domain.TicketStatus.COMPLETED
+		    OR t.completedAt >= :completedVisibleAfter
+		  )
+		""")
+	Page<Ticket> findVisibleTeamTickets(
+		@Param("departmentId") Long departmentId,
+		@Param("status") TicketStatus status,
+		@Param("completedVisibleAfter") LocalDateTime completedVisibleAfter,
+		Pageable pageable
+	);
+
 	Page<Ticket> findByDeletedAtIsNull(Pageable pageable);
 
 	Page<Ticket> findByStatusAndDeletedAtIsNullOrderByCreatedAtDesc(TicketStatus status, Pageable pageable);
@@ -41,6 +60,24 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 	List<TicketStatusCountProjection> countByStatusInDepartment(
 		@Param("departmentId") Long departmentId,
 		@Param("statuses") Collection<TicketStatus> statuses
+	);
+
+	@Query("""
+		SELECT t.status AS status, COUNT(t) AS count
+		FROM Ticket t
+		WHERE t.assignedDepartmentId = :departmentId
+		  AND t.deletedAt IS NULL
+		  AND t.status IN :statuses
+		  AND (
+		    t.status <> com.wip.workipedia.ticket.domain.TicketStatus.COMPLETED
+		    OR t.completedAt >= :completedVisibleAfter
+		  )
+		GROUP BY t.status
+		""")
+	List<TicketStatusCountProjection> countVisibleByStatusInDepartment(
+		@Param("departmentId") Long departmentId,
+		@Param("statuses") Collection<TicketStatus> statuses,
+		@Param("completedVisibleAfter") LocalDateTime completedVisibleAfter
 	);
 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)

@@ -10,6 +10,7 @@ import com.wip.workipedia.worki.dto.QuestionSummaryResponse;
 import com.wip.workipedia.worki.dto.QuestionUpdateRequest;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
+import com.wip.workipedia.point.domain.PointReasonType;
 import com.wip.workipedia.point.service.PointService;
 import com.wip.workipedia.reaction.domain.ReactionTargetType;
 import com.wip.workipedia.reaction.domain.ReactionType;
@@ -144,6 +145,18 @@ public class WorkiQuestionService {
         return QuestionResponse.from(question);
     }
 
+    private boolean hasCreatedQuestion(Long actorUserId) {
+        return questionRepository.existsByAuthorId(actorUserId);
+    }
+
+    private void earnQuestionCreatedPoint(Long actorUserId, Long questionId, boolean firstQuestion) {
+        if (firstQuestion) {
+            pointService.earnPoint(actorUserId, FIRST_QUESTION_POINT, PointReasonType.WORKI_FIRST_QUESTION_CREATED, QUESTION_RELATED_TYPE, questionId);
+            return;
+        }
+        pointService.earnPoint(actorUserId, QUESTION_POINT, PointReasonType.WORKI_QUESTION_CREATED, QUESTION_RELATED_TYPE, questionId);
+    }
+
     private WorkiQuestion getQuestionOrThrow(Long questionId) {
         return questionRepository.findByQuestionIdAndDeletedAtIsNull(questionId)
                 .orElseThrow(() -> new CustomException(ErrorType.WORKI_NOT_FOUND, "질문을 찾을 수 없습니다. id=" + questionId));
@@ -151,6 +164,7 @@ public class WorkiQuestionService {
 
     @Transactional
     public List<QuestionResponse> createBulk(Long actorUserId, List<QuestionCreateRequest> requests) {
+        boolean hasCreatedQuestion = hasCreatedQuestion(actorUserId);
         List<WorkiQuestion> questions = requests.stream()
                 .map(request -> WorkiQuestion.create(
                         actorUserId,
@@ -162,9 +176,11 @@ public class WorkiQuestionService {
 
         List<WorkiQuestion> savedQuestions = questionRepository.saveAll(questions);
 
-        savedQuestions.forEach(saved -> {
+        for (int index = 0; index < savedQuestions.size(); index++) {
+            WorkiQuestion saved = savedQuestions.get(index);
             eventPublisher.publishEvent(new WorkiQuestionChangedEvent(saved.getQuestionId()));
-        });
+            earnQuestionCreatedPoint(actorUserId, saved.getQuestionId(), !hasCreatedQuestion && index == 0);
+        }
 
         return savedQuestions.stream()
                 .map(QuestionResponse::from)
