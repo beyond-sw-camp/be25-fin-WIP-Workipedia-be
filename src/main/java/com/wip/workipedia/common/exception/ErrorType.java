@@ -44,6 +44,12 @@ public enum ErrorType {
 	TICKET_INVALID_ASSIGNMENT("ticket-006", "현재 상태에서는 티켓을 배정할 수 없습니다.", HttpStatus.CONFLICT),
 	TICKET_INVALID_ATTACHMENT("ticket-007", "티켓 답변 첨부파일이 유효하지 않습니다.", HttpStatus.BAD_REQUEST),
 
+	// knowledge data
+	KNOWLEDGE_DATA_NOT_FOUND("knowledge-data-001", "지식화 데이터를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+	KNOWLEDGE_DATA_FORBIDDEN("knowledge-data-002", "지식화 데이터 관리 권한이 없습니다.", HttpStatus.FORBIDDEN),
+	KNOWLEDGE_DATA_ALREADY_APPROVED("knowledge-data-003", "이미 지식화된 티켓입니다.", HttpStatus.CONFLICT),
+	KNOWLEDGE_DATA_INVALID_APPROVAL("knowledge-data-004", "현재 상태에서는 지식화 승인할 수 없습니다.", HttpStatus.CONFLICT),
+
 	// worki
 	WORKI_NOT_FOUND("worki-001", "워키 리소스를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 	WORKI_FORBIDDEN("worki-002", "해당 작업에 대한 권한이 없습니다.", HttpStatus.FORBIDDEN),
