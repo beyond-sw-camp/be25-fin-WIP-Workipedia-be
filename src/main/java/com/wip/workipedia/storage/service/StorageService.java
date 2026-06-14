@@ -4,6 +4,7 @@ import com.wip.workipedia.storage.dto.PresignedDownloadResponse;
 import com.wip.workipedia.storage.dto.PresignedUploadRequest;
 import com.wip.workipedia.storage.dto.PresignedUploadResponse;
 import com.wip.workipedia.storage.dto.StoredObject;
+import com.wip.workipedia.storage.dto.StoredObjectMetadata;
 import com.wip.workipedia.storage.port.StoragePort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,10 @@ public class StorageService {
 
     public StoredObject upload(byte[] content, String keyPrefix, String fileName, String contentType) {
         return storagePort.upload(content, keyPrefix, fileName, contentType);
+    }
+
+    public StoredObjectMetadata getObjectMetadata(String objectKey) {
+        return storagePort.getObjectMetadata(objectKey);
     }
 
     public PresignedDownloadResponse createPresignedDownloadUrl(String objectKey) {

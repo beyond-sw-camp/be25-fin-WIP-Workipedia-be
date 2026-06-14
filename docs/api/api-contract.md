@@ -253,6 +253,16 @@ Authorization: Bearer <accessToken>
 
 담당: 김가영
 
+팀 대시보드
+
+| Method | Path                                      | 설명                         | 인증 |
+| ------ | ----------------------------------------- | ---------------------------- | ---- |
+| GET    | `/team/tickets/summary`                   | 우리 부서 티켓 요약 조회       | USER, TEAM_ADMIN | 추후 팀 어드민으로만 박기
+| GET    | `/team/tickets`                           | 우리 부서 티켓 목록 조회       | USER, TEAM_ADMIN |
+| GET    | `/team/tickets/{ticketId}`                | 우리 부서 티켓 상세 조회       | USER, TEAM_ADMIN |
+| POST   | `/tickets/{ticketId}/answers`             | 티켓 답변 등록 및 완료 처리    | USER, TEAM_ADMIN |
+| GET    | `/tickets/{ticketId}/answers/latest`      | 티켓 최신 답변 조회(완료티켓 확인용)     | USER, TEAM_ADMIN |
+
 팀 관리자 대시보드 
 
 
