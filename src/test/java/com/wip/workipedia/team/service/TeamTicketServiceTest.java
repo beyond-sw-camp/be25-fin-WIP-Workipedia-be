@@ -92,6 +92,7 @@ class TeamTicketServiceTest {
 	private User user(UserRole role, Long departmentId) {
 		User user = mock(User.class);
 		Department department = mock(Department.class);
+		lenient().when(user.getUserId()).thenReturn(1L);
 		lenient().when(user.getRole()).thenReturn(role);
 		lenient().when(user.getDepartment()).thenReturn(department);
 		lenient().when(department.getDepartmentId()).thenReturn(departmentId);
