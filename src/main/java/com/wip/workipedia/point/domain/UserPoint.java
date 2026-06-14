@@ -50,6 +50,12 @@ public class UserPoint extends BaseTimeEntity {
 		this.esgScore += amount;
 	}
 
+	public void updateGradeIfChanged(Integer gradeId) {
+		if (!this.gradeId.equals(gradeId)) {
+			this.gradeId = gradeId;
+		}
+	}
+
 	public void spend(long amount) {
 		validatePositiveAmount(amount);
 		if (this.currentPoint < amount) {

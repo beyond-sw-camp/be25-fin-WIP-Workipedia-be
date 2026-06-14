@@ -3,8 +3,11 @@ package com.wip.workipedia.point.service;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.response.PageResponse;
+import com.wip.workipedia.esg.domain.EsgGrade;
+import com.wip.workipedia.esg.repository.EsgGradeRepository;
 import com.wip.workipedia.point.domain.PointHistory;
 import com.wip.workipedia.point.domain.PointHistoryType;
+import com.wip.workipedia.point.domain.PointReasonType;
 import com.wip.workipedia.point.domain.PointsDailyLimit;
 import com.wip.workipedia.point.domain.UserPoint;
 import com.wip.workipedia.point.dto.MyPointResponse;
@@ -26,12 +29,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class PointService {
 	private static final int DAILY_EARN_LIMIT = 50;
 	private static final int LOGIN_POINT = 1;
-	private static final String LOGIN_REASON_TYPE = "LOGIN";
 	private static final String USER_RELATED_TYPE = "USER";
 
 	private final UserPointRepository userPointRepository;
 	private final PointHistoryRepository pointHistoryRepository;
 	private final PointsDailyLimitRepository pointsDailyLimitRepository;
+	private final EsgGradeRepository esgGradeRepository;
 
 	@Transactional(readOnly = true)
 	public MyPointResponse getMyPoint(Long userId) {
@@ -50,7 +53,11 @@ public class PointService {
 		if (searchType == PointHistorySearchType.ALL) {
 			return PageResponse.from(
 				pointHistoryRepository
-					.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(userId, pageable)
+					.findByUserIdAndTypeNotAndDeletedAtIsNullOrderByCreatedAtDesc(
+						userId,
+						PointHistoryType.RESET,
+						pageable
+					)
 					.map(PointHistoryResponse::from)
 			);
 		}
@@ -66,13 +73,27 @@ public class PointService {
 		);
 	}
 
-	// 동일 도메인 이벤트가 재처리되어도 포인트가 중복 적립되지 않도록 막는다.
+	// 사용자의 특정 포인트 적립 이력이 있는지 확인한다.
+	@Transactional(readOnly = true)
+	public boolean hasEarnedPoint(Long userId, PointReasonType reasonType) {
+		return pointHistoryRepository.existsByUserIdAndReasonTypeAndTypeAndDeletedAtIsNull(
+			userId, reasonType.name(), PointHistoryType.EARN);
+	}
+
 	@Transactional
-	public void earnPoint(Long userId, int amount, String reasonType, String relatedType, Long relatedId) {
-		if (isDuplicateEarnEvent(reasonType, relatedType, relatedId)) {
+	public void earnPoint(Long userId, int amount, PointReasonType reasonType, String relatedType, Long relatedId) {
+		validateEarnEvent(reasonType, relatedType, relatedId);
+		String reasonTypeName = reasonType.name();
+		if (isDuplicatePointEvent(reasonTypeName, relatedType, relatedId, PointHistoryType.EARN)) {
 			return;
 		}
-		earnPointInternal(userId, amount, reasonType, relatedType, relatedId);
+		earnPointInternal(userId, amount, reasonTypeName, relatedType, relatedId);
+	}
+
+	private void validateEarnEvent(PointReasonType reasonType, String relatedType, Long relatedId) {
+		if (reasonType == null || relatedType == null || relatedType.isBlank() || relatedId == null) {
+			throw new CustomException(ErrorType.POINT_INVALID_EVENT);
+		}
 	}
 
 	// 일일 적립 한도를 초과하면 잔여 한도만큼만 적립하고, 한도가 없으면 아무 것도 저장하지 않는다.
@@ -84,6 +105,7 @@ public class PointService {
 
 		UserPoint userPoint = getOrCreateUserPoint(userId);
 		userPoint.earn(earnAmount);
+		updateEsgGrade(userPoint);
 		pointHistoryRepository.save(PointHistory.earn(userId, earnAmount, reasonType, relatedType, relatedId));
 	}
 
@@ -93,14 +115,24 @@ public class PointService {
 		if (hasEarnedLoginPointToday(userId)) {
 			return;
 		}
-		earnPointInternal(userId, LOGIN_POINT, LOGIN_REASON_TYPE, USER_RELATED_TYPE, userId);
+		earnPointInternal(userId, LOGIN_POINT, PointReasonType.LOGIN.name(), USER_RELATED_TYPE, userId);
 	}
 
 	@Transactional
 	public void spendPoint(Long userId, int amount, String reasonType, String relatedType, Long relatedId) {
+		validateSpendEvent(reasonType, relatedType, relatedId);
+		if (isDuplicatePointEvent(reasonType, relatedType, relatedId, PointHistoryType.SPEND)) {
+			return;
+		}
 		UserPoint userPoint = getOrCreateUserPoint(userId);
 		userPoint.spend(amount);
 		pointHistoryRepository.save(PointHistory.spend(userId, amount, reasonType, relatedType, relatedId));
+	}
+
+	private void validateSpendEvent(String reasonType, String relatedType, Long relatedId) {
+		if (reasonType == null || reasonType.isBlank() || relatedType == null || relatedType.isBlank() || relatedId == null) {
+			throw new CustomException(ErrorType.POINT_INVALID_EVENT);
+		}
 	}
 
 	@Transactional
@@ -142,6 +174,12 @@ public class PointService {
 			.orElseThrow(() -> new CustomException(ErrorType.INTERNAL_ERROR));
 	}
 
+	private void updateEsgGrade(UserPoint userPoint) {
+		EsgGrade grade = esgGradeRepository.findActiveGradeByScore(userPoint.getEsgScore())
+			.orElseThrow(() -> new CustomException(ErrorType.POINT_GRADE_NOT_FOUND));
+		userPoint.updateGradeIfChanged(grade.getGradeId());
+	}
+
 	private boolean hasEarnedLoginPointToday(Long userId) {
 		LocalDate today = LocalDate.now();
 		LocalDateTime startAt = today.atStartOfDay();
@@ -149,7 +187,7 @@ public class PointService {
 		return pointHistoryRepository
 			.existsByUserIdAndReasonTypeAndRelatedTypeAndRelatedIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThanAndDeletedAtIsNull(
 				userId,
-				LOGIN_REASON_TYPE,
+				PointReasonType.LOGIN.name(),
 				USER_RELATED_TYPE,
 				userId,
 				startAt,
@@ -157,16 +195,12 @@ public class PointService {
 			);
 	}
 
-	// 관련 엔티티가 없는 적립은 이벤트 멱등성을 판단할 수 없어 중복 검사 대상에서 제외한다.
-	private boolean isDuplicateEarnEvent(String reasonType, String relatedType, Long relatedId) {
-		if (reasonType == null || relatedType == null || relatedId == null) {
-			return false;
-		}
+	private boolean isDuplicatePointEvent(String reasonType, String relatedType, Long relatedId, PointHistoryType type) {
 		return pointHistoryRepository.existsByReasonTypeAndRelatedTypeAndRelatedIdAndTypeAndDeletedAtIsNull(
 			reasonType,
 			relatedType,
 			relatedId,
-			PointHistoryType.EARN
+			type
 		);
 	}
 

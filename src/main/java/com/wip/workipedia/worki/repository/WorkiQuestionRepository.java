@@ -19,6 +19,8 @@ public interface WorkiQuestionRepository extends JpaRepository<WorkiQuestion, Lo
 
     Optional<WorkiQuestion> findByQuestionIdAndDeletedAtIsNull(Long questionId);
 
+    boolean existsByAuthorId(Long authorId);
+
     @Query(value = """
             SELECT q.question_id AS questionId,
                    q.title AS title,

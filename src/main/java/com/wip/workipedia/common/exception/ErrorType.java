@@ -44,6 +44,12 @@ public enum ErrorType {
 	TICKET_INVALID_ASSIGNMENT("ticket-006", "현재 상태에서는 티켓을 배정할 수 없습니다.", HttpStatus.CONFLICT),
 	TICKET_INVALID_ATTACHMENT("ticket-007", "티켓 답변 첨부파일이 유효하지 않습니다.", HttpStatus.BAD_REQUEST),
 
+	// knowledge data
+	KNOWLEDGE_DATA_NOT_FOUND("knowledge-data-001", "지식화 데이터를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+	KNOWLEDGE_DATA_FORBIDDEN("knowledge-data-002", "지식화 데이터 관리 권한이 없습니다.", HttpStatus.FORBIDDEN),
+	KNOWLEDGE_DATA_ALREADY_APPROVED("knowledge-data-003", "이미 지식화된 티켓입니다.", HttpStatus.CONFLICT),
+	KNOWLEDGE_DATA_INVALID_APPROVAL("knowledge-data-004", "현재 상태에서는 지식화 승인할 수 없습니다.", HttpStatus.CONFLICT),
+
 	// worki
 	WORKI_NOT_FOUND("worki-001", "워키 리소스를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 	WORKI_FORBIDDEN("worki-002", "해당 작업에 대한 권한이 없습니다.", HttpStatus.FORBIDDEN),
@@ -65,6 +71,8 @@ public enum ErrorType {
 	POINT_INVALID_AMOUNT("point-001", "포인트 금액은 0보다 커야 합니다.", HttpStatus.BAD_REQUEST),
 	POINT_INSUFFICIENT_BALANCE("point-002", "보유 포인트가 부족합니다.", HttpStatus.CONFLICT),
 	POINT_AMOUNT_OVERFLOW("point-003", "처리할 수 있는 포인트 범위를 초과했습니다.", HttpStatus.BAD_REQUEST),
+	POINT_INVALID_EVENT("point-004", "포인트 이벤트 식별값이 유효하지 않습니다.", HttpStatus.BAD_REQUEST),
+	POINT_GRADE_NOT_FOUND("point-005", "ESG 등급 기준을 찾을 수 없습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
 
 	// flash-chat
 	FLASH_CHAT_COOLDOWN("flash-chat-001", "메시지 전송 쿨다운 중입니다.", HttpStatus.TOO_MANY_REQUESTS),
