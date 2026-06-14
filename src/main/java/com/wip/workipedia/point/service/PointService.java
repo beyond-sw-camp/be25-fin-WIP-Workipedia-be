@@ -3,6 +3,8 @@ package com.wip.workipedia.point.service;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.response.PageResponse;
+import com.wip.workipedia.esg.domain.EsgGrade;
+import com.wip.workipedia.esg.repository.EsgGradeRepository;
 import com.wip.workipedia.point.domain.PointHistory;
 import com.wip.workipedia.point.domain.PointHistoryType;
 import com.wip.workipedia.point.domain.PointReasonType;
@@ -32,6 +34,7 @@ public class PointService {
 	private final UserPointRepository userPointRepository;
 	private final PointHistoryRepository pointHistoryRepository;
 	private final PointsDailyLimitRepository pointsDailyLimitRepository;
+	private final EsgGradeRepository esgGradeRepository;
 
 	@Transactional(readOnly = true)
 	public MyPointResponse getMyPoint(Long userId) {
@@ -91,6 +94,7 @@ public class PointService {
 
 		UserPoint userPoint = getOrCreateUserPoint(userId);
 		userPoint.earn(earnAmount);
+		updateEsgGrade(userPoint);
 		pointHistoryRepository.save(PointHistory.earn(userId, earnAmount, reasonType, relatedType, relatedId));
 	}
 
@@ -147,6 +151,12 @@ public class PointService {
 		pointsDailyLimitRepository.insertIgnore(userId, today);
 		return pointsDailyLimitRepository.findActiveByUserIdAndPointDateForUpdate(userId, today)
 			.orElseThrow(() -> new CustomException(ErrorType.INTERNAL_ERROR));
+	}
+
+	private void updateEsgGrade(UserPoint userPoint) {
+		EsgGrade grade = esgGradeRepository.findActiveGradeByScore(userPoint.getEsgScore())
+			.orElseThrow(() -> new CustomException(ErrorType.NOT_FOUND));
+		userPoint.updateGradeIfChanged(grade.getGradeId());
 	}
 
 	private boolean hasEarnedLoginPointToday(Long userId) {
