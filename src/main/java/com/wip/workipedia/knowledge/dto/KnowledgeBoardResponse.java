@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 
 public record KnowledgeBoardResponse(
 	Long knowledgeDataId,
-	Long ticketId,
 	Long departmentId,
 	String question,
 	String answer,
@@ -16,7 +15,6 @@ public record KnowledgeBoardResponse(
 	public static KnowledgeBoardResponse from(KnowledgeData knowledgeData) {
 		return new KnowledgeBoardResponse(
 			knowledgeData.getKnowledgeDataId(),
-			knowledgeData.getTicketId(),
 			knowledgeData.getDepartmentId(),
 			knowledgeData.getTitle(),
 			knowledgeData.getContent(),
