@@ -69,7 +69,6 @@ public class SecurityConfig {
 						.requestMatchers("/ws/flash-chat/**").permitAll()
 						.requestMatchers("/ws/flash-chat-native/**").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/v1/search/**").permitAll()
-						.requestMatchers("/api/v1/admin/team/**").hasAnyRole("TEAM_ADMIN", "SYSTEM_ADMIN")
 						.requestMatchers("/api/v1/admin/**").hasRole("SYSTEM_ADMIN")
 						.requestMatchers("/api/v1/faq/**").permitAll()
 						.anyRequest().authenticated())

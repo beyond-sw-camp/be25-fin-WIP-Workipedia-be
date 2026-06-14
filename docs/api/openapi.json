@@ -2069,7 +2069,6 @@
             "schema": {
               "type": "string",
               "enum": [
-                "RECEIVED",
                 "COMMON_QUEUE",
                 "ASSIGNED",
                 "COMPLETED",
@@ -2767,7 +2766,6 @@
           "status": {
             "type": "string",
             "enum": [
-              "RECEIVED",
               "COMMON_QUEUE",
               "ASSIGNED",
               "COMPLETED",
@@ -2858,7 +2856,6 @@
           "status": {
             "type": "string",
             "enum": [
-              "RECEIVED",
               "COMMON_QUEUE",
               "ASSIGNED",
               "COMPLETED",
