@@ -2,6 +2,7 @@ package com.wip.workipedia.knowledge.repository;
 
 import com.wip.workipedia.knowledge.domain.KnowledgeData;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +17,29 @@ public interface KnowledgeDataRepository extends JpaRepository<KnowledgeData, Lo
 	Optional<KnowledgeData> findByKnowledgeDataIdAndDeletedAtIsNull(Long knowledgeDataId);
 
 	Page<KnowledgeData> findByDepartmentIdAndDeletedAtIsNull(Long departmentId, Pageable pageable);
+
+	Optional<KnowledgeData> findByKnowledgeDataIdAndDeletedAtIsNullAndIsDeleted(Long knowledgeDataId, String isDeleted);
+
+	Page<KnowledgeData> findByDeletedAtIsNullAndIsDeleted(String isDeleted, Pageable pageable);
+
+	@Query(
+		value = """
+			SELECT DATE_FORMAT(kd.approved_at, '%Y-%m') AS month, COUNT(*) AS count
+			FROM knowledge_data kd
+			WHERE kd.department_id = :departmentId
+				AND kd.deleted_at IS NULL
+				AND kd.is_deleted = 'N'
+				AND kd.approved_at >= :startAt
+				AND kd.approved_at < :endAt
+			GROUP BY DATE_FORMAT(kd.approved_at, '%Y-%m')
+			""",
+		nativeQuery = true
+	)
+	List<MonthlyCountProjection> countMonthlyApprovedByDepartment(
+		@Param("departmentId") Long departmentId,
+		@Param("startAt") LocalDateTime startAt,
+		@Param("endAt") LocalDateTime endAt
+	);
 
 	@Query(
 		value = """
@@ -100,5 +124,11 @@ public interface KnowledgeDataRepository extends JpaRepository<KnowledgeData, Lo
 		LocalDateTime getCompletedAt();
 
 		LocalDateTime getAnsweredAt();
+	}
+
+	interface MonthlyCountProjection {
+		String getMonth();
+
+		long getCount();
 	}
 }

@@ -51,6 +51,12 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
 	long countByRequesterIdAndDeletedAtIsNull(Long requesterId);
 
+	long countByAssignedDepartmentIdAndAssignedAtGreaterThanEqualAndAssignedAtLessThanAndDeletedAtIsNull(
+		Long assignedDepartmentId,
+		LocalDateTime startAt,
+		LocalDateTime endAt
+	);
+
 	@Query("""
 		SELECT t.status AS status, COUNT(t) AS count
 		FROM Ticket t
@@ -80,6 +86,26 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 		@Param("departmentId") Long departmentId,
 		@Param("statuses") Collection<TicketStatus> statuses,
 		@Param("completedVisibleAfter") LocalDateTime completedVisibleAfter
+	);
+
+	@Query(
+		value = """
+			SELECT DATE_FORMAT(t.assigned_at, '%Y-%m') AS month, COUNT(*) AS count
+			FROM tickets t
+			WHERE t.assigned_department_id = :departmentId
+				AND t.routing_decision = 'AUTO_ASSIGNED'
+				AND t.assigned_at >= :startAt
+				AND t.assigned_at < :endAt
+				AND t.deleted_at IS NULL
+				AND t.is_deleted = 'N'
+			GROUP BY DATE_FORMAT(t.assigned_at, '%Y-%m')
+			""",
+		nativeQuery = true
+	)
+	List<MonthlyCountProjection> countMonthlyAutoAssignedByDepartment(
+		@Param("departmentId") Long departmentId,
+		@Param("startAt") LocalDateTime startAt,
+		@Param("endAt") LocalDateTime endAt
 	);
 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -113,6 +139,12 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
 	interface TicketStatusCountProjection {
 		TicketStatus getStatus();
+
+		long getCount();
+	}
+
+	interface MonthlyCountProjection {
+		String getMonth();
 
 		long getCount();
 	}
