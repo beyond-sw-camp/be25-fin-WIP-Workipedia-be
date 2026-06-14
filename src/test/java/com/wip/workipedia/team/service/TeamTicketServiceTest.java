@@ -57,8 +57,8 @@ class TeamTicketServiceTest {
 		var response = service.getSummary(1L);
 
 		assertThat(response.departmentId()).isEqualTo(10L);
-		assertThat(response.totalCount()).isEqualTo(4L);
-		assertThat(response.myAnsweredCount()).isEqualTo(2L);
+		assertThat(response.yearlyAssignedCount()).isEqualTo(4L);
+		assertThat(response.myVisibleAnsweredCount()).isEqualTo(2L);
 		assertThat(response.assignedCount()).isEqualTo(2L);
 		assertThat(response.completedCount()).isEqualTo(1L);
 	}

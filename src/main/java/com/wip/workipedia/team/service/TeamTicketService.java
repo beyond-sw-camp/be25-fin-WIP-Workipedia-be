@@ -46,12 +46,12 @@ public class TeamTicketService {
 		Map<TicketStatus, Long> counts = countByStatus(departmentId);
 		long assignedCount = counts.getOrDefault(TicketStatus.ASSIGNED, 0L);
 		long completedCount = counts.getOrDefault(TicketStatus.COMPLETED, 0L);
-		long totalCount = ticketRepository.countByAssignedDepartmentIdAndAssignedAtGreaterThanEqualAndAssignedAtLessThanAndDeletedAtIsNull(
+		long yearlyAssignedCount = ticketRepository.countByAssignedDepartmentIdAndAssignedAtGreaterThanEqualAndAssignedAtLessThanAndDeletedAtIsNull(
 			departmentId,
 			startOfCurrentYear(),
 			startOfNextYear()
 		);
-		long myAnsweredCount = ticketAnswerRepository.countVisibleAnsweredTicketsByAuthorInDepartment(
+		long myVisibleAnsweredCount = ticketAnswerRepository.countVisibleAnsweredTicketsByAuthorInDepartment(
 			actor.getUserId(),
 			departmentId
 		);
@@ -59,8 +59,8 @@ public class TeamTicketService {
 		return new TeamTicketSummaryResponse(
 			departmentId,
 			department.getDepartmentName(),
-			totalCount,
-			myAnsweredCount,
+			yearlyAssignedCount,
+			myVisibleAnsweredCount,
 			assignedCount,
 			completedCount
 		);

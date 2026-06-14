@@ -17,6 +17,8 @@ import com.wip.workipedia.user.domain.UserRole;
 import com.wip.workipedia.user.repository.UserRepository;
 import java.util.List;
 import java.util.Optional;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -63,6 +65,24 @@ class TeamAdminDashboardServiceTest {
 	}
 
 	@Test
+	void getChatbotAssignmentTrend_fillsMissingMonthsAndMapsCounts() {
+		TeamAdminDashboardService service = service();
+		User actor = user(UserRole.TEAM_ADMIN, 10L);
+		String currentMonth = YearMonth.now().format(DateTimeFormatter.ofPattern("yyyy-MM"));
+		when(userRepository.findById(1L)).thenReturn(Optional.of(actor));
+		when(ticketRepository.countMonthlyAutoAssignedByDepartment(any(), any(), any()))
+			.thenReturn(List.of(monthlyTicketCount(currentMonth, 7L)));
+
+		var response = service.getChatbotAssignmentTrend(1L, 3);
+
+		assertThat(response.departmentId()).isEqualTo(10L);
+		assertThat(response.months()).isEqualTo(3);
+		assertThat(response.points()).hasSize(3);
+		assertThat(response.points().getLast().month()).isEqualTo(currentMonth);
+		assertThat(response.points().getLast().count()).isEqualTo(7L);
+	}
+
+	@Test
 	void getKnowledgeTrend_rejectsInvalidMonths() {
 		TeamAdminDashboardService service = service();
 		User actor = user(UserRole.TEAM_ADMIN, 10L);
@@ -90,6 +110,20 @@ class TeamAdminDashboardServiceTest {
 
 	private KnowledgeDataRepository.MonthlyCountProjection monthlyKnowledgeCount(String month, long count) {
 		return new KnowledgeDataRepository.MonthlyCountProjection() {
+			@Override
+			public String getMonth() {
+				return month;
+			}
+
+			@Override
+			public long getCount() {
+				return count;
+			}
+		};
+	}
+
+	private TicketRepository.MonthlyCountProjection monthlyTicketCount(String month, long count) {
+		return new TicketRepository.MonthlyCountProjection() {
 			@Override
 			public String getMonth() {
 				return month;
