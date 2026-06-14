@@ -9,6 +9,8 @@ import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.response.PageResponse;
 import com.wip.workipedia.knowledge.domain.KnowledgeData;
 import com.wip.workipedia.knowledge.repository.KnowledgeDataRepository;
+import com.wip.workipedia.point.domain.PointReasonType;
+import com.wip.workipedia.point.service.PointService;
 import com.wip.workipedia.ticket.domain.KnowledgeReviewStatus;
 import com.wip.workipedia.ticket.domain.Ticket;
 import com.wip.workipedia.ticket.domain.TicketStatus;
@@ -27,10 +29,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class TeamAdminKnowledgeDataService {
 
+	private static final int TICKET_KNOWLEDGE_POINT = 30;
+	private static final String TICKET_KNOWLEDGE_RELATED_TYPE = "KNOWLEDGE_DATA";
+
 	private final KnowledgeDataRepository knowledgeDataRepository;
 	private final TicketRepository ticketRepository;
 	private final TicketAnswerRepository ticketAnswerRepository;
 	private final UserRepository userRepository;
+	private final PointService pointService;
 
 	public PageResponse<KnowledgeTicketCandidateResponse> findApprovalCandidates(Long actorUserId, Pageable pageable) {
 		User actor = getTeamAdmin(actorUserId);
@@ -72,7 +78,16 @@ public class TeamAdminKnowledgeDataService {
 			actor.getUserId()
 		);
 		ticket.approveKnowledgeReview(actor.getUserId());
-		return KnowledgeDataResponse.from(knowledgeDataRepository.save(knowledgeData));
+		KnowledgeData savedKnowledgeData = knowledgeDataRepository.save(knowledgeData);
+		// 티켓 내용이 지식화되면 해당 티켓을 발행한 사용자에게 지식화 기여 포인트를 적립한다.
+		pointService.earnPoint(
+			ticket.getRequesterId(),
+			TICKET_KNOWLEDGE_POINT,
+			PointReasonType.TICKET_KNOWLEDGE_CREATED,
+			TICKET_KNOWLEDGE_RELATED_TYPE,
+			savedKnowledgeData.getKnowledgeDataId()
+		);
+		return KnowledgeDataResponse.from(savedKnowledgeData);
 	}
 
 	@Transactional

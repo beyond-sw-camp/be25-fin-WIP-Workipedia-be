@@ -71,6 +71,8 @@ public enum ErrorType {
 	POINT_INVALID_AMOUNT("point-001", "포인트 금액은 0보다 커야 합니다.", HttpStatus.BAD_REQUEST),
 	POINT_INSUFFICIENT_BALANCE("point-002", "보유 포인트가 부족합니다.", HttpStatus.CONFLICT),
 	POINT_AMOUNT_OVERFLOW("point-003", "처리할 수 있는 포인트 범위를 초과했습니다.", HttpStatus.BAD_REQUEST),
+	POINT_INVALID_EVENT("point-004", "포인트 이벤트 식별값이 유효하지 않습니다.", HttpStatus.BAD_REQUEST),
+	POINT_GRADE_NOT_FOUND("point-005", "ESG 등급 기준을 찾을 수 없습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
 
 	// flash-chat
 	FLASH_CHAT_COOLDOWN("flash-chat-001", "메시지 전송 쿨다운 중입니다.", HttpStatus.TOO_MANY_REQUESTS),

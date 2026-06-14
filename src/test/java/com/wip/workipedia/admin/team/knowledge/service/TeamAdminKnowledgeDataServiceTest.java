@@ -3,8 +3,10 @@ package com.wip.workipedia.admin.team.knowledge.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.wip.workipedia.admin.team.knowledge.dto.KnowledgeDataApprovalRequest;
@@ -14,6 +16,8 @@ import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.department.domain.Department;
 import com.wip.workipedia.knowledge.domain.KnowledgeData;
 import com.wip.workipedia.knowledge.repository.KnowledgeDataRepository;
+import com.wip.workipedia.point.domain.PointReasonType;
+import com.wip.workipedia.point.service.PointService;
 import com.wip.workipedia.ticket.domain.KnowledgeReviewStatus;
 import com.wip.workipedia.ticket.domain.RoutingDecision;
 import com.wip.workipedia.ticket.domain.Ticket;
@@ -47,6 +51,9 @@ class TeamAdminKnowledgeDataServiceTest {
 	@Mock
 	private UserRepository userRepository;
 
+	@Mock
+	private PointService pointService;
+
 	@Test
 	void approve_createsKnowledgeDataFromCompletedTicketAnswer() {
 		TeamAdminKnowledgeDataService service = service();
@@ -72,6 +79,13 @@ class TeamAdminKnowledgeDataServiceTest {
 		assertThat(response.question()).isEqualTo("edited question");
 		assertThat(response.answer()).isEqualTo("edited answer");
 		assertThat(ticket.getKnowledgeReviewStatus()).isEqualTo(KnowledgeReviewStatus.APPROVED);
+		verify(pointService).earnPoint(
+			eq(1L),
+			eq(30),
+			eq(PointReasonType.TICKET_KNOWLEDGE_CREATED),
+			eq("KNOWLEDGE_DATA"),
+			eq(300L)
+		);
 	}
 
 	@Test
@@ -174,7 +188,8 @@ class TeamAdminKnowledgeDataServiceTest {
 			knowledgeDataRepository,
 			ticketRepository,
 			ticketAnswerRepository,
-			userRepository
+			userRepository,
+			pointService
 		);
 	}
 
