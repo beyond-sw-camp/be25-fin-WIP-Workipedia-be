@@ -53,7 +53,11 @@ public class PointService {
 		if (searchType == PointHistorySearchType.ALL) {
 			return PageResponse.from(
 				pointHistoryRepository
-					.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(userId, pageable)
+					.findByUserIdAndTypeNotAndDeletedAtIsNullOrderByCreatedAtDesc(
+						userId,
+						PointHistoryType.RESET,
+						pageable
+					)
 					.map(PointHistoryResponse::from)
 			);
 		}

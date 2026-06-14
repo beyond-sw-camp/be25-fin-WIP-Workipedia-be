@@ -14,6 +14,12 @@ public interface PointHistoryRepository extends JpaRepository<PointHistory, Long
 
 	Page<PointHistory> findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
+	Page<PointHistory> findByUserIdAndTypeNotAndDeletedAtIsNullOrderByCreatedAtDesc(
+		Long userId,
+		PointHistoryType excludedType,
+		Pageable pageable
+	);
+
 	Page<PointHistory> findByUserIdAndTypeAndDeletedAtIsNullOrderByCreatedAtDesc(
 		Long userId,
 		PointHistoryType type,
