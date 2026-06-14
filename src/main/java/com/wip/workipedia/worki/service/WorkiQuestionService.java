@@ -10,6 +10,7 @@ import com.wip.workipedia.worki.dto.QuestionSummaryResponse;
 import com.wip.workipedia.worki.dto.QuestionUpdateRequest;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
+import com.wip.workipedia.point.service.PointService;
 import com.wip.workipedia.reaction.domain.ReactionTargetType;
 import com.wip.workipedia.reaction.domain.ReactionType;
 import com.wip.workipedia.reaction.repository.ReactionRepository;
@@ -37,21 +38,38 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class WorkiQuestionService {
 
+    // 워키 질문 등록 포인트 정책: 첫 질문은 20p, 이후 질문은 10p.
+    private static final int FIRST_QUESTION_POINT = 20;
+    private static final int QUESTION_POINT = 10;
+    private static final String REASON_FIRST_QUESTION = "WORKI_FIRST_QUESTION";
+    private static final String REASON_QUESTION_CREATED = "WORKI_QUESTION_CREATED";
+    private static final String RELATED_TYPE_WORKI_QUESTION = "WORKI_QUESTION";
+
     private final WorkiQuestionRepository questionRepository;
     private final WorkiAnswerRepository answerRepository;
     private final UserRepository userRepository;
     private final ReactionRepository reactionRepository;
     private final WorkiViewCountService viewCountService;
     private final ApplicationEventPublisher eventPublisher;
+    private final PointService pointService;
 
     @Transactional
     public QuestionResponse create(Long actorUserId, QuestionCreateRequest request) {
+        // 저장 전에 기존 질문 수를 세어 "첫 질문" 여부를 판별한다(저장 후엔 방금 글이 포함되어 0이 될 수 없다).
+        boolean firstQuestion = questionRepository.countByAuthorIdAndDeletedAtIsNull(actorUserId) == 0;
+
         WorkiQuestion question = WorkiQuestion.create(
                 actorUserId, request.title(), request.content(), request.sourceChatbotMessageId());
         WorkiQuestion saved = questionRepository.save(question);
         // 커밋 후 검색 색인이 반영되도록 이벤트만 발행한다(실제 색인은 search가 구독 즉, search 서비스에서 처리).
         // 롤백 되면 색인 요청 삭제. 안하게 됨. 커밋과 색인 요청이 동시에 일어남.
         eventPublisher.publishEvent(new WorkiQuestionChangedEvent(saved.getQuestionId()));
+
+        // 질문 등록 포인트 적립. relatedId(questionId)가 질문마다 고유하므로 같은 질문에 중복 적립되지 않는다.
+        int amount = firstQuestion ? FIRST_QUESTION_POINT : QUESTION_POINT;
+        String reasonType = firstQuestion ? REASON_FIRST_QUESTION : REASON_QUESTION_CREATED;
+        pointService.earnPoint(actorUserId, amount, reasonType, RELATED_TYPE_WORKI_QUESTION, saved.getQuestionId());
+
         return QuestionResponse.from(saved);
     }
 

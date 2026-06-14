@@ -7,6 +7,7 @@ import com.wip.workipedia.worki.dto.AnswerResponse;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.notification.service.NotificationService;
+import com.wip.workipedia.point.service.PointService;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.repository.UserRepository;
 import com.wip.workipedia.worki.repository.WorkiAnswerRepository;
@@ -20,10 +21,18 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class WorkiAnswerService {
 
+    // 워키 답변 포인트 정책: 답변 등록 5p, 답변 채택 시 채택된 답변 작성자에게 10p.
+    private static final int ANSWER_CREATED_POINT = 5;
+    private static final int ANSWER_ACCEPTED_POINT = 10;
+    private static final String REASON_ANSWER_CREATED = "WORKI_ANSWER_CREATED";
+    private static final String REASON_ANSWER_ACCEPTED = "WORKI_ANSWER_ACCEPTED";
+    private static final String RELATED_TYPE_WORKI_ANSWER = "WORKI_ANSWER";
+
     private final WorkiAnswerRepository answerRepository;
     private final WorkiQuestionRepository questionRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final PointService pointService;
 
     public AnswerResponse createAnswer(Long actorUserId, Long questionId, AnswerCreateRequest request) {
         WorkiQuestion question = getQuestionOrThrow(questionId);
@@ -38,6 +47,10 @@ public class WorkiAnswerService {
             notificationService.createWorkiQuestionAnswered(
                     question.getAuthorId(), question.getQuestionId(), question.getTitle());
         }
+        // 답변 등록 포인트 적립(5p). relatedId(answerId)가 답변마다 고유하므로 같은 답변에 중복 적립되지 않는다.
+        pointService.earnPoint(
+                actorUserId, ANSWER_CREATED_POINT, REASON_ANSWER_CREATED,
+                RELATED_TYPE_WORKI_ANSWER, answer.getAnswerId());
         User author = userRepository.findById(actorUserId).orElse(null);
         return AnswerResponse.of(answer, author);
     }
@@ -62,6 +75,10 @@ public class WorkiAnswerService {
             notificationService.createWorkiAnswerAccepted(
                     answer.getAuthorId(), answer.getAnswerId(), question.getQuestionId(), question.getTitle());
         }
+        // 답변 채택 포인트 적립(10p)은 채택된 답변의 작성자에게 지급한다(채택을 누른 질문 작성자가 아님).
+        pointService.earnPoint(
+                answer.getAuthorId(), ANSWER_ACCEPTED_POINT, REASON_ANSWER_ACCEPTED,
+                RELATED_TYPE_WORKI_ANSWER, answer.getAnswerId());
         User author = userRepository.findById(answer.getAuthorId()).orElse(null);
         return AnswerResponse.of(answer, author);
     }
