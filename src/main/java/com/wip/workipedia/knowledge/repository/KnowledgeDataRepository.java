@@ -17,6 +17,10 @@ public interface KnowledgeDataRepository extends JpaRepository<KnowledgeData, Lo
 
 	Page<KnowledgeData> findByDepartmentIdAndDeletedAtIsNull(Long departmentId, Pageable pageable);
 
+	Optional<KnowledgeData> findByKnowledgeDataIdAndDeletedAtIsNullAndIsDeleted(Long knowledgeDataId, String isDeleted);
+
+	Page<KnowledgeData> findByDeletedAtIsNullAndIsDeleted(String isDeleted, Pageable pageable);
+
 	@Query(
 		value = """
 			SELECT
