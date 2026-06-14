@@ -4,21 +4,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
+import com.wip.workipedia.notification.service.NotificationService;
+import com.wip.workipedia.point.domain.PointReasonType;
+import com.wip.workipedia.point.service.PointService;
 import com.wip.workipedia.worki.domain.QuestionStatus;
 import com.wip.workipedia.worki.domain.WorkiAnswer;
 import com.wip.workipedia.worki.domain.WorkiQuestion;
 import com.wip.workipedia.worki.dto.AnswerCreateRequest;
 import com.wip.workipedia.worki.dto.AnswerResponse;
-import com.wip.workipedia.common.exception.CustomException;
-import com.wip.workipedia.common.exception.ErrorType;
-import com.wip.workipedia.notification.service.NotificationService;
-import com.wip.workipedia.point.service.PointService;
 import com.wip.workipedia.user.repository.UserRepository;
 import com.wip.workipedia.worki.repository.WorkiAnswerRepository;
 import com.wip.workipedia.worki.repository.WorkiQuestionRepository;
@@ -57,15 +57,50 @@ class WorkiAnswerServiceTest {
         Long authorId = 1001L;
         Long answererId = 1002L;
         Long questionId = 1010L;
+        Long answerId = 1050L;
+        WorkiQuestion question = WorkiQuestion.create(authorId, "title", "content", null);
+        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(questionId))
+                .thenReturn(Optional.of(question));
+        when(answerRepository.save(any(WorkiAnswer.class)))
+                .thenAnswer(invocation -> {
+                    WorkiAnswer answer = invocation.getArgument(0);
+                    org.springframework.test.util.ReflectionTestUtils.setField(answer, "answerId", answerId);
+                    return answer;
+                });
+
+        answerService.createAnswer(answererId, questionId, new AnswerCreateRequest("answer content"));
+
+        assertThat(question.getStatus()).isEqualTo(QuestionStatus.IN_PROGRESS);
+        verify(pointService).earnPoint(
+                eq(answererId),
+                eq(5),
+                eq(PointReasonType.WORKI_ANSWER_CREATED),
+                eq("WORKI_ANSWER"),
+                eq(answerId)
+        );
+    }
+
+    @Test
+    @DisplayName("author answering own question does not earn answer point")
+    void createAnswer_onOwnQuestion_doesNotEarnPoint() {
+        Long authorId = 1001L;
+        Long questionId = 1010L;
         WorkiQuestion question = WorkiQuestion.create(authorId, "title", "content", null);
         when(questionRepository.findByQuestionIdAndDeletedAtIsNull(questionId))
                 .thenReturn(Optional.of(question));
         when(answerRepository.save(any(WorkiAnswer.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        answerService.createAnswer(answererId, questionId, new AnswerCreateRequest("answer content"));
+        answerService.createAnswer(authorId, questionId, new AnswerCreateRequest("answer content"));
 
         assertThat(question.getStatus()).isEqualTo(QuestionStatus.IN_PROGRESS);
+        verify(pointService, never()).earnPoint(
+                anyLong(),
+                eq(5),
+                eq(PointReasonType.WORKI_ANSWER_CREATED),
+                eq("WORKI_ANSWER"),
+                anyLong()
+        );
     }
 
     @Test
@@ -108,6 +143,7 @@ class WorkiAnswerServiceTest {
         Long questionId = 1010L;
         Long answerId = 1050L;
         WorkiAnswer answer = WorkiAnswer.create(questionId, answererId, "answer");
+        org.springframework.test.util.ReflectionTestUtils.setField(answer, "answerId", answerId);
         WorkiQuestion question = WorkiQuestion.create(authorId, "title", "content", null);
         when(answerRepository.findByAnswerIdAndDeletedAtIsNull(answerId))
                 .thenReturn(Optional.of(answer));
@@ -120,6 +156,41 @@ class WorkiAnswerServiceTest {
         assertThat(answer.isAccepted()).isTrue();
         assertThat(answer.getAcceptedAt()).isNotNull();
         assertThat(question.getStatus()).isEqualTo(QuestionStatus.ANSWERED);
+        verify(pointService).earnPoint(
+                eq(answererId),
+                eq(5),
+                eq(PointReasonType.WORKI_ANSWER_ACCEPTED),
+                eq("WORKI_ANSWER"),
+                eq(answerId)
+        );
+    }
+
+    @Test
+    @DisplayName("author accepting own answer does not earn accepted answer point")
+    void acceptAnswer_onOwnAnswer_doesNotEarnPoint() {
+        Long authorId = 1001L;
+        Long questionId = 1010L;
+        Long answerId = 1050L;
+        WorkiAnswer answer = WorkiAnswer.create(questionId, authorId, "answer");
+        org.springframework.test.util.ReflectionTestUtils.setField(answer, "answerId", answerId);
+        WorkiQuestion question = WorkiQuestion.create(authorId, "title", "content", null);
+        when(answerRepository.findByAnswerIdAndDeletedAtIsNull(answerId))
+                .thenReturn(Optional.of(answer));
+        when(questionRepository.findByQuestionIdAndDeletedAtIsNull(questionId))
+                .thenReturn(Optional.of(question));
+
+        AnswerResponse response = answerService.acceptAnswer(authorId, answerId);
+
+        assertThat(response.accepted()).isTrue();
+        assertThat(answer.isAccepted()).isTrue();
+        assertThat(question.getStatus()).isEqualTo(QuestionStatus.ANSWERED);
+        verify(pointService, never()).earnPoint(
+                anyLong(),
+                eq(5),
+                eq(PointReasonType.WORKI_ANSWER_ACCEPTED),
+                eq("WORKI_ANSWER"),
+                anyLong()
+        );
     }
 
     @Test

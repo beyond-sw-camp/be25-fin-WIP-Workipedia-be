@@ -53,7 +53,7 @@ public class WorkiQuestionService {
 
     @Transactional
     public QuestionResponse create(Long actorUserId, QuestionCreateRequest request) {
-        boolean firstQuestion = !hasEarnedFirstQuestionPoint(actorUserId);
+        boolean firstQuestion = !hasCreatedQuestion(actorUserId);
         WorkiQuestion question = WorkiQuestion.create(
                 actorUserId, request.title(), request.content(), request.sourceChatbotMessageId());
         WorkiQuestion saved = questionRepository.save(question);
@@ -134,8 +134,8 @@ public class WorkiQuestionService {
         return QuestionResponse.from(question);
     }
 
-    private boolean hasEarnedFirstQuestionPoint(Long actorUserId) {
-        return pointService.hasEarnedPoint(actorUserId, PointReasonType.WORKI_FIRST_QUESTION_CREATED);
+    private boolean hasCreatedQuestion(Long actorUserId) {
+        return questionRepository.existsByAuthorId(actorUserId);
     }
 
     private void earnQuestionCreatedPoint(Long actorUserId, Long questionId, boolean firstQuestion) {
@@ -153,7 +153,7 @@ public class WorkiQuestionService {
 
     @Transactional
     public List<QuestionResponse> createBulk(Long actorUserId, List<QuestionCreateRequest> requests) {
-        boolean hasEarnedFirstQuestionPoint = hasEarnedFirstQuestionPoint(actorUserId);
+        boolean hasCreatedQuestion = hasCreatedQuestion(actorUserId);
         List<WorkiQuestion> questions = requests.stream()
                 .map(request -> WorkiQuestion.create(
                         actorUserId,
@@ -168,7 +168,7 @@ public class WorkiQuestionService {
         for (int index = 0; index < savedQuestions.size(); index++) {
             WorkiQuestion saved = savedQuestions.get(index);
             eventPublisher.publishEvent(new WorkiQuestionChangedEvent(saved.getQuestionId()));
-            earnQuestionCreatedPoint(actorUserId, saved.getQuestionId(), !hasEarnedFirstQuestionPoint && index == 0);
+            earnQuestionCreatedPoint(actorUserId, saved.getQuestionId(), !hasCreatedQuestion && index == 0);
         }
 
         return savedQuestions.stream()
