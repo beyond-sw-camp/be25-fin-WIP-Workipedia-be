@@ -39,6 +39,10 @@ public class WorkiAnswerService {
         if (question.isAnswered()) {
             throw new CustomException(ErrorType.WORKI_POLICY_VIOLATION, "채택된 답변이 있어 더 이상 답변을 등록할 수 없습니다.");
         }
+        // 답변 등록 포인트(5p)는 질문당 1회만 지급한다. 같은 질문에 답변을 여러 번 달아도 반복 적립되지 않도록
+        // 저장 전에 "이 사용자가 이 질문에 이미 답변했는지"를 확인한다.
+        boolean firstAnswerToQuestion = !answerRepository.existsByQuestionIdAndAuthorIdAndDeletedAtIsNull(questionId, actorUserId);
+
         WorkiAnswer answer = answerRepository.save(
                 WorkiAnswer.create(questionId, actorUserId, request.content()));
         question.markInProgress();
@@ -47,10 +51,12 @@ public class WorkiAnswerService {
             notificationService.createWorkiQuestionAnswered(
                     question.getAuthorId(), question.getQuestionId(), question.getTitle());
         }
-        // 답변 등록 포인트 적립(5p). relatedId(answerId)가 답변마다 고유하므로 같은 답변에 중복 적립되지 않는다.
-        pointService.earnPoint(
-                actorUserId, ANSWER_CREATED_POINT, REASON_ANSWER_CREATED,
-                RELATED_TYPE_WORKI_ANSWER, answer.getAnswerId());
+        // 첫 답변일 때만 5p 적립. relatedId(answerId)는 멱등성(같은 답변 재처리 방지)용으로 유지한다.
+        if (firstAnswerToQuestion) {
+            pointService.earnPoint(
+                    actorUserId, ANSWER_CREATED_POINT, REASON_ANSWER_CREATED,
+                    RELATED_TYPE_WORKI_ANSWER, answer.getAnswerId());
+        }
         User author = userRepository.findById(actorUserId).orElse(null);
         return AnswerResponse.of(answer, author);
     }

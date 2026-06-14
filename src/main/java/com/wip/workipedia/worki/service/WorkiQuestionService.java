@@ -55,8 +55,9 @@ public class WorkiQuestionService {
 
     @Transactional
     public QuestionResponse create(Long actorUserId, QuestionCreateRequest request) {
-        // 저장 전에 기존 질문 수를 세어 "첫 질문" 여부를 판별한다(저장 후엔 방금 글이 포함되어 0이 될 수 없다).
-        boolean firstQuestion = questionRepository.countByAuthorIdAndDeletedAtIsNull(actorUserId) == 0;
+        // 첫 질문 보너스(20p)는 "이전에 첫 질문 보너스를 받은 적이 있는지"로 판별한다.
+        // 질문 개수로 세면 글이 삭제/일괄등록(createBulk)된 경우 보너스가 다시 지급되는 문제가 있어, 적립 이력 기준으로 1회만 지급한다.
+        boolean firstQuestion = !pointService.hasEarnedReason(actorUserId, REASON_FIRST_QUESTION);
 
         WorkiQuestion question = WorkiQuestion.create(
                 actorUserId, request.title(), request.content(), request.sourceChatbotMessageId());

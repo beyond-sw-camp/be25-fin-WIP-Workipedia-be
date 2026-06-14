@@ -35,4 +35,11 @@ public interface PointHistoryRepository extends JpaRepository<PointHistory, Long
 		Long relatedId,
 		PointHistoryType type
 	);
+
+	// 특정 사유의 적립 이력을 사용자가 가진 적이 있는지 확인한다(예: 첫 질문 보너스 1회성 지급 판별).
+	boolean existsByUserIdAndReasonTypeAndTypeAndDeletedAtIsNull(
+		Long userId,
+		String reasonType,
+		PointHistoryType type
+	);
 }

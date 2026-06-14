@@ -40,6 +40,13 @@ public class PointService {
 			.orElseGet(() -> new MyPointResponse(userId, 0L));
 	}
 
+	// 해당 사유로 적립받은 이력이 한 번이라도 있는지 확인한다(1회성 보너스 중복 지급 방지용).
+	@Transactional(readOnly = true)
+	public boolean hasEarnedReason(Long userId, String reasonType) {
+		return pointHistoryRepository.existsByUserIdAndReasonTypeAndTypeAndDeletedAtIsNull(
+			userId, reasonType, PointHistoryType.EARN);
+	}
+
 	@Transactional(readOnly = true)
 	public PageResponse<PointHistoryResponse> getMyPointHistory(
 			Long userId,

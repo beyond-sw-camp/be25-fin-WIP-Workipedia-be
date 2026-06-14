@@ -19,9 +19,6 @@ public interface WorkiQuestionRepository extends JpaRepository<WorkiQuestion, Lo
 
     Optional<WorkiQuestion> findByQuestionIdAndDeletedAtIsNull(Long questionId);
 
-    // 첫 질문 등록 보너스(20p) 판별용. 작성자의 삭제되지 않은 기존 질문 수를 센다.
-    long countByAuthorIdAndDeletedAtIsNull(Long authorId);
-
     
     @Query(value = """
             SELECT q.question_id AS questionId,
