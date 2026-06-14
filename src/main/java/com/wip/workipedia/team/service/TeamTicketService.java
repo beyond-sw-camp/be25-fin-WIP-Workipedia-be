@@ -4,13 +4,18 @@ import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.response.PageResponse;
 import com.wip.workipedia.department.domain.Department;
+import com.wip.workipedia.department.repository.DepartmentRepository;
 import com.wip.workipedia.team.dto.TeamTicketSummaryResponse;
 import com.wip.workipedia.ticket.domain.Ticket;
+import com.wip.workipedia.ticket.domain.TicketTransferRequest;
 import com.wip.workipedia.ticket.domain.TicketStatus;
+import com.wip.workipedia.ticket.dto.TicketTransferRequestCreateRequest;
 import com.wip.workipedia.ticket.dto.RoutingResult;
 import com.wip.workipedia.ticket.dto.TicketResponse;
 import com.wip.workipedia.ticket.repository.TicketRepository;
+import com.wip.workipedia.ticket.repository.TicketTransferRequestRepository;
 import com.wip.workipedia.user.domain.User;
+import com.wip.workipedia.user.domain.UserRole;
 import com.wip.workipedia.user.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.EnumMap;
@@ -35,6 +40,8 @@ public class TeamTicketService {
 
 	private final TicketRepository ticketRepository;
 	private final UserRepository userRepository;
+	private final DepartmentRepository departmentRepository;
+	private final TicketTransferRequestRepository ticketTransferRequestRepository;
 
 	public TeamTicketSummaryResponse getSummary(Long actorUserId) {
 		User actor = getTeamMember(actorUserId);
@@ -73,6 +80,43 @@ public class TeamTicketService {
 		return TicketResponse.from(ticket, emptyRoutingResult());
 	}
 
+	@Transactional
+	public TicketResponse requestTransfer(
+		Long actorUserId,
+		Long ticketId,
+		TicketTransferRequestCreateRequest request
+	) {
+		User actor = getTeamMember(actorUserId);
+		assertTeamAdmin(actor);
+		Ticket ticket = ticketRepository.findActiveByTicketIdForUpdate(ticketId)
+			.orElseThrow(() -> new CustomException(ErrorType.TICKET_NOT_FOUND));
+		assertDepartmentTicket(actor, ticket);
+		if (ticket.getStatus() != TicketStatus.ASSIGNED) {
+			throw new CustomException(ErrorType.TICKET_INVALID_TRANSFER);
+		}
+
+		Long suggestedDepartmentId = request.suggestedDepartmentId();
+		String suggestedDepartmentName = null;
+		if (suggestedDepartmentId != null) {
+			Department suggestedDepartment = departmentRepository.findByDepartmentIdAndDeletedAtIsNull(suggestedDepartmentId)
+				.orElseThrow(() -> new CustomException(ErrorType.DEPARTMENT_NOT_FOUND));
+			suggestedDepartmentName = suggestedDepartment.getDepartmentName();
+		}
+
+		TicketTransferRequest transferRequest = TicketTransferRequest.create(
+			ticket.getTicketId(),
+			actorUserId,
+			actor.getDepartment().getDepartmentId(),
+			suggestedDepartmentId,
+			request.reason()
+		);
+		ticketTransferRequestRepository.save(transferRequest);
+		ticket.requestTransfer();
+
+		return TicketResponse.from(ticket, emptyRoutingResult())
+			.withTransferInfo(request.reason(), suggestedDepartmentId, suggestedDepartmentName);
+	}
+
 	private User getTeamMember(Long actorUserId) {
 		User user = userRepository.findById(actorUserId)
 			.orElseThrow(() -> new CustomException(ErrorType.TICKET_FORBIDDEN));
@@ -85,6 +129,12 @@ public class TeamTicketService {
 	private void assertDepartmentTicket(User actor, Ticket ticket) {
 		Long actorDepartmentId = actor.getDepartment().getDepartmentId();
 		if (!actorDepartmentId.equals(ticket.getAssignedDepartmentId())) {
+			throw new CustomException(ErrorType.TICKET_FORBIDDEN);
+		}
+	}
+
+	private void assertTeamAdmin(User actor) {
+		if (actor.getRole() != UserRole.TEAM_ADMIN) {
 			throw new CustomException(ErrorType.TICKET_FORBIDDEN);
 		}
 	}

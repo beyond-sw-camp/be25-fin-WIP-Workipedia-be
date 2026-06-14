@@ -6,6 +6,7 @@ import com.wip.workipedia.team.dto.TeamTicketSummaryResponse;
 import com.wip.workipedia.team.service.TeamTicketService;
 import com.wip.workipedia.ticket.domain.TicketStatus;
 import com.wip.workipedia.ticket.dto.TicketResponse;
+import com.wip.workipedia.ticket.dto.TicketTransferRequestCreateRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -13,7 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -45,5 +48,14 @@ public class TeamTicketController {
 		@PathVariable Long ticketId
 	) {
 		return ResponseEntity.ok(teamTicketService.findTicket(actorUserId, ticketId));
+	}
+
+	@PostMapping("/{ticketId}/transfer")
+	public ResponseEntity<TicketResponse> requestTransfer(
+		@AuthenticationPrincipal Long actorUserId,
+		@PathVariable Long ticketId,
+		@Valid @RequestBody TicketTransferRequestCreateRequest request
+	) {
+		return ResponseEntity.ok(teamTicketService.requestTransfer(actorUserId, ticketId, request));
 	}
 }

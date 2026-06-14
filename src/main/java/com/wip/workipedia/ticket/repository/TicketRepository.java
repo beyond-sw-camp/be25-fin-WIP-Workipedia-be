@@ -47,6 +47,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
 	Page<Ticket> findByStatusAndDeletedAtIsNullOrderByCreatedAtDesc(TicketStatus status, Pageable pageable);
 
+	Page<Ticket> findByStatusInAndDeletedAtIsNullOrderByCreatedAtDesc(Collection<TicketStatus> statuses, Pageable pageable);
+
 	long countByRequesterIdAndDeletedAtIsNull(Long requesterId);
 
 	@Query("""

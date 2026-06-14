@@ -129,6 +129,15 @@ public class Ticket {
 		touch();
 	}
 
+	public void requestTransfer() {
+		this.assigneeId = null;
+		this.assignedDepartmentId = null;
+		this.assignedAt = null;
+		this.routingDecision = RoutingDecision.COMMON_QUEUE;
+		this.status = TicketStatus.TRANSFERRED;
+		touch();
+	}
+
 	public void complete() {
 		this.status = TicketStatus.COMPLETED;
 		this.completedAt = LocalDateTime.now();

@@ -37,6 +37,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
                 NotificationTargetType.TICKET,
                 List.of(
                         NotificationType.TICKET_ASSIGNED,
+                        NotificationType.TICKET_REASSIGNED,
                         NotificationType.TICKET_COMPLETED,
                         NotificationType.TICKET_DELETED
                 ),

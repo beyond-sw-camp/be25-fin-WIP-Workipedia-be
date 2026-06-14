@@ -88,6 +88,20 @@ public class NotificationService {
                         "/me/tickets/" + ticket.getTicketId()
                 )));
     }
+
+    public void createTicketReassignedNotification(Long userId, Ticket ticket) {
+        createAfterCommit("ticket reassigned notification", () ->
+                notificationRepository.save(Notification.create(
+                        userId,
+                        NotificationType.TICKET_REASSIGNED,
+                        ticketTitle(NotificationType.TICKET_REASSIGNED),
+                        ticket.getTitle(),
+                        NotificationTargetType.TICKET,
+                        ticket.getTicketId(),
+                        "/me/tickets/" + ticket.getTicketId()
+                )));
+    }
+
     public void createWorkiQuestionCreated(Long userId, Long questionId, String questionTitle) {
         createAfterCommit("worki question created notification", () ->
                 notificationRepository.save(Notification.create(
@@ -207,6 +221,7 @@ public class NotificationService {
     private String ticketTitle(NotificationType type) {
         return switch (type) {
             case TICKET_ASSIGNED -> "티켓 부서 배정";
+            case TICKET_REASSIGNED -> "티켓 담당 부서 재배정";
             case TICKET_COMPLETED -> "티켓 답변 완료";
             case TICKET_DELETED -> "티켓 삭제";
             default -> "티켓 알림";
