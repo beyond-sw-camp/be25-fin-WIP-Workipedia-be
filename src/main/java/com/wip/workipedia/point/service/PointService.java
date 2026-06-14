@@ -82,11 +82,18 @@ public class PointService {
 
 	@Transactional
 	public void earnPoint(Long userId, int amount, PointReasonType reasonType, String relatedType, Long relatedId) {
+		validateEarnEvent(reasonType, relatedType, relatedId);
 		String reasonTypeName = reasonType.name();
-		if (isDuplicateEarnEvent(reasonTypeName, relatedType, relatedId)) {
+		if (isDuplicatePointEvent(reasonTypeName, relatedType, relatedId, PointHistoryType.EARN)) {
 			return;
 		}
 		earnPointInternal(userId, amount, reasonTypeName, relatedType, relatedId);
+	}
+
+	private void validateEarnEvent(PointReasonType reasonType, String relatedType, Long relatedId) {
+		if (reasonType == null || relatedType == null || relatedType.isBlank() || relatedId == null) {
+			throw new CustomException(ErrorType.POINT_INVALID_EVENT);
+		}
 	}
 
 	// 일일 적립 한도를 초과하면 잔여 한도만큼만 적립하고, 한도가 없으면 아무 것도 저장하지 않는다.
@@ -113,9 +120,19 @@ public class PointService {
 
 	@Transactional
 	public void spendPoint(Long userId, int amount, String reasonType, String relatedType, Long relatedId) {
+		validateSpendEvent(reasonType, relatedType, relatedId);
+		if (isDuplicatePointEvent(reasonType, relatedType, relatedId, PointHistoryType.SPEND)) {
+			return;
+		}
 		UserPoint userPoint = getOrCreateUserPoint(userId);
 		userPoint.spend(amount);
 		pointHistoryRepository.save(PointHistory.spend(userId, amount, reasonType, relatedType, relatedId));
+	}
+
+	private void validateSpendEvent(String reasonType, String relatedType, Long relatedId) {
+		if (reasonType == null || reasonType.isBlank() || relatedType == null || relatedType.isBlank() || relatedId == null) {
+			throw new CustomException(ErrorType.POINT_INVALID_EVENT);
+		}
 	}
 
 	@Transactional
@@ -159,7 +176,7 @@ public class PointService {
 
 	private void updateEsgGrade(UserPoint userPoint) {
 		EsgGrade grade = esgGradeRepository.findActiveGradeByScore(userPoint.getEsgScore())
-			.orElseThrow(() -> new CustomException(ErrorType.NOT_FOUND));
+			.orElseThrow(() -> new CustomException(ErrorType.POINT_GRADE_NOT_FOUND));
 		userPoint.updateGradeIfChanged(grade.getGradeId());
 	}
 
@@ -178,16 +195,12 @@ public class PointService {
 			);
 	}
 
-	// 관련 엔티티가 없는 적립은 이벤트 멱등성을 판단할 수 없어 중복 검사 대상에서 제외한다.
-	private boolean isDuplicateEarnEvent(String reasonType, String relatedType, Long relatedId) {
-		if (reasonType == null || relatedType == null || relatedId == null) {
-			return false;
-		}
+	private boolean isDuplicatePointEvent(String reasonType, String relatedType, Long relatedId, PointHistoryType type) {
 		return pointHistoryRepository.existsByReasonTypeAndRelatedTypeAndRelatedIdAndTypeAndDeletedAtIsNull(
 			reasonType,
 			relatedType,
 			relatedId,
-			PointHistoryType.EARN
+			type
 		);
 	}
 
