@@ -3,6 +3,8 @@ package com.wip.workipedia.ticket.service;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.notification.service.NotificationService;
+import com.wip.workipedia.point.domain.PointReasonType;
+import com.wip.workipedia.point.service.PointService;
 import com.wip.workipedia.storage.dto.StoredObjectMetadata;
 import com.wip.workipedia.storage.service.StorageService;
 import com.wip.workipedia.ticket.domain.Ticket;
@@ -23,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class TicketAnswerService {
 
+	private static final int TICKET_ANSWER_POINT = 15;
+	private static final String TICKET_ANSWER_RELATED_TYPE = "TICKET_ANSWER";
 	private static final String TICKET_REPLY_FILE_PREFIX = "tickets/replies/";
 
 	private final TicketRepository ticketRepository;
@@ -30,6 +34,7 @@ public class TicketAnswerService {
 	private final UserRepository userRepository;
 	private final NotificationService notificationService;
 	private final StorageService storageService;
+	private final PointService pointService;
 
 	@Transactional
 	public TicketAnswerResponse createOfficialAnswer(Long actorUserId, Long ticketId, TicketAnswerCreateRequest request) {
@@ -51,6 +56,13 @@ public class TicketAnswerService {
 				attachment == null ? null : attachment.contentType(),
 				attachment == null ? null : attachment.contentLength()
 			)
+		);
+		pointService.earnPoint(
+			actor.getUserId(),
+			TICKET_ANSWER_POINT,
+			PointReasonType.TICKET_ANSWER_CREATED,
+			TICKET_ANSWER_RELATED_TYPE,
+			answer.getTicketAnswerId()
 		);
 		ticket.complete();
 		notificationService.createTicketNotification(ticket.getRequesterId(), ticket);

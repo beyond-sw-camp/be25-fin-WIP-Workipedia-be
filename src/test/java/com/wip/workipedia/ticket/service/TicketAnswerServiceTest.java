@@ -2,6 +2,7 @@ package com.wip.workipedia.ticket.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -11,6 +12,8 @@ import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.department.domain.Department;
 import com.wip.workipedia.notification.service.NotificationService;
+import com.wip.workipedia.point.domain.PointReasonType;
+import com.wip.workipedia.point.service.PointService;
 import com.wip.workipedia.storage.dto.StoredObjectMetadata;
 import com.wip.workipedia.storage.service.StorageService;
 import com.wip.workipedia.ticket.domain.RoutingDecision;
@@ -49,10 +52,13 @@ class TicketAnswerServiceTest {
 	@Mock
 	private StorageService storageService;
 
+	@Mock
+	private PointService pointService;
+
 	@Test
 	void createOfficialAnswer_savesAnswerAndCompletesTicket() {
 		TicketAnswerService service = new TicketAnswerService(
-			ticketRepository, ticketAnswerRepository, userRepository, notificationService, storageService);
+			ticketRepository, ticketAnswerRepository, userRepository, notificationService, storageService, pointService);
 		User actor = user(1L, 10L);
 		Ticket ticket = assignedTicket(100L, 10L);
 		when(userRepository.findById(1L)).thenReturn(Optional.of(actor));
@@ -70,13 +76,20 @@ class TicketAnswerServiceTest {
 		assertThat(response.content()).isEqualTo("처리 완료했습니다.");
 		assertThat(ticket.getStatus()).isEqualTo(TicketStatus.COMPLETED);
 		assertThat(ticket.getCompletedAt()).isNotNull();
+		verify(pointService).earnPoint(
+			eq(1L),
+			eq(15),
+			eq(PointReasonType.TICKET_ANSWER_CREATED),
+			eq("TICKET_ANSWER"),
+			eq(500L)
+		);
 		verify(notificationService).createTicketNotification(ticket.getRequesterId(), ticket);
 	}
 
 	@Test
 	void createOfficialAnswer_rejectsOtherDepartmentUser() {
 		TicketAnswerService service = new TicketAnswerService(
-			ticketRepository, ticketAnswerRepository, userRepository, notificationService, storageService);
+			ticketRepository, ticketAnswerRepository, userRepository, notificationService, storageService, pointService);
 		User actor = user(1L, 20L);
 		when(userRepository.findById(1L)).thenReturn(Optional.of(actor));
 		when(ticketRepository.findActiveByTicketIdForUpdate(100L)).thenReturn(Optional.of(assignedTicket(100L, 10L)));
@@ -90,7 +103,7 @@ class TicketAnswerServiceTest {
 	@Test
 	void createOfficialAnswer_rejectsUserWithoutDepartment() {
 		TicketAnswerService service = new TicketAnswerService(
-			ticketRepository, ticketAnswerRepository, userRepository, notificationService, storageService);
+			ticketRepository, ticketAnswerRepository, userRepository, notificationService, storageService, pointService);
 		User actor = mock(User.class);
 		when(actor.getDepartment()).thenReturn(null);
 		when(userRepository.findById(1L)).thenReturn(Optional.of(actor));
@@ -105,7 +118,7 @@ class TicketAnswerServiceTest {
 	@Test
 	void createOfficialAnswer_rejectsCompletedTicket() {
 		TicketAnswerService service = new TicketAnswerService(
-			ticketRepository, ticketAnswerRepository, userRepository, notificationService, storageService);
+			ticketRepository, ticketAnswerRepository, userRepository, notificationService, storageService, pointService);
 		Ticket ticket = assignedTicket(100L, 10L);
 		ticket.complete();
 		User actor = user(1L, 10L);
@@ -121,7 +134,7 @@ class TicketAnswerServiceTest {
 	@Test
 	void createOfficialAnswer_resolvesAttachmentMetadataFromStorage() {
 		TicketAnswerService service = new TicketAnswerService(
-			ticketRepository, ticketAnswerRepository, userRepository, notificationService, storageService);
+			ticketRepository, ticketAnswerRepository, userRepository, notificationService, storageService, pointService);
 		User actor = user(1L, 10L);
 		Ticket ticket = assignedTicket(100L, 10L);
 		String objectKey = "tickets/replies/uuid/guide.pdf";
@@ -149,7 +162,7 @@ class TicketAnswerServiceTest {
 	@Test
 	void createOfficialAnswer_rejectsAttachmentOutsideTicketReplyPrefix() {
 		TicketAnswerService service = new TicketAnswerService(
-			ticketRepository, ticketAnswerRepository, userRepository, notificationService, storageService);
+			ticketRepository, ticketAnswerRepository, userRepository, notificationService, storageService, pointService);
 		User actor = user(1L, 10L);
 		when(userRepository.findById(1L)).thenReturn(Optional.of(actor));
 		when(ticketRepository.findActiveByTicketIdForUpdate(100L)).thenReturn(Optional.of(assignedTicket(100L, 10L)));
