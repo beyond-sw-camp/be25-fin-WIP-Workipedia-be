@@ -42,6 +42,7 @@ public interface KnowledgeDataRepository extends JpaRepository<KnowledgeData, Lo
 				)
 			WHERE t.assigned_department_id = :departmentId
 				AND t.status = 'COMPLETED'
+				AND t.completed_at >= DATE_SUB(NOW(), INTERVAL 48 HOUR)
 				AND (t.knowledge_review_status IS NULL OR t.knowledge_review_status = 'PENDING')
 				AND t.deleted_at IS NULL
 				AND NOT EXISTS (
@@ -67,6 +68,7 @@ public interface KnowledgeDataRepository extends JpaRepository<KnowledgeData, Lo
 				)
 			WHERE t.assigned_department_id = :departmentId
 				AND t.status = 'COMPLETED'
+				AND t.completed_at >= DATE_SUB(NOW(), INTERVAL 48 HOUR)
 				AND (t.knowledge_review_status IS NULL OR t.knowledge_review_status = 'PENDING')
 				AND t.deleted_at IS NULL
 				AND NOT EXISTS (
