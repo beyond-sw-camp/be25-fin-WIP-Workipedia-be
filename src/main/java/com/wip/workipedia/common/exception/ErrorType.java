@@ -28,6 +28,9 @@ public enum ErrorType {
 	AUTH_REFRESH_TOKEN_INVALID("auth-010", "유효하지 않은 Refresh Token입니다.", HttpStatus.UNAUTHORIZED),
 	AUTH_USER_NOT_FOUND("auth-011", "일치하는 사용자 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 	AUTH_PASSWORD_RESET_VERIFICATION_REQUIRED("auth-012", "비밀번호 재설정 인증이 필요합니다.", HttpStatus.BAD_REQUEST),
+	AUTH_INVALID_PASSWORD_FORMAT("auth-013", "비밀번호는 영문자, 숫자 조합의 8~16자리를 사용해야 합니다.", HttpStatus.BAD_REQUEST),
+	AUTH_INVALID_EMAIL_FORMAT("auth-014", "올바른 이메일 형식이 아닙니다.", HttpStatus.BAD_REQUEST),
+	AUTH_INVALID_EMAIL_CODE_FORMAT("auth-015", "인증코드는 6자리 숫자여야 합니다.", HttpStatus.BAD_REQUEST),
 
 	// department
 	DEPARTMENT_NOT_FOUND("department-001", "부서를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
@@ -66,6 +69,12 @@ public enum ErrorType {
 	// notification
 	NOTIFICATION_NOT_FOUND("notification-001", "알림을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 	NOTIFICATION_FORBIDDEN("notification-002", "본인 알림이 아닙니다.", HttpStatus.FORBIDDEN),
+
+	// mypage
+	MYPAGE_USER_NOT_FOUND("mypage-001", "마이페이지 사용자 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+
+	// esg
+	ESG_GRADE_NOT_FOUND("esg-001", "ESG 등급 기준을 찾을 수 없습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
 
 	// point
 	POINT_INVALID_AMOUNT("point-001", "포인트 금액은 0보다 커야 합니다.", HttpStatus.BAD_REQUEST),
