@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/api/api-contract.md`
 > 관련 문서: `docs/reference/prd.md`, `docs/reference/trd.md`, `docs/planning/wbs.md`, `docs/adr/013-object-storage-strategy.md`
-> 버전: v0.4
-> 최종 수정: 2026-06-09
+> 버전: v0.5
+> 최종 수정: 2026-06-15
 
 ## 1. 목적
 
@@ -308,6 +308,7 @@ Authorization: Bearer <accessToken>
 | PATCH  | `/admin/departments/{departmentId}`             | 부서 정보 수정                      | SYSTEM_ADMIN |
 | DELETE | `/admin/departments/{departmentId}`             | 부서 삭제                         | SYSTEM_ADMIN |
 | PATCH  | `/admin/departments/routing-prompt/instruction` | 부서 라우팅 프롬프트                   | SYSTEM_ADMIN |
+| PATCH  | `/admin/departments/{departmentId}/routing-prompt` | 부서별 R&R 직접 수정                 | SYSTEM_ADMIN |
 | GET    | `/admin/users`                                  | 전체 사용자 목록 조회                    | SYSTEM_ADMIN |
 | GET    | `/admin/users/search`                           | 사번으로 사용자 조회                   | SYSTEM_ADMIN |
 | PATCH  | `/admin/users/{userId}/status`                  | 사용자 활성화/비활성화 변경               | SYSTEM_ADMIN |

@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/dev/domain-guides/chatbot-rag.md`
 > 관련 문서: `docs/adr/002-rag-strategy.md`, `docs/adr/008-local-llm-security-strategy.md`, `docs/api/api-contract.md`
-> 버전: v0.4
-> 최종 수정: 2026-06-11
+> 버전: v0.5
+> 최종 수정: 2026-06-15
 
 ## 개발 목표
 
@@ -62,6 +62,26 @@ final_system_prompt = base_prompt + custom_prompt
 
 - `base_prompt`: 코드/배포 설정으로 관리하며 관리자 화면에서 수정하지 않는다.
 - `custom_prompt`: SYSTEM_ADMIN이 수정할 수 있고 활성 상태와 변경 이력을 저장한다.
+
+## BE-AI 연동 계약
+
+BE는 세션 이력을 조립해 AI의 `POST /api/v1/chat`을 호출한다.
+
+```json
+{
+  "question": "현재 질문",
+  "customPrompt": null,
+  "sessionContext": [
+    {
+      "messageId": 1,
+      "senderType": "USER",
+      "content": "이전 질문"
+    }
+  ]
+}
+```
+
+AI 응답의 핵심 필드는 `answer`, `sources`, `route`, `action`이다. BE는 답변과 출처를 세션 메시지에 저장한다. AI 호출 실패 시 임의 답변을 생성하지 않고 서비스 이용 불가 안내를 반환한다.
 
 ## 지식 동기화
 
