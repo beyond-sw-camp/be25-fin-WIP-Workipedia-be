@@ -29,6 +29,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -116,7 +117,7 @@ public class AdminManualService {
                 manualNum,
                 actorUserId
         );
-        Manual savedManual = manualRepository.save(manual);
+        Manual savedManual = saveManual(manual);
         saveVersion(savedManual, actorUserId, manualNum, "INITIAL_CREATE");
         return ManualDetailResponse.from(savedManual);
     }
@@ -131,7 +132,7 @@ public class AdminManualService {
         String content = extractContent(uploads);
         String manualNum = INITIAL_VERSION;
         Manual manual = Manual.create(validateDepartmentId(departmentId), title, content, status, sourceUrl, manualNum, actorUserId);
-        Manual savedManual = manualRepository.save(manual);
+        Manual savedManual = saveManual(manual);
         List<StoredObject> storedObjects = uploadPdfFiles(uploads);
         attachFiles(savedManual, storedObjects);
         saveVersion(savedManual, actorUserId, manualNum, "INITIAL_PDF_UPLOAD");
@@ -153,6 +154,7 @@ public class AdminManualService {
                 request.sourceUrl(),
                 manualNum
         );
+        flushManualChanges();
         ManualVersion version = saveVersion(manual, actorUserId, manualNum, request.updateReason());
         // 기존 매뉴얼 수정 알림은 사용자에게 공개되는 PUBLISHED 상태에서만 생성한다.
         createManualUpdateNotificationsIfPublished(manual, version);
@@ -170,6 +172,7 @@ public class AdminManualService {
         String content = extractContent(uploads);
         String manualNum = resolveNextVersion(manual, uploads.size());
         manual.update(validateDepartmentId(departmentId), title, content, status, sourceUrl, manualNum);
+        flushManualChanges();
         List<ManualFile> previousFiles = findActiveFiles(manual.getManualId());
         List<StoredObject> storedObjects = uploadPdfFiles(uploads);
         replaceFiles(manual, previousFiles, storedObjects);
@@ -206,6 +209,22 @@ public class AdminManualService {
             return;
         }
         if (manualRepository.existsByTitleAndManualIdNotAndDeletedAtIsNull(title, manualId)) {
+            throw new CustomException(ErrorType.CONFLICT, "Manual title already exists.");
+        }
+    }
+
+    private Manual saveManual(Manual manual) {
+        try {
+            return manualRepository.saveAndFlush(manual);
+        } catch (DataIntegrityViolationException exception) {
+            throw new CustomException(ErrorType.CONFLICT, "Manual title already exists.");
+        }
+    }
+
+    private void flushManualChanges() {
+        try {
+            manualRepository.flush();
+        } catch (DataIntegrityViolationException exception) {
             throw new CustomException(ErrorType.CONFLICT, "Manual title already exists.");
         }
     }
