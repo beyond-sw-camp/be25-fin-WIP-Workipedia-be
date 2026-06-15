@@ -61,13 +61,10 @@ class AdminCommonQueueServiceTest {
 			TicketStatus.COMMON_QUEUE,
 			CommonQueueReason.TRANSFER_REQUESTED,
 			"transfer reason",
-			10L,
-			"IT",
 			createdAt,
 			updatedAt
 		);
 		when(ticketRepository.findCommonQueueTickets(
-			List.of(TicketStatus.COMMON_QUEUE),
 			TicketTransferRequestStatus.REQUESTED,
 			pageable
 		)).thenReturn(new PageImpl<>(List.of(projection), pageable, 1));
@@ -80,8 +77,6 @@ class AdminCommonQueueServiceTest {
 		assertThat(response.content().getFirst().commonQueueReason()).isEqualTo(CommonQueueReason.TRANSFER_REQUESTED);
 		assertThat(response.content().getFirst().commonQueueEnteredAt()).isEqualTo(createdAt);
 		assertThat(response.content().getFirst().transferReason()).isEqualTo("transfer reason");
-		assertThat(response.content().getFirst().transferSuggestedDepartmentId()).isEqualTo(10L);
-		assertThat(response.content().getFirst().transferSuggestedDepartmentName()).isEqualTo("IT");
 		assertThat(response.content().getFirst().createdAt()).isEqualTo(createdAt);
 		assertThat(response.content().getFirst().updatedAt()).isEqualTo(updatedAt);
 		verifyNoInteractions(departmentRepository, ticketTransferRequestRepository);
@@ -163,7 +158,6 @@ class AdminCommonQueueServiceTest {
 			100L,
 			1L,
 			20L,
-			10L,
 			"transfer reason"
 		);
 		when(ticketRepository.findActiveByTicketIdForUpdate(100L)).thenReturn(Optional.of(ticket));
@@ -208,8 +202,6 @@ class AdminCommonQueueServiceTest {
 		TicketStatus status,
 		CommonQueueReason commonQueueReason,
 		String transferReason,
-		Long transferSuggestedDepartmentId,
-		String transferSuggestedDepartmentName,
 		LocalDateTime createdAt,
 		LocalDateTime updatedAt
 	) {
@@ -277,16 +269,6 @@ class AdminCommonQueueServiceTest {
 			@Override
 			public String getTransferReason() {
 				return transferReason;
-			}
-
-			@Override
-			public Long getTransferSuggestedDepartmentId() {
-				return transferSuggestedDepartmentId;
-			}
-
-			@Override
-			public String getTransferSuggestedDepartmentName() {
-				return transferSuggestedDepartmentName;
 			}
 
 			@Override

@@ -102,6 +102,19 @@ public class NotificationService {
                 )));
     }
 
+    public void createTicketDeletedNotification(Long userId, Long ticketId, String ticketTitle) {
+        createAfterCommit("ticket deleted notification", () ->
+                notificationRepository.save(Notification.create(
+                        userId,
+                        NotificationType.TICKET_DELETED,
+                        ticketTitle(NotificationType.TICKET_DELETED),
+                        ticketTitle,
+                        NotificationTargetType.TICKET,
+                        ticketId,
+                        "/me/tickets/" + ticketId
+                )));
+    }
+
     public void createWorkiQuestionCreated(Long userId, Long questionId, String questionTitle) {
         createAfterCommit("worki question created notification", () ->
                 notificationRepository.save(Notification.create(

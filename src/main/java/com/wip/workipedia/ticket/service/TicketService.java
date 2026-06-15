@@ -18,10 +18,12 @@ import com.wip.workipedia.ticket.repository.TicketRepository;
 import com.wip.workipedia.ticket.repository.TicketRoutingLogRepository;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.repository.UserRepository;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +31,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TicketService {
+	private static final int COMMON_QUEUE_EXPIRATION_DAYS = 7;
+	private static final int COMMON_QUEUE_EXPIRATION_BATCH_SIZE = 500;
+
 	private final TicketRepository ticketRepository;
 	private final TicketRoutingService ticketRoutingService;
 	private final TicketRoutingLogRepository ticketRoutingLogRepository;
@@ -157,5 +163,39 @@ public class TicketService {
 
 	private TicketPriority defaultPriority(TicketPriority priority) {
 		return priority == null ? TicketPriority.MEDIUM : priority;
+	}
+
+	@Transactional
+	public void moveExpiredTicketsToCommonQueue() {
+		ticketRepository.moveExpiredTicketsToCommonQueue();
+		LocalDateTime expiredBefore = LocalDateTime.now().minusDays(COMMON_QUEUE_EXPIRATION_DAYS);
+		List<TicketRepository.ExpiredCommonQueueTicketProjection> expiredTickets;
+		do {
+			expiredTickets = ticketRepository.findExpiredCommonQueueTickets(
+					expiredBefore,
+					PageRequest.of(0, COMMON_QUEUE_EXPIRATION_BATCH_SIZE)
+			);
+			expiredTickets.forEach(ticket -> softDeleteAndNotify(ticket, expiredBefore));
+		} while (!expiredTickets.isEmpty());
+	}
+
+	private void softDeleteAndNotify(
+			TicketRepository.ExpiredCommonQueueTicketProjection ticket,
+			LocalDateTime expiredBefore
+	) {
+		int updatedRows = ticketRepository.softDeleteExpiredCommonQueueTicket(ticket.getTicketId(), expiredBefore);
+		if (updatedRows != 1) {
+			log.warn(
+					"Skipped ticket deleted notification because expired ticket was not deleted. ticketId={}, updatedRows={}",
+					ticket.getTicketId(),
+					updatedRows
+			);
+			return;
+		}
+		notificationService.createTicketDeletedNotification(
+				ticket.getRequesterId(),
+				ticket.getTicketId(),
+				ticket.getTitle()
+		);
 	}
 }

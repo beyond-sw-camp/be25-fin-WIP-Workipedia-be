@@ -3,22 +3,23 @@ package com.wip.workipedia.team.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.department.domain.Department;
-import com.wip.workipedia.department.repository.DepartmentRepository;
 import com.wip.workipedia.ticket.domain.CommonQueueReason;
 import com.wip.workipedia.ticket.domain.RoutingDecision;
 import com.wip.workipedia.ticket.domain.Ticket;
 import com.wip.workipedia.ticket.domain.TicketPriority;
+import com.wip.workipedia.ticket.domain.TicketStatus;
 import com.wip.workipedia.ticket.domain.TicketTransferRequest;
 import com.wip.workipedia.ticket.domain.TicketTransferRequestStatus;
-import com.wip.workipedia.ticket.domain.TicketStatus;
 import com.wip.workipedia.ticket.dto.TicketTransferRequestCreateRequest;
 import com.wip.workipedia.ticket.repository.TicketRepository;
 import com.wip.workipedia.ticket.repository.TicketTransferRequestRepository;
@@ -30,12 +31,10 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class TeamTicketServiceTest {
@@ -45,9 +44,6 @@ class TeamTicketServiceTest {
 
 	@Mock
 	private UserRepository userRepository;
-
-	@Mock
-	private DepartmentRepository departmentRepository;
 
 	@Mock
 	private TicketTransferRequestRepository ticketTransferRequestRepository;
@@ -102,15 +98,14 @@ class TeamTicketServiceTest {
 		TeamTicketService service = service();
 		User actor = user(UserRole.TEAM_ADMIN, 10L);
 		Ticket ticket = assignedTicket(100L, 10L);
-		Department suggestedDepartment = department(20L, "department-20");
+		String reason = "wrong department";
 		when(userRepository.findById(1L)).thenReturn(Optional.of(actor));
 		when(ticketRepository.findActiveByTicketIdForUpdate(100L)).thenReturn(Optional.of(ticket));
-		when(departmentRepository.findByDepartmentIdAndDeletedAtIsNull(20L)).thenReturn(Optional.of(suggestedDepartment));
 
 		var response = service.requestTransfer(
 			1L,
 			100L,
-			new TicketTransferRequestCreateRequest("다른 부서 업무입니다.", 20L)
+			new TicketTransferRequestCreateRequest(reason)
 		);
 
 		assertThat(response.status()).isEqualTo(TicketStatus.COMMON_QUEUE);
@@ -118,9 +113,7 @@ class TeamTicketServiceTest {
 		assertThat(response.commonQueueEnteredAt()).isNotNull();
 		assertThat(response.assignedDepartmentId()).isNull();
 		assertThat(response.assigneeId()).isNull();
-		assertThat(response.transferReason()).isEqualTo("다른 부서 업무입니다.");
-		assertThat(response.transferSuggestedDepartmentId()).isEqualTo(20L);
-		assertThat(response.transferSuggestedDepartmentName()).isEqualTo("department-20");
+		assertThat(response.transferReason()).isEqualTo(reason);
 		assertThat(ticket.getStatus()).isEqualTo(TicketStatus.COMMON_QUEUE);
 		assertThat(ticket.getCommonQueueReason()).isEqualTo(CommonQueueReason.TRANSFER_REQUESTED);
 		assertThat(ticket.getCommonQueueEnteredAt()).isNotNull();
@@ -129,8 +122,7 @@ class TeamTicketServiceTest {
 			request.getTicketId().equals(100L)
 				&& request.getRequesterId().equals(1L)
 				&& request.getFromDepartmentId().equals(10L)
-				&& request.getSuggestedDepartmentId().equals(20L)
-				&& request.getReason().equals("다른 부서 업무입니다.")
+				&& request.getReason().equals(reason)
 		));
 	}
 
@@ -149,7 +141,7 @@ class TeamTicketServiceTest {
 		assertThatThrownBy(() -> service.requestTransfer(
 			1L,
 			100L,
-			new TicketTransferRequestCreateRequest("?ㅻⅨ 遺???낅Т?낅땲??", null)
+			new TicketTransferRequestCreateRequest("duplicate")
 		))
 			.isInstanceOf(CustomException.class)
 			.extracting("errorType")
@@ -171,7 +163,7 @@ class TeamTicketServiceTest {
 		assertThatThrownBy(() -> service.requestTransfer(
 			1L,
 			100L,
-			new TicketTransferRequestCreateRequest("?ㅻⅨ 遺???낅Т?낅땲??", null)
+			new TicketTransferRequestCreateRequest("duplicate")
 		))
 			.isInstanceOf(CustomException.class)
 			.extracting("errorType")
@@ -188,7 +180,7 @@ class TeamTicketServiceTest {
 		assertThatThrownBy(() -> service.requestTransfer(
 			1L,
 			100L,
-			new TicketTransferRequestCreateRequest("다른 부서 업무입니다.", null)
+			new TicketTransferRequestCreateRequest("wrong department")
 		))
 			.isInstanceOf(CustomException.class)
 			.extracting("errorType")
@@ -199,7 +191,6 @@ class TeamTicketServiceTest {
 		return new TeamTicketService(
 			ticketRepository,
 			userRepository,
-			departmentRepository,
 			ticketTransferRequestRepository
 		);
 	}
