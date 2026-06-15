@@ -94,7 +94,10 @@ public enum ErrorType {
 
 	// chatbot
 	CHATBOT_SESSION_NOT_FOUND("chatbot-001", "챗봇 세션을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
-	CHATBOT_SESSION_FORBIDDEN("chatbot-002", "본인의 챗봇 세션에만 접근할 수 있습니다.", HttpStatus.FORBIDDEN);
+	CHATBOT_SESSION_FORBIDDEN("chatbot-002", "본인의 챗봇 세션에만 접근할 수 있습니다.", HttpStatus.FORBIDDEN),
+
+	// ai prompt settings
+	AI_PROMPT_SETTING_NOT_FOUND("ai-prompt-001", "AI 프롬프트 설정을 찾을 수 없습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
 
 	private final String status;
 	private final String message;
