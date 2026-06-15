@@ -6,8 +6,6 @@ import jakarta.validation.constraints.Size;
 public record TicketTransferRequestCreateRequest(
 	@NotBlank
 	@Size(max = 1000)
-	String reason,
-
-	Long suggestedDepartmentId
+	String reason
 ) {
 }

@@ -33,8 +33,6 @@ public class TicketTransferRequest extends BaseTimeEntity {
 	@Column(nullable = false)
 	private Long fromDepartmentId;
 
-	private Long suggestedDepartmentId;
-
 	@Column(nullable = false, columnDefinition = "TEXT")
 	private String reason;
 
@@ -49,14 +47,12 @@ public class TicketTransferRequest extends BaseTimeEntity {
 		Long ticketId,
 		Long requesterId,
 		Long fromDepartmentId,
-		Long suggestedDepartmentId,
 		String reason
 	) {
 		TicketTransferRequest request = new TicketTransferRequest();
 		request.ticketId = ticketId;
 		request.requesterId = requesterId;
 		request.fromDepartmentId = fromDepartmentId;
-		request.suggestedDepartmentId = suggestedDepartmentId;
 		request.reason = reason;
 		request.status = TicketTransferRequestStatus.REQUESTED;
 		request.touchModifiedSource(ModifiedSource.ADMIN);

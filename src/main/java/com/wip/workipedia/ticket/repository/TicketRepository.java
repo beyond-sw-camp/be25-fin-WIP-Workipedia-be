@@ -3,8 +3,9 @@ package com.wip.workipedia.ticket.repository;
 import com.wip.workipedia.ticket.domain.RoutingDecision;
 import com.wip.workipedia.ticket.domain.Ticket;
 import com.wip.workipedia.ticket.domain.TicketPriority;
-import com.wip.workipedia.ticket.domain.TicketTransferRequestStatus;
 import com.wip.workipedia.ticket.domain.TicketStatus;
+import com.wip.workipedia.ticket.domain.TicketTransferRequestStatus;
+import com.wip.workipedia.ticket.domain.CommonQueueReason;
 import jakarta.persistence.LockModeType;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -49,7 +50,15 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
 	Page<Ticket> findByDeletedAtIsNull(Pageable pageable);
 
-	Page<Ticket> findByStatusAndDeletedAtIsNullOrderByCreatedAtDesc(TicketStatus status, Pageable pageable);
+	@Query("""
+		SELECT t
+		FROM Ticket t
+		WHERE t.status = com.wip.workipedia.ticket.domain.TicketStatus.COMMON_QUEUE
+		  AND t.deletedAt IS NULL
+		  AND t.isDeleted = 'N'
+		ORDER BY t.createdAt DESC
+		""")
+	Page<Ticket> findActiveCommonQueueTickets(Pageable pageable);
 
 	Page<Ticket> findByStatusInAndDeletedAtIsNullOrderByCreatedAtDesc(Collection<TicketStatus> statuses, Pageable pageable);
 
@@ -66,9 +75,9 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 		  t.title AS title,
 		  t.content AS content,
 		  t.assigneeId AS assigneeId,
+		  t.commonQueueReason AS commonQueueReason,
+		  t.commonQueueEnteredAt AS commonQueueEnteredAt,
 		  tr.reason AS transferReason,
-		  tr.suggestedDepartmentId AS transferSuggestedDepartmentId,
-		  d.departmentName AS transferSuggestedDepartmentName,
 		  t.createdAt AS createdAt,
 		  t.updatedAt AS updatedAt
 		FROM Ticket t
@@ -76,37 +85,38 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 		  ON tr.ticketId = t.ticketId
 		 AND tr.status = :transferStatus
 		 AND tr.deletedAt IS NULL
+		 AND tr.isDeleted = 'N'
 		 AND tr.transferRequestId = (
 		   SELECT MAX(tr3.transferRequestId)
 		   FROM TicketTransferRequest tr3
 		   WHERE tr3.ticketId = t.ticketId
 		     AND tr3.status = :transferStatus
 		     AND tr3.deletedAt IS NULL
+		     AND tr3.isDeleted = 'N'
 		     AND tr3.createdAt = (
 		       SELECT MAX(tr2.createdAt)
 		       FROM TicketTransferRequest tr2
 		       WHERE tr2.ticketId = t.ticketId
 		         AND tr2.status = :transferStatus
 		         AND tr2.deletedAt IS NULL
+		         AND tr2.isDeleted = 'N'
 		     )
 		 )
-		LEFT JOIN Department d
-		  ON d.departmentId = tr.suggestedDepartmentId
-		 AND d.deletedAt IS NULL
-		WHERE t.status IN :statuses
+		WHERE t.status = com.wip.workipedia.ticket.domain.TicketStatus.COMMON_QUEUE
 		  AND t.deletedAt IS NULL
+		  AND t.isDeleted = 'N'
 		ORDER BY t.createdAt DESC
 		""",
 		countQuery = """
 		SELECT COUNT(t)
 		FROM Ticket t
-		WHERE t.status IN :statuses
+		WHERE t.status = com.wip.workipedia.ticket.domain.TicketStatus.COMMON_QUEUE
 		  AND t.deletedAt IS NULL
+		  AND t.isDeleted = 'N'
 		  AND (:transferStatus IS NULL OR :transferStatus IS NOT NULL)
 		"""
 	)
 	Page<CommonQueueTicketProjection> findCommonQueueTickets(
-		@Param("statuses") Collection<TicketStatus> statuses,
 		@Param("transferStatus") TicketTransferRequestStatus transferStatus,
 		Pageable pageable
 	);
@@ -176,6 +186,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 		FROM Ticket t
 		WHERE t.ticketId = :ticketId
 		  AND t.deletedAt IS NULL
+		  AND t.isDeleted = 'N'
 		""")
 	Optional<Ticket> findActiveByTicketIdForUpdate(@Param("ticketId") Long ticketId);
 
@@ -188,6 +199,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
             assigned_department_id = NULL,
             assigned_at = NULL,
             routing_decision = 'COMMON_QUEUE',
+            common_queue_reason = 'ASSIGNMENT_EXPIRED',
+            common_queue_entered_at = NOW(),
             updated_at = NOW()
         WHERE status = 'ASSIGNED'
           AND assigned_at IS NOT NULL
@@ -198,6 +211,23 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 		nativeQuery = true
 	)
 	int moveExpiredTicketsToCommonQueue();
+
+	@Modifying
+	@Query(
+		value = """
+        UPDATE tickets
+        SET status = 'DELETED',
+            deleted_at = NOW(),
+            is_deleted = 'Y',
+            updated_at = NOW()
+        WHERE status = 'COMMON_QUEUE'
+          AND created_at <= DATE_SUB(NOW(), INTERVAL 7 DAY)
+          AND deleted_at IS NULL
+          AND is_deleted = 'N'
+    """,
+		nativeQuery = true
+	)
+	int softDeleteExpiredCommonQueueTickets();
 
 	interface TicketStatusCountProjection {
 		TicketStatus getStatus();
@@ -232,11 +262,11 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
 		Long getAssigneeId();
 
+		CommonQueueReason getCommonQueueReason();
+
+		LocalDateTime getCommonQueueEnteredAt();
+
 		String getTransferReason();
-
-		Long getTransferSuggestedDepartmentId();
-
-		String getTransferSuggestedDepartmentName();
 
 		LocalDateTime getCreatedAt();
 

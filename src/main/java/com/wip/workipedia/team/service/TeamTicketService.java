@@ -4,7 +4,6 @@ import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.response.PageResponse;
 import com.wip.workipedia.department.domain.Department;
-import com.wip.workipedia.department.repository.DepartmentRepository;
 import com.wip.workipedia.team.dto.TeamTicketSummaryResponse;
 import com.wip.workipedia.ticket.domain.Ticket;
 import com.wip.workipedia.ticket.domain.TicketTransferRequest;
@@ -42,7 +41,6 @@ public class TeamTicketService {
 
 	private final TicketRepository ticketRepository;
 	private final UserRepository userRepository;
-	private final DepartmentRepository departmentRepository;
 	private final TicketTransferRequestRepository ticketTransferRequestRepository;
 
 	public TeamTicketSummaryResponse getSummary(Long actorUserId) {
@@ -103,19 +101,10 @@ public class TeamTicketService {
 			throw new CustomException(ErrorType.TICKET_INVALID_TRANSFER);
 		}
 
-		Long suggestedDepartmentId = request.suggestedDepartmentId();
-		String suggestedDepartmentName = null;
-		if (suggestedDepartmentId != null) {
-			Department suggestedDepartment = departmentRepository.findByDepartmentIdAndDeletedAtIsNull(suggestedDepartmentId)
-				.orElseThrow(() -> new CustomException(ErrorType.DEPARTMENT_NOT_FOUND));
-			suggestedDepartmentName = suggestedDepartment.getDepartmentName();
-		}
-
 		TicketTransferRequest transferRequest = TicketTransferRequest.create(
 			ticket.getTicketId(),
 			actorUserId,
 			actor.getDepartment().getDepartmentId(),
-			suggestedDepartmentId,
 			request.reason()
 		);
 		try {
@@ -126,7 +115,7 @@ public class TeamTicketService {
 		ticket.requestTransfer();
 
 		return TicketResponse.from(ticket, emptyRoutingResult())
-			.withTransferInfo(request.reason(), suggestedDepartmentId, suggestedDepartmentName);
+			.withTransferInfo(request.reason());
 	}
 
 	private User getTeamMember(Long actorUserId) {

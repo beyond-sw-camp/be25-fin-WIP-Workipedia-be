@@ -52,6 +52,12 @@ public class Ticket {
 	@Column(nullable = false, length = 30)
 	private TicketStatus status;
 
+	@Enumerated(EnumType.STRING)
+	@Column(length = 30)
+	private CommonQueueReason commonQueueReason;
+
+	private LocalDateTime commonQueueEnteredAt;
+
 	private LocalDateTime completedAt;
 
 	@Enumerated(EnumType.STRING)
@@ -87,6 +93,8 @@ public class Ticket {
 		ticket.title = title;
 		ticket.content = content;
 		ticket.status = TicketStatus.COMMON_QUEUE;
+		ticket.commonQueueReason = CommonQueueReason.ROUTING_FAILED;
+		ticket.commonQueueEnteredAt = now;
 		ticket.createdAt = now;
 		ticket.updatedAt = now;
 		return ticket;
@@ -98,6 +106,11 @@ public class Ticket {
 		this.routingConfidenceScore = confidenceScore;
 		this.routingDecision = decision;
 		this.status = decision == RoutingDecision.AUTO_ASSIGNED ? TicketStatus.ASSIGNED : TicketStatus.COMMON_QUEUE;
+		if (this.status == TicketStatus.COMMON_QUEUE) {
+			enterCommonQueue(CommonQueueReason.ROUTING_FAILED);
+		} else {
+			leaveCommonQueue();
+		}
 		touch();
 	}
 
@@ -117,6 +130,7 @@ public class Ticket {
 		this.assignedAt = LocalDateTime.now();
 		this.routingDecision = RoutingDecision.ADMIN_REVIEW;
 		this.status = TicketStatus.ASSIGNED;
+		leaveCommonQueue();
 		touch();
 	}
 
@@ -126,6 +140,7 @@ public class Ticket {
 		this.assignedAt = null;
 		this.routingDecision = RoutingDecision.COMMON_QUEUE;
 		this.status = TicketStatus.COMMON_QUEUE;
+		enterCommonQueue(CommonQueueReason.ASSIGNMENT_EXPIRED);
 		touch();
 	}
 
@@ -134,7 +149,8 @@ public class Ticket {
 		this.assignedDepartmentId = null;
 		this.assignedAt = null;
 		this.routingDecision = RoutingDecision.COMMON_QUEUE;
-		this.status = TicketStatus.TRANSFERRED;
+		this.status = TicketStatus.COMMON_QUEUE;
+		enterCommonQueue(CommonQueueReason.TRANSFER_REQUESTED);
 		touch();
 	}
 
@@ -160,5 +176,15 @@ public class Ticket {
 
 	private void touch() {
 		this.updatedAt = LocalDateTime.now();
+	}
+
+	private void enterCommonQueue(CommonQueueReason reason) {
+		this.commonQueueReason = reason;
+		this.commonQueueEnteredAt = LocalDateTime.now();
+	}
+
+	private void leaveCommonQueue() {
+		this.commonQueueReason = null;
+		this.commonQueueEnteredAt = null;
 	}
 }

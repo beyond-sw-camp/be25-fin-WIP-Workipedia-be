@@ -4,6 +4,7 @@ import com.wip.workipedia.ticket.domain.RoutingDecision;
 import com.wip.workipedia.ticket.domain.Ticket;
 import com.wip.workipedia.ticket.domain.TicketPriority;
 import com.wip.workipedia.ticket.domain.TicketStatus;
+import com.wip.workipedia.ticket.domain.CommonQueueReason;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,9 +23,9 @@ public record TicketResponse(
 	String title,
 	String content,
 	Long assigneeId,
+	CommonQueueReason commonQueueReason,
+	LocalDateTime commonQueueEnteredAt,
 	String transferReason,
-	Long transferSuggestedDepartmentId,
-	String transferSuggestedDepartmentName,
 	LocalDateTime createdAt,
 	LocalDateTime updatedAt
 ) {
@@ -43,19 +44,15 @@ public record TicketResponse(
 			ticket.getTitle(),
 			ticket.getContent(),
 			ticket.getAssigneeId(),
-			null,
-			null,
+			ticket.getCommonQueueReason(),
+			ticket.getCommonQueueEnteredAt(),
 			null,
 			ticket.getCreatedAt(),
 			ticket.getUpdatedAt()
 		);
 	}
 
-	public TicketResponse withTransferInfo(
-		String transferReason,
-		Long transferSuggestedDepartmentId,
-		String transferSuggestedDepartmentName
-	) {
+	public TicketResponse withTransferInfo(String transferReason) {
 		return new TicketResponse(
 			ticketId,
 			status,
@@ -70,9 +67,9 @@ public record TicketResponse(
 			title,
 			content,
 			assigneeId,
+			commonQueueReason,
+			commonQueueEnteredAt,
 			transferReason,
-			transferSuggestedDepartmentId,
-			transferSuggestedDepartmentName,
 			createdAt,
 			updatedAt
 		);

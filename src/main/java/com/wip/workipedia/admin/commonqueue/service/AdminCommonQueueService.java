@@ -30,10 +30,10 @@ public class AdminCommonQueueService {
 	private final NotificationService notificationService;
 	private final TicketTransferRequestRepository ticketTransferRequestRepository;
 
+//  공통 큐 목록 조회
 	public PageResponse<TicketResponse> findCommonQueueTickets(Pageable pageable) {
 		return PageResponse.from(
 			ticketRepository.findCommonQueueTickets(
-					List.of(TicketStatus.COMMON_QUEUE, TicketStatus.TRANSFERRED),
 					TicketTransferRequestStatus.REQUESTED,
 					pageable
 				)
@@ -41,14 +41,15 @@ public class AdminCommonQueueService {
 		);
 	}
 
+//  공통 큐 티켓 부서 배정
 	@Transactional
 	public TicketResponse assignDepartment(Long ticketId, CommonQueueAssignDepartmentRequest request) {
 		Ticket ticket = ticketRepository.findActiveByTicketIdForUpdate(ticketId)
 			.orElseThrow(() -> new CustomException(ErrorType.TICKET_NOT_FOUND));
-		if (ticket.getStatus() != TicketStatus.COMMON_QUEUE && ticket.getStatus() != TicketStatus.TRANSFERRED) {
+		if (ticket.getStatus() != TicketStatus.COMMON_QUEUE) {
 			throw new CustomException(ErrorType.TICKET_INVALID_ASSIGNMENT);
 		}
-		Department department = departmentRepository.findByDepartmentIdAndDeletedAtIsNull(request.departmentId())
+		Department department = departmentRepository.findActiveDepartmentById(request.departmentId())
 			.orElseThrow(() -> new CustomException(ErrorType.DEPARTMENT_NOT_FOUND));
 		boolean isReassignedTicket = ticketTransferRequestRepository
 			.findFirstByTicketIdAndStatusAndDeletedAtIsNullOrderByCreatedAtDesc(
@@ -92,9 +93,9 @@ public class AdminCommonQueueService {
 			ticket.getTitle(),
 			ticket.getContent(),
 			ticket.getAssigneeId(),
+			ticket.getCommonQueueReason(),
+			ticket.getCommonQueueEnteredAt(),
 			ticket.getTransferReason(),
-			ticket.getTransferSuggestedDepartmentId(),
-			ticket.getTransferSuggestedDepartmentName(),
 			ticket.getCreatedAt(),
 			ticket.getUpdatedAt()
 		);
