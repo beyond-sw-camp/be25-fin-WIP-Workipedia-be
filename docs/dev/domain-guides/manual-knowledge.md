@@ -2,7 +2,7 @@
 
 > 문서 유형: Development Guide
 > 상태: Draft
-> 최종 수정: 2026-06-09
+> 최종 수정: 2026-06-15
 
 ## 목적
 
@@ -14,7 +14,7 @@
 SYSTEM_ADMIN 등록·수정
 → BE가 원문과 동기화 작업을 같은 트랜잭션으로 저장
 → `@Scheduled` 워커가 PENDING 동기화 작업을 AI 서버에 전달
-→ AI가 민감정보 마스킹 후 chunking/embedding/Qdrant upsert
+→ AI가 원문을 chunking/embedding하여 Qdrant upsert
 → SYNCED 또는 FAILED
 ```
 
@@ -29,9 +29,15 @@ SYSTEM_ADMIN 등록·수정
 
 ## AI 책임
 
-- 모델 호출 전과 Qdrant 저장 전 민감정보 마스킹
 - chunking, embedding, Qdrant upsert/delete
 - 출처 제목과 수정일 메타데이터 구성
+
+## 보안
+
+- BE RDB는 민감정보를 암호화 저장하고 사용 시 복호화한다.
+- Vector Store는 검색 품질을 위해 원문을 저장하며 접근을 내부망과 서비스 계정으로 제한한다.
+- 사용자에게 반환하는 최종 LLM 응답 마스킹은 AI 챗봇 서비스가 담당한다.
+- 원문과 비밀정보를 로그에 기록하지 않는다.
 
 ## 구현 전 migration
 
