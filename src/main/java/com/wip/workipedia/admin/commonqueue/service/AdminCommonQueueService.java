@@ -72,6 +72,8 @@ public class AdminCommonQueueService {
 			department.getDepartmentId(),
 			department.getDepartmentName(),
 			ticket.getRoutingConfidenceScore(),
+			null,
+			null,
 			ticket.getRoutingDecision(),
 			List.of("Admin assigned the common queue ticket to the department."),
 			List.of()
