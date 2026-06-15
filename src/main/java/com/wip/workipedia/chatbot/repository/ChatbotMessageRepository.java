@@ -8,9 +8,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ChatbotMessageRepository extends JpaRepository<ChatbotMessage, Long> {
 
-    List<ChatbotMessage> findTop10BySessionIdAndIsDeletedOrderByCreatedAtDesc(
+    List<ChatbotMessage> findTop10BySessionIdAndIsDeletedOrderByCreatedAtDescMessageIdDesc(
             Long sessionId, String isDeleted);
 
-    Page<ChatbotMessage> findBySessionIdAndIsDeletedOrderByCreatedAtAsc(
+    Page<ChatbotMessage> findBySessionIdAndIsDeletedOrderByCreatedAtAscMessageIdAsc(
             Long sessionId, String isDeleted, Pageable pageable);
 }

@@ -67,7 +67,7 @@ public class ChatbotService {
         ChatbotSession session = getSession(sessionId);
         validateOwner(userId, session);
         return PageResponse.from(
-                messageRepository.findBySessionIdAndIsDeletedOrderByCreatedAtAsc(sessionId, "N", pageable)
+                messageRepository.findBySessionIdAndIsDeletedOrderByCreatedAtAscMessageIdAsc(sessionId, "N", pageable)
                         .map(ChatbotMessageResponse::from)
         );
     }
@@ -133,7 +133,7 @@ public class ChatbotService {
     // SYSTEM 메시지는 AI API가 422를 반환하므로 제외
     private List<SessionMessage> buildContext(Long sessionId) {
         List<ChatbotMessage> recent = new ArrayList<>(messageRepository
-                .findTop10BySessionIdAndIsDeletedOrderByCreatedAtDesc(sessionId, "N"));
+                .findTop10BySessionIdAndIsDeletedOrderByCreatedAtDescMessageIdDesc(sessionId, "N"));
         Collections.reverse(recent); // 오래된 순으로 정렬
         return recent.stream()
                 .filter(m -> m.getSenderType() != SenderType.SYSTEM)
