@@ -127,5 +127,6 @@ public class TicketService {
 	@Transactional
 	public void moveExpiredTicketsToCommonQueue() {
 		ticketRepository.moveExpiredTicketsToCommonQueue();
+		ticketRepository.softDeleteExpiredCommonQueueTickets();
 	}
 }

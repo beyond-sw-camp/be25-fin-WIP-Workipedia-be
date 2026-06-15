@@ -12,6 +12,7 @@ import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.department.domain.Department;
 import com.wip.workipedia.department.repository.DepartmentRepository;
+import com.wip.workipedia.ticket.domain.CommonQueueReason;
 import com.wip.workipedia.ticket.domain.RoutingDecision;
 import com.wip.workipedia.ticket.domain.Ticket;
 import com.wip.workipedia.ticket.domain.TicketPriority;
@@ -97,7 +98,7 @@ class TeamTicketServiceTest {
 	}
 
 	@Test
-	void requestTransfer_movesAssignedTicketToTransferredAndStoresReason() {
+	void requestTransfer_movesAssignedTicketToCommonQueueAndStoresReason() {
 		TeamTicketService service = service();
 		User actor = user(UserRole.TEAM_ADMIN, 10L);
 		Ticket ticket = assignedTicket(100L, 10L);
@@ -112,13 +113,17 @@ class TeamTicketServiceTest {
 			new TicketTransferRequestCreateRequest("다른 부서 업무입니다.", 20L)
 		);
 
-		assertThat(response.status()).isEqualTo(TicketStatus.TRANSFERRED);
+		assertThat(response.status()).isEqualTo(TicketStatus.COMMON_QUEUE);
+		assertThat(response.commonQueueReason()).isEqualTo(CommonQueueReason.TRANSFER_REQUESTED);
+		assertThat(response.commonQueueEnteredAt()).isNotNull();
 		assertThat(response.assignedDepartmentId()).isNull();
 		assertThat(response.assigneeId()).isNull();
 		assertThat(response.transferReason()).isEqualTo("다른 부서 업무입니다.");
 		assertThat(response.transferSuggestedDepartmentId()).isEqualTo(20L);
 		assertThat(response.transferSuggestedDepartmentName()).isEqualTo("department-20");
-		assertThat(ticket.getStatus()).isEqualTo(TicketStatus.TRANSFERRED);
+		assertThat(ticket.getStatus()).isEqualTo(TicketStatus.COMMON_QUEUE);
+		assertThat(ticket.getCommonQueueReason()).isEqualTo(CommonQueueReason.TRANSFER_REQUESTED);
+		assertThat(ticket.getCommonQueueEnteredAt()).isNotNull();
 		assertThat(ticket.getAssignedDepartmentId()).isNull();
 		verify(ticketTransferRequestRepository).saveAndFlush(argThat(request ->
 			request.getTicketId().equals(100L)
