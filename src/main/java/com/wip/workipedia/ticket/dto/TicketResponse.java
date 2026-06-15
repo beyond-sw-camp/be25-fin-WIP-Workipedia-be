@@ -26,8 +26,6 @@ public record TicketResponse(
 	CommonQueueReason commonQueueReason,
 	LocalDateTime commonQueueEnteredAt,
 	String transferReason,
-	Long transferSuggestedDepartmentId,
-	String transferSuggestedDepartmentName,
 	LocalDateTime createdAt,
 	LocalDateTime updatedAt
 ) {
@@ -49,18 +47,12 @@ public record TicketResponse(
 			ticket.getCommonQueueReason(),
 			ticket.getCommonQueueEnteredAt(),
 			null,
-			null,
-			null,
 			ticket.getCreatedAt(),
 			ticket.getUpdatedAt()
 		);
 	}
 
-	public TicketResponse withTransferInfo(
-		String transferReason,
-		Long transferSuggestedDepartmentId,
-		String transferSuggestedDepartmentName
-	) {
+	public TicketResponse withTransferInfo(String transferReason) {
 		return new TicketResponse(
 			ticketId,
 			status,
@@ -78,8 +70,6 @@ public record TicketResponse(
 			commonQueueReason,
 			commonQueueEnteredAt,
 			transferReason,
-			transferSuggestedDepartmentId,
-			transferSuggestedDepartmentName,
 			createdAt,
 			updatedAt
 		);

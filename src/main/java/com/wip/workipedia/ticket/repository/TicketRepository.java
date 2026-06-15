@@ -78,8 +78,6 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 		  t.commonQueueReason AS commonQueueReason,
 		  t.commonQueueEnteredAt AS commonQueueEnteredAt,
 		  tr.reason AS transferReason,
-		  tr.suggestedDepartmentId AS transferSuggestedDepartmentId,
-		  d.departmentName AS transferSuggestedDepartmentName,
 		  t.createdAt AS createdAt,
 		  t.updatedAt AS updatedAt
 		FROM Ticket t
@@ -104,10 +102,6 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 		         AND tr2.isDeleted = 'N'
 		     )
 		 )
-		LEFT JOIN Department d
-		  ON d.departmentId = tr.suggestedDepartmentId
-		 AND d.deletedAt IS NULL
-		 AND d.isDeleted = 'N'
 		WHERE t.status IN :statuses
 		  AND t.deletedAt IS NULL
 		  AND t.isDeleted = 'N'
@@ -228,7 +222,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
             is_deleted = 'Y',
             updated_at = NOW()
         WHERE status = 'COMMON_QUEUE'
-          AND COALESCE(common_queue_entered_at, created_at) <= DATE_SUB(NOW(), INTERVAL 7 DAY)
+          AND created_at <= DATE_SUB(NOW(), INTERVAL 7 DAY)
           AND deleted_at IS NULL
           AND is_deleted = 'N'
     """,
@@ -274,10 +268,6 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 		LocalDateTime getCommonQueueEnteredAt();
 
 		String getTransferReason();
-
-		Long getTransferSuggestedDepartmentId();
-
-		String getTransferSuggestedDepartmentName();
 
 		LocalDateTime getCreatedAt();
 

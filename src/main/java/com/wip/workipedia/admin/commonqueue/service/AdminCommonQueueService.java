@@ -97,8 +97,6 @@ public class AdminCommonQueueService {
 			ticket.getCommonQueueReason(),
 			ticket.getCommonQueueEnteredAt(),
 			ticket.getTransferReason(),
-			ticket.getTransferSuggestedDepartmentId(),
-			ticket.getTransferSuggestedDepartmentName(),
 			ticket.getCreatedAt(),
 			ticket.getUpdatedAt()
 		);
