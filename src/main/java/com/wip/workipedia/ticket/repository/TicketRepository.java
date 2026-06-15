@@ -212,6 +212,21 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 	)
 	int moveExpiredTicketsToCommonQueue();
 
+	@Query(
+		value = """
+        SELECT t.ticket_id AS ticketId,
+               t.requester_id AS requesterId,
+               t.title AS title
+        FROM tickets t
+        WHERE t.status = 'COMMON_QUEUE'
+          AND t.created_at <= DATE_SUB(NOW(), INTERVAL 7 DAY)
+          AND t.deleted_at IS NULL
+          AND t.is_deleted = 'N'
+    """,
+		nativeQuery = true
+	)
+	List<ExpiredCommonQueueTicketProjection> findExpiredCommonQueueTickets();
+
 	@Modifying
 	@Query(
 		value = """
@@ -220,14 +235,15 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
             deleted_at = NOW(),
             is_deleted = 'Y',
             updated_at = NOW()
-        WHERE status = 'COMMON_QUEUE'
+        WHERE ticket_id IN (:ticketIds)
+          AND status = 'COMMON_QUEUE'
           AND created_at <= DATE_SUB(NOW(), INTERVAL 7 DAY)
           AND deleted_at IS NULL
           AND is_deleted = 'N'
     """,
 		nativeQuery = true
 	)
-	int softDeleteExpiredCommonQueueTickets();
+	int softDeleteExpiredCommonQueueTickets(@Param("ticketIds") Collection<Long> ticketIds);
 
 	interface TicketStatusCountProjection {
 		TicketStatus getStatus();
@@ -239,6 +255,14 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 		String getMonth();
 
 		long getCount();
+	}
+
+	interface ExpiredCommonQueueTicketProjection {
+		Long getTicketId();
+
+		Long getRequesterId();
+
+		String getTitle();
 	}
 
 	interface CommonQueueTicketProjection {

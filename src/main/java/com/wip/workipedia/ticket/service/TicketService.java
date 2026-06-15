@@ -127,6 +127,20 @@ public class TicketService {
 	@Transactional
 	public void moveExpiredTicketsToCommonQueue() {
 		ticketRepository.moveExpiredTicketsToCommonQueue();
-		ticketRepository.softDeleteExpiredCommonQueueTickets();
+		List<TicketRepository.ExpiredCommonQueueTicketProjection> expiredTickets =
+				ticketRepository.findExpiredCommonQueueTickets();
+		if (expiredTickets.isEmpty()) {
+			return;
+		}
+
+		List<Long> ticketIds = expiredTickets.stream()
+				.map(TicketRepository.ExpiredCommonQueueTicketProjection::getTicketId)
+				.toList();
+		ticketRepository.softDeleteExpiredCommonQueueTickets(ticketIds);
+		expiredTickets.forEach(ticket -> notificationService.createTicketDeletedNotification(
+				ticket.getRequesterId(),
+				ticket.getTicketId(),
+				ticket.getTitle()
+		));
 	}
 }
