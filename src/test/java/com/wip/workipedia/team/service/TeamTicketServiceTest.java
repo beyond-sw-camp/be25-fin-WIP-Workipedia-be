@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 import com.wip.workipedia.common.exception.CustomException;
@@ -14,6 +15,8 @@ import com.wip.workipedia.department.repository.DepartmentRepository;
 import com.wip.workipedia.ticket.domain.RoutingDecision;
 import com.wip.workipedia.ticket.domain.Ticket;
 import com.wip.workipedia.ticket.domain.TicketPriority;
+import com.wip.workipedia.ticket.domain.TicketTransferRequest;
+import com.wip.workipedia.ticket.domain.TicketTransferRequestStatus;
 import com.wip.workipedia.ticket.domain.TicketStatus;
 import com.wip.workipedia.ticket.dto.TicketTransferRequestCreateRequest;
 import com.wip.workipedia.ticket.repository.TicketRepository;
@@ -26,6 +29,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -116,13 +120,58 @@ class TeamTicketServiceTest {
 		assertThat(response.transferSuggestedDepartmentName()).isEqualTo("department-20");
 		assertThat(ticket.getStatus()).isEqualTo(TicketStatus.TRANSFERRED);
 		assertThat(ticket.getAssignedDepartmentId()).isNull();
-		verify(ticketTransferRequestRepository).save(argThat(request ->
+		verify(ticketTransferRequestRepository).saveAndFlush(argThat(request ->
 			request.getTicketId().equals(100L)
 				&& request.getRequesterId().equals(1L)
 				&& request.getFromDepartmentId().equals(10L)
 				&& request.getSuggestedDepartmentId().equals(20L)
 				&& request.getReason().equals("다른 부서 업무입니다.")
 		));
+	}
+
+	@Test
+	void requestTransfer_rejectsWhenRequestedTransferAlreadyExists() {
+		TeamTicketService service = service();
+		User actor = user(UserRole.TEAM_ADMIN, 10L);
+		Ticket ticket = assignedTicket(100L, 10L);
+		when(userRepository.findById(1L)).thenReturn(Optional.of(actor));
+		when(ticketRepository.findActiveByTicketIdForUpdate(100L)).thenReturn(Optional.of(ticket));
+		when(ticketTransferRequestRepository.existsByTicketIdAndStatusAndDeletedAtIsNull(
+			100L,
+			TicketTransferRequestStatus.REQUESTED
+		)).thenReturn(true);
+
+		assertThatThrownBy(() -> service.requestTransfer(
+			1L,
+			100L,
+			new TicketTransferRequestCreateRequest("?ㅻⅨ 遺???낅Т?낅땲??", null)
+		))
+			.isInstanceOf(CustomException.class)
+			.extracting("errorType")
+			.isEqualTo(ErrorType.TICKET_INVALID_TRANSFER);
+		assertThat(ticket.getStatus()).isEqualTo(TicketStatus.ASSIGNED);
+		verify(ticketTransferRequestRepository, never()).saveAndFlush(any(TicketTransferRequest.class));
+	}
+
+	@Test
+	void requestTransfer_convertsDuplicateConstraintViolationToInvalidTransfer() {
+		TeamTicketService service = service();
+		User actor = user(UserRole.TEAM_ADMIN, 10L);
+		Ticket ticket = assignedTicket(100L, 10L);
+		when(userRepository.findById(1L)).thenReturn(Optional.of(actor));
+		when(ticketRepository.findActiveByTicketIdForUpdate(100L)).thenReturn(Optional.of(ticket));
+		when(ticketTransferRequestRepository.saveAndFlush(any(TicketTransferRequest.class)))
+			.thenThrow(new DataIntegrityViolationException("duplicate active transfer request"));
+
+		assertThatThrownBy(() -> service.requestTransfer(
+			1L,
+			100L,
+			new TicketTransferRequestCreateRequest("?ㅻⅨ 遺???낅Т?낅땲??", null)
+		))
+			.isInstanceOf(CustomException.class)
+			.extracting("errorType")
+			.isEqualTo(ErrorType.TICKET_INVALID_TRANSFER);
+		assertThat(ticket.getStatus()).isEqualTo(TicketStatus.ASSIGNED);
 	}
 
 	@Test

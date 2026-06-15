@@ -8,7 +8,6 @@ import com.wip.workipedia.department.domain.Department;
 import com.wip.workipedia.department.repository.DepartmentRepository;
 import com.wip.workipedia.notification.service.NotificationService;
 import com.wip.workipedia.ticket.domain.Ticket;
-import com.wip.workipedia.ticket.domain.TicketTransferRequest;
 import com.wip.workipedia.ticket.domain.TicketTransferRequestStatus;
 import com.wip.workipedia.ticket.domain.TicketStatus;
 import com.wip.workipedia.ticket.dto.RoutingResult;
@@ -33,8 +32,9 @@ public class AdminCommonQueueService {
 
 	public PageResponse<TicketResponse> findCommonQueueTickets(Pageable pageable) {
 		return PageResponse.from(
-			ticketRepository.findByStatusInAndDeletedAtIsNullOrderByCreatedAtDesc(
+			ticketRepository.findCommonQueueTickets(
 					List.of(TicketStatus.COMMON_QUEUE, TicketStatus.TRANSFERRED),
+					TicketTransferRequestStatus.REQUESTED,
 					pageable
 				)
 				.map(this::toCommonQueueTicketResponse)
@@ -77,36 +77,26 @@ public class AdminCommonQueueService {
 		));
 	}
 
-	private TicketResponse toCommonQueueTicketResponse(Ticket ticket) {
-		TicketResponse response = TicketResponse.from(ticket, emptyRoutingResult());
-		if (ticket.getStatus() != TicketStatus.TRANSFERRED) {
-			return response;
-		}
-
-		return ticketTransferRequestRepository
-			.findFirstByTicketIdAndStatusAndDeletedAtIsNullOrderByCreatedAtDesc(
-				ticket.getTicketId(),
-				TicketTransferRequestStatus.REQUESTED
-			)
-			.map(transferRequest -> response.withTransferInfo(
-				transferRequest.getReason(),
-				transferRequest.getSuggestedDepartmentId(),
-				findDepartmentName(transferRequest.getSuggestedDepartmentId())
-			))
-			.orElse(response);
-	}
-
-	private String findDepartmentName(Long departmentId) {
-		if (departmentId == null) {
-			return null;
-		}
-
-		return departmentRepository.findByDepartmentIdAndDeletedAtIsNull(departmentId)
-			.map(Department::getDepartmentName)
-			.orElse(null);
-	}
-
-	private RoutingResult emptyRoutingResult() {
-		return new RoutingResult(null, null, null, null, List.of(), List.of());
+	private TicketResponse toCommonQueueTicketResponse(TicketRepository.CommonQueueTicketProjection ticket) {
+		return new TicketResponse(
+			ticket.getTicketId(),
+			ticket.getStatus(),
+			ticket.getAssignedDepartmentId(),
+			null,
+			ticket.getRoutingConfidenceScore(),
+			ticket.getRoutingDecision(),
+			List.of(),
+			List.of(),
+			ticket.getSourceChatbotMessageId(),
+			ticket.getPriority(),
+			ticket.getTitle(),
+			ticket.getContent(),
+			ticket.getAssigneeId(),
+			ticket.getTransferReason(),
+			ticket.getTransferSuggestedDepartmentId(),
+			ticket.getTransferSuggestedDepartmentName(),
+			ticket.getCreatedAt(),
+			ticket.getUpdatedAt()
+		);
 	}
 }

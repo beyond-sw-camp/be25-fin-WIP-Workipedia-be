@@ -1,5 +1,7 @@
 package com.wip.workipedia.ticket.domain;
 
+import com.wip.workipedia.common.domain.BaseTimeEntity;
+import com.wip.workipedia.common.domain.ModifiedSource;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -8,7 +10,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "ticket_transfer_requests")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class TicketTransferRequest {
+public class TicketTransferRequest extends BaseTimeEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,13 +42,6 @@ public class TicketTransferRequest {
 	@Column(nullable = false, length = 30)
 	private TicketTransferRequestStatus status;
 
-	@Column(nullable = false)
-	private LocalDateTime createdAt;
-
-	private LocalDateTime updatedAt;
-
-	private LocalDateTime deletedAt;
-
 	@Column(nullable = false, length = 1, columnDefinition = "CHAR(1) DEFAULT 'N'")
 	private String isDeleted = "N";
 
@@ -58,7 +52,6 @@ public class TicketTransferRequest {
 		Long suggestedDepartmentId,
 		String reason
 	) {
-		LocalDateTime now = LocalDateTime.now();
 		TicketTransferRequest request = new TicketTransferRequest();
 		request.ticketId = ticketId;
 		request.requesterId = requesterId;
@@ -66,13 +59,18 @@ public class TicketTransferRequest {
 		request.suggestedDepartmentId = suggestedDepartmentId;
 		request.reason = reason;
 		request.status = TicketTransferRequestStatus.REQUESTED;
-		request.createdAt = now;
-		request.updatedAt = now;
+		request.touchModifiedSource(ModifiedSource.ADMIN);
 		return request;
 	}
 
 	public void markAssignedFromQueue() {
 		this.status = TicketTransferRequestStatus.ASSIGNED_FROM_QUEUE;
-		this.updatedAt = LocalDateTime.now();
+		touchModifiedSource(ModifiedSource.ADMIN);
+	}
+
+	public void delete() {
+		markDeleted();
+		this.isDeleted = "Y";
+		touchModifiedSource(ModifiedSource.ADMIN);
 	}
 }

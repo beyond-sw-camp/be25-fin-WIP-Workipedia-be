@@ -8,6 +8,7 @@ import com.wip.workipedia.department.repository.DepartmentRepository;
 import com.wip.workipedia.team.dto.TeamTicketSummaryResponse;
 import com.wip.workipedia.ticket.domain.Ticket;
 import com.wip.workipedia.ticket.domain.TicketTransferRequest;
+import com.wip.workipedia.ticket.domain.TicketTransferRequestStatus;
 import com.wip.workipedia.ticket.domain.TicketStatus;
 import com.wip.workipedia.ticket.dto.TicketTransferRequestCreateRequest;
 import com.wip.workipedia.ticket.dto.RoutingResult;
@@ -24,6 +25,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -94,6 +96,12 @@ public class TeamTicketService {
 		if (ticket.getStatus() != TicketStatus.ASSIGNED) {
 			throw new CustomException(ErrorType.TICKET_INVALID_TRANSFER);
 		}
+		if (ticketTransferRequestRepository.existsByTicketIdAndStatusAndDeletedAtIsNull(
+			ticketId,
+			TicketTransferRequestStatus.REQUESTED
+		)) {
+			throw new CustomException(ErrorType.TICKET_INVALID_TRANSFER);
+		}
 
 		Long suggestedDepartmentId = request.suggestedDepartmentId();
 		String suggestedDepartmentName = null;
@@ -110,7 +118,11 @@ public class TeamTicketService {
 			suggestedDepartmentId,
 			request.reason()
 		);
-		ticketTransferRequestRepository.save(transferRequest);
+		try {
+			ticketTransferRequestRepository.saveAndFlush(transferRequest);
+		} catch (DataIntegrityViolationException e) {
+			throw new CustomException(ErrorType.TICKET_INVALID_TRANSFER);
+		}
 		ticket.requestTransfer();
 
 		return TicketResponse.from(ticket, emptyRoutingResult())

@@ -11,4 +11,9 @@ public interface TicketTransferRequestRepository extends JpaRepository<TicketTra
 		Long ticketId,
 		TicketTransferRequestStatus status
 	);
+
+	boolean existsByTicketIdAndStatusAndDeletedAtIsNull(
+		Long ticketId,
+		TicketTransferRequestStatus status
+	);
 }
