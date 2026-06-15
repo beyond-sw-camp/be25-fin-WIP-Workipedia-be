@@ -44,7 +44,7 @@ public class ChatbotMessage {
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
 
-    @Column(nullable = false, length = 1)
+    @Column(nullable = false, columnDefinition = "CHAR(1)")
     private String isDeleted = "N";
 
     public static ChatbotMessage ofUser(Long sessionId, String content) {
