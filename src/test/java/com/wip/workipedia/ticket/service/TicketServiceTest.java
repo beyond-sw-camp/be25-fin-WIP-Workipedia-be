@@ -1,5 +1,8 @@
 package com.wip.workipedia.ticket.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -8,9 +11,12 @@ import static org.mockito.Mockito.inOrder;
 import com.wip.workipedia.notification.service.NotificationService;
 import com.wip.workipedia.ticket.repository.TicketRepository;
 import com.wip.workipedia.user.repository.UserRepository;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
+import org.springframework.data.domain.Pageable;
 
 import static org.mockito.Mockito.mock;
 
@@ -31,15 +37,54 @@ class TicketServiceTest {
 			1L,
 			"expired ticket"
 		);
-		when(ticketRepository.findExpiredCommonQueueTickets()).thenReturn(List.of(expiredTicket));
+		when(ticketRepository.findExpiredCommonQueueTickets(any(LocalDateTime.class), any(Pageable.class)))
+			.thenReturn(List.of(expiredTicket))
+			.thenReturn(List.of());
+		when(ticketRepository.softDeleteExpiredCommonQueueTicket(eq(100L), any(LocalDateTime.class))).thenReturn(1);
 
 		service.moveExpiredTicketsToCommonQueue();
 
 		InOrder inOrder = inOrder(ticketRepository);
 		inOrder.verify(ticketRepository).moveExpiredTicketsToCommonQueue();
-		inOrder.verify(ticketRepository).findExpiredCommonQueueTickets();
-		inOrder.verify(ticketRepository).softDeleteExpiredCommonQueueTickets(List.of(100L));
+		inOrder.verify(ticketRepository).findExpiredCommonQueueTickets(any(LocalDateTime.class), any(Pageable.class));
+		inOrder.verify(ticketRepository).softDeleteExpiredCommonQueueTicket(eq(100L), any(LocalDateTime.class));
+		inOrder.verify(ticketRepository).findExpiredCommonQueueTickets(any(LocalDateTime.class), any(Pageable.class));
+		ArgumentCaptor<LocalDateTime> findCutoffCaptor = ArgumentCaptor.forClass(LocalDateTime.class);
+		ArgumentCaptor<LocalDateTime> deleteCutoffCaptor = ArgumentCaptor.forClass(LocalDateTime.class);
+		verify(ticketRepository, org.mockito.Mockito.atLeastOnce())
+			.findExpiredCommonQueueTickets(findCutoffCaptor.capture(), any(Pageable.class));
+		verify(ticketRepository).softDeleteExpiredCommonQueueTicket(eq(100L), deleteCutoffCaptor.capture());
+		assertThat(deleteCutoffCaptor.getValue()).isEqualTo(findCutoffCaptor.getAllValues().getFirst());
 		verify(notificationService).createTicketDeletedNotification(1L, 100L, "expired ticket");
+	}
+
+	@Test
+	void moveExpiredTicketsToCommonQueue_skipsNotificationWhenExpiredTicketWasNotDeleted() {
+		TicketRepository ticketRepository = mock(TicketRepository.class);
+		NotificationService notificationService = mock(NotificationService.class);
+		TicketService service = new TicketService(
+			ticketRepository,
+			mock(TicketRoutingService.class),
+			mock(UserRepository.class),
+			notificationService
+		);
+		TicketRepository.ExpiredCommonQueueTicketProjection expiredTicket = expiredTicket(
+			100L,
+			1L,
+			"expired ticket"
+		);
+		when(ticketRepository.findExpiredCommonQueueTickets(any(LocalDateTime.class), any(Pageable.class)))
+			.thenReturn(List.of(expiredTicket))
+			.thenReturn(List.of());
+		when(ticketRepository.softDeleteExpiredCommonQueueTicket(eq(100L), any(LocalDateTime.class))).thenReturn(0);
+
+		service.moveExpiredTicketsToCommonQueue();
+
+		verify(ticketRepository).moveExpiredTicketsToCommonQueue();
+		verify(ticketRepository, org.mockito.Mockito.times(2))
+			.findExpiredCommonQueueTickets(any(LocalDateTime.class), any(Pageable.class));
+		verify(ticketRepository).softDeleteExpiredCommonQueueTicket(eq(100L), any(LocalDateTime.class));
+		verifyNoMoreInteractions(notificationService);
 	}
 
 	@Test
@@ -52,12 +97,12 @@ class TicketServiceTest {
 			mock(UserRepository.class),
 			notificationService
 		);
-		when(ticketRepository.findExpiredCommonQueueTickets()).thenReturn(List.of());
+		when(ticketRepository.findExpiredCommonQueueTickets(any(LocalDateTime.class), any(Pageable.class))).thenReturn(List.of());
 
 		service.moveExpiredTicketsToCommonQueue();
 
 		verify(ticketRepository).moveExpiredTicketsToCommonQueue();
-		verify(ticketRepository).findExpiredCommonQueueTickets();
+		verify(ticketRepository).findExpiredCommonQueueTickets(any(LocalDateTime.class), any(Pageable.class));
 		verifyNoMoreInteractions(ticketRepository, notificationService);
 	}
 
