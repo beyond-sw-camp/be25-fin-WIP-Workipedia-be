@@ -32,6 +32,9 @@ public enum ErrorType {
 	AUTH_INVALID_EMAIL_FORMAT("auth-014", "올바른 이메일 형식이 아닙니다.", HttpStatus.BAD_REQUEST),
 	AUTH_INVALID_EMAIL_CODE_FORMAT("auth-015", "인증코드는 6자리 숫자여야 합니다.", HttpStatus.BAD_REQUEST),
 
+	// ai
+	AI_SYNC_FAILED("ai-001", "AI 동기화에 실패했습니다.", HttpStatus.BAD_GATEWAY),
+
 	// department
 	DEPARTMENT_NOT_FOUND("department-001", "부서를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 	DEPARTMENT_DUPLICATE_NAME("department-002", "이미 사용 중인 부서명입니다.", HttpStatus.CONFLICT),

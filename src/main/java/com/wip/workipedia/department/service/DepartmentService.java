@@ -4,6 +4,8 @@ import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.security.SecurityUtil;
 import com.wip.workipedia.department.ai.DepartmentRoutingPromptEditor;
+import com.wip.workipedia.department.ai.KnowledgeSyncAiClient;
+import com.wip.workipedia.department.ai.KnowledgeSyncRequest;
 import com.wip.workipedia.department.ai.RoutingPromptEditResult;
 import com.wip.workipedia.department.ai.RoutingPromptEditTarget;
 import com.wip.workipedia.department.domain.Department;
@@ -34,6 +36,7 @@ public class DepartmentService {
 	private final DepartmentRepository departmentRepository;
 	private final RoutingPromptRepository routingPromptRepository;
 	private final DepartmentRoutingPromptEditor departmentRoutingPromptEditor;
+	private final KnowledgeSyncAiClient knowledgeSyncAiClient;
 	private final UserRepository userRepository;
 
 	@Transactional(readOnly = true)
@@ -101,12 +104,27 @@ public class DepartmentService {
 		Map<Long, Department> departmentMap = departments.stream()
 			.collect(Collectors.toMap(Department::getDepartmentId, Function.identity()));
 
-		editResults.forEach(editResult -> upsertRoutingPrompt(
-			departmentMap.get(editResult.departmentId()),
-			editResult.routingPrompt()
-		));
+		editResults.forEach(editResult -> {
+			Department dept = departmentMap.get(editResult.departmentId());
+			upsertRoutingPrompt(dept, editResult.routingPrompt());
+			knowledgeSyncAiClient.sync(
+				KnowledgeSyncRequest.ofDeptRr(dept.getDepartmentId(), dept.getDepartmentName(), editResult.routingPrompt())
+			);
+		});
 
 		return findAllForAdmin();
+	}
+
+	@Transactional
+	public AdminDepartmentResponse updateRoutingPromptDirect(Long departmentId, String routingPrompt) {
+		Department department = getDepartment(departmentId);
+		upsertRoutingPrompt(department, routingPrompt);
+		knowledgeSyncAiClient.sync(
+			KnowledgeSyncRequest.ofDeptRr(departmentId, department.getDepartmentName(), routingPrompt)
+		);
+		long memberCount = userRepository.countByDepartment_DepartmentIdAndDeletedAtIsNullAndStatus(
+			departmentId, UserStatus.ACTIVE);
+		return AdminDepartmentResponse.from(department, routingPrompt, memberCount);
 	}
 
 	@Transactional
@@ -121,6 +139,7 @@ public class DepartmentService {
 		department.markDeleted();
 		routingPromptRepository.findByDepartment_DepartmentIdAndDeletedAtIsNull(departmentId)
 			.ifPresent(routingPrompt -> routingPrompt.markDeleted(actorUserId));
+		knowledgeSyncAiClient.delete(departmentId, "DEPT_RR");
 	}
 
 	private Map<Long, DepartmentRoutingPrompt> findRoutingPromptMap(List<Department> departments) {
