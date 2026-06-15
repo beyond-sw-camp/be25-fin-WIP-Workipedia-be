@@ -43,15 +43,31 @@
 - `priority`
 - `assigned_department_id`
 - `assignee_id`
+- `ticket_transfer_requests`
 - `routing_confidence_score`
 - reranker `top_score`, `score_margin`, 후보별 `score`, `rank`
-- `transfer_reason`
+- `transfer_reason`, `suggested_department_id`
 - `attachments`
 - ticket create/list/detail/update APIs
 - `GET /tickets?status={status}&departmentId={departmentId}`
+- `POST /team/tickets/{ticketId}/transfer`
+- `GET /admin/common-queue/tickets`
+- `PATCH /admin/common-queue/tickets/{ticketId}/department`
 - attachment upload/read APIs
 - `StoragePort` 기반 R2/S3/MinIO Object Storage
 - presigned upload/download API
+
+## 티켓 이관 정책
+
+- AI 라우팅으로 담당 부서가 배정된 티켓은 `tickets.status=ASSIGNED` 상태가 된다.
+- 담당 부서의 `TEAM_ADMIN`만 자기 부서에 배정된 `ASSIGNED` 티켓에 대해 이관을 요청할 수 있다.
+- 이관 요청 시 티켓은 다른 부서로 직접 이동하지 않고 공통 접수 큐의 이관 대기 항목으로 이동한다.
+- 이관 요청 시 `tickets.status=TRANSFERRED`, `ticket_transfer_requests.status=REQUESTED`로 저장한다.
+- 이관 요청에는 이관 사유가 필수이며, 후보 부서는 선택값이다.
+- 공통 접수 큐 관리자인 `SYSTEM_ADMIN`은 `TRANSFERRED` 티켓의 이관 사유와 후보 부서를 확인한다.
+- `SYSTEM_ADMIN`이 적절한 담당 부서로 재배정하면 `tickets.status=ASSIGNED`, `ticket_transfer_requests.status=ASSIGNED_FROM_QUEUE`로 변경한다.
+- 재배정된 티켓은 새 담당 부서의 팀 큐에서 `ASSIGNED` 티켓으로 조회된다.
+- 일반 공통 접수 큐 배정은 `TICKET_ASSIGNED` 알림을 생성하고, 이관 티켓 재배정은 `TICKET_REASSIGNED` 알림을 생성한다.
 
 ## 권한/보안 체크
 
@@ -66,6 +82,9 @@
 - 사용자가 요청 티켓을 생성할 수 있다.
 - 라우팅 점수에 따라 담당 부서 또는 공통 접수 큐로 이동한다.
 - 팀 관리자가 팀원에게 티켓을 배정할 수 있다.
+- 팀 관리자가 자기 부서의 배정 티켓에 대해 이관을 요청할 수 있다.
+- 이관 요청된 티켓은 공통 접수 큐에서 이관 사유와 후보 부서를 확인할 수 있다.
+- 시스템 관리자가 이관 요청 티켓을 담당 부서로 재배정할 수 있다.
 - 담당 팀원이 처리 완료 상태로 변경할 수 있다.
 - `status`, `departmentId` 조건으로 티켓 목록을 조회할 수 있다.
 - 티켓 생성 시 중요도와 첨부 파일이 저장된다.

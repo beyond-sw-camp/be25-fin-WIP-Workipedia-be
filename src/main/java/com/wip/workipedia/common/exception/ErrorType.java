@@ -28,6 +28,9 @@ public enum ErrorType {
 	AUTH_REFRESH_TOKEN_INVALID("auth-010", "유효하지 않은 Refresh Token입니다.", HttpStatus.UNAUTHORIZED),
 	AUTH_USER_NOT_FOUND("auth-011", "일치하는 사용자 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 	AUTH_PASSWORD_RESET_VERIFICATION_REQUIRED("auth-012", "비밀번호 재설정 인증이 필요합니다.", HttpStatus.BAD_REQUEST),
+	AUTH_INVALID_PASSWORD_FORMAT("auth-013", "비밀번호는 영문자, 숫자 조합의 8~16자리를 사용해야 합니다.", HttpStatus.BAD_REQUEST),
+	AUTH_INVALID_EMAIL_FORMAT("auth-014", "올바른 이메일 형식이 아닙니다.", HttpStatus.BAD_REQUEST),
+	AUTH_INVALID_EMAIL_CODE_FORMAT("auth-015", "인증코드는 6자리 숫자여야 합니다.", HttpStatus.BAD_REQUEST),
 
 	// department
 	DEPARTMENT_NOT_FOUND("department-001", "부서를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
@@ -36,6 +39,19 @@ public enum ErrorType {
 
 	// ticket
 	TICKET_NOT_FOUND("ticket-001", "티켓을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+
+	TICKET_FORBIDDEN("ticket-002", "티켓 처리 권한이 없습니다.", HttpStatus.FORBIDDEN),
+	TICKET_INVALID_TRANSFER("ticket-003", "현재 상태에서는 티켓을 이관할 수 없습니다.", HttpStatus.CONFLICT),
+	TICKET_TRANSFER_REASON_REQUIRED("ticket-004", "티켓 이관 사유는 필수입니다.", HttpStatus.BAD_REQUEST),
+	TICKET_INVALID_ANSWER("ticket-005", "현재 상태에서는 티켓 답변을 등록할 수 없습니다.", HttpStatus.CONFLICT),
+	TICKET_INVALID_ASSIGNMENT("ticket-006", "현재 상태에서는 티켓을 배정할 수 없습니다.", HttpStatus.CONFLICT),
+	TICKET_INVALID_ATTACHMENT("ticket-007", "티켓 답변 첨부파일이 유효하지 않습니다.", HttpStatus.BAD_REQUEST),
+
+	// knowledge data
+	KNOWLEDGE_DATA_NOT_FOUND("knowledge-data-001", "지식화 데이터를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+	KNOWLEDGE_DATA_FORBIDDEN("knowledge-data-002", "지식화 데이터 관리 권한이 없습니다.", HttpStatus.FORBIDDEN),
+	KNOWLEDGE_DATA_ALREADY_APPROVED("knowledge-data-003", "이미 지식화된 티켓입니다.", HttpStatus.CONFLICT),
+	KNOWLEDGE_DATA_INVALID_APPROVAL("knowledge-data-004", "현재 상태에서는 지식화 승인할 수 없습니다.", HttpStatus.CONFLICT),
 
 	// worki
 	WORKI_NOT_FOUND("worki-001", "워키 리소스를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
@@ -47,9 +63,25 @@ public enum ErrorType {
 	MANUAL_FORBIDDEN("manual-002", "매뉴얼 관리 권한이 없습니다.", HttpStatus.FORBIDDEN),
 	MANUAL_INVALID_FILE("manual-003", "매뉴얼 파일이 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
 
+	DIRECT_DATA_NOT_FOUND("direct-data-001", "수기 지식을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+	DIRECT_DATA_ALREADY_DELETED("direct-data-002", "이미 삭제된 수기 지식입니다.", HttpStatus.CONFLICT),
+
 	// notification
 	NOTIFICATION_NOT_FOUND("notification-001", "알림을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 	NOTIFICATION_FORBIDDEN("notification-002", "본인 알림이 아닙니다.", HttpStatus.FORBIDDEN),
+
+	// mypage
+	MYPAGE_USER_NOT_FOUND("mypage-001", "마이페이지 사용자 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+
+	// esg
+	ESG_GRADE_NOT_FOUND("esg-001", "ESG 등급 기준을 찾을 수 없습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+
+	// point
+	POINT_INVALID_AMOUNT("point-001", "포인트 금액은 0보다 커야 합니다.", HttpStatus.BAD_REQUEST),
+	POINT_INSUFFICIENT_BALANCE("point-002", "보유 포인트가 부족합니다.", HttpStatus.CONFLICT),
+	POINT_AMOUNT_OVERFLOW("point-003", "처리할 수 있는 포인트 범위를 초과했습니다.", HttpStatus.BAD_REQUEST),
+	POINT_INVALID_EVENT("point-004", "포인트 이벤트 식별값이 유효하지 않습니다.", HttpStatus.BAD_REQUEST),
+	POINT_GRADE_NOT_FOUND("point-005", "ESG 등급 기준을 찾을 수 없습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
 
 	// flash-chat
 	FLASH_CHAT_COOLDOWN("flash-chat-001", "메시지 전송 쿨다운 중입니다.", HttpStatus.TOO_MANY_REQUESTS),

@@ -5,7 +5,6 @@ import java.util.List;
 
 public enum MyTicketStatus {
 	WAITING(List.of(
-		TicketStatus.RECEIVED,
 		TicketStatus.COMMON_QUEUE,
 		TicketStatus.ASSIGNED
 	)),

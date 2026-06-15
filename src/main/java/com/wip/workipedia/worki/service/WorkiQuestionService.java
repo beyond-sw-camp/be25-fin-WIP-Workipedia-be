@@ -10,6 +10,8 @@ import com.wip.workipedia.worki.dto.QuestionSummaryResponse;
 import com.wip.workipedia.worki.dto.QuestionUpdateRequest;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
+import com.wip.workipedia.point.domain.PointReasonType;
+import com.wip.workipedia.point.service.PointService;
 import com.wip.workipedia.reaction.domain.ReactionTargetType;
 import com.wip.workipedia.reaction.domain.ReactionType;
 import com.wip.workipedia.reaction.repository.ReactionRepository;
@@ -37,20 +39,28 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class WorkiQuestionService {
 
+    private static final int FIRST_QUESTION_POINT = 10;
+    private static final int QUESTION_POINT = 5;
+    private static final String QUESTION_RELATED_TYPE = "WORKI_QUESTION";
+
     private final WorkiQuestionRepository questionRepository;
     private final WorkiAnswerRepository answerRepository;
     private final UserRepository userRepository;
     private final ReactionRepository reactionRepository;
+    private final WorkiViewCountService viewCountService;
     private final ApplicationEventPublisher eventPublisher;
+    private final PointService pointService;
 
     @Transactional
     public QuestionResponse create(Long actorUserId, QuestionCreateRequest request) {
+        boolean firstQuestion = !hasCreatedQuestion(actorUserId);
         WorkiQuestion question = WorkiQuestion.create(
                 actorUserId, request.title(), request.content(), request.sourceChatbotMessageId());
         WorkiQuestion saved = questionRepository.save(question);
         // 커밋 후 검색 색인이 반영되도록 이벤트만 발행한다(실제 색인은 search가 구독 즉, search 서비스에서 처리).
         // 롤백 되면 색인 요청 삭제. 안하게 됨. 커밋과 색인 요청이 동시에 일어남.
         eventPublisher.publishEvent(new WorkiQuestionChangedEvent(saved.getQuestionId()));
+        earnQuestionCreatedPoint(actorUserId, saved.getQuestionId(), firstQuestion);
         return QuestionResponse.from(saved);
     }
 
@@ -75,16 +85,14 @@ public class WorkiQuestionService {
                 .collect(Collectors.toMap(TargetLikeCount::getTargetId, TargetLikeCount::getLikeCount));
     }
 
-    // ToDo: 여기부분 부하 줄수 있음. 새로고침 계속 하면 update 해야하니 이부분 수정 방법 찾아야함.
-   @Transactional // 왜 위에 readOnly = true 가 있는데 여기에 추가한 이유: 사실 더티 체킹을 어떻게 하냐에 따른 방법인데, 트랜젝션이 있으면, 동시성에 문제가 생겨버림. 2명이 동시에 조회수 10짜리 읽으면 12가 되어야 하는데 11이 됨.
-    public QuestionDetailResponse getDetail(Long questionId) {
-        // WorkiQuestion question = getQuestionOrThrow(questionId);
-        // question.increaseViewCount(); // 여기 서비스에서 바꾸면 캡슐화 깨짐. 따로 메서드 빼서 바꾸는게 좋음.
-
-        // 그냥 JPA 쿼리 사용해서 단순 뷰 업데이트 올림. 
-        questionRepository.increaseViewCount(questionId);
+    // 조회수는 더 이상 여기서 바로 DB에 UPDATE하지 않는다. Redis로 중복 조회를 막고 신규 조회만 누적한 뒤
+    // 스케줄러가 일괄 반영한다(WorkiViewCountService 참고). readOnly 트랜잭션을 유지할 수 있게 됐다.
+    public QuestionDetailResponse getDetail(Long questionId, Long viewerUserId) {
         WorkiQuestion question = getQuestionOrThrow(questionId);
-        
+
+        // 10분 내 같은 사용자의 재조회는 무시하고, 신규 조회만 Redis 임시 카운터에 누적한다.
+        viewCountService.countView(questionId, viewerUserId);
+
         List<WorkiAnswer> answers =
                 answerRepository.findByQuestionIdAndDeletedAtIsNullOrderByCreatedAtAsc(questionId);
 
@@ -104,8 +112,11 @@ public class WorkiQuestionService {
         long likeCount = reactionRepository.countByTargetTypeAndTargetIdAndReactionType(
                 ReactionTargetType.WORKI_QUESTION, questionId, ReactionType.LIKE);
 
+        // 화면에는 DB값 + 아직 반영되지 않은 Redis 누적분을 합쳐 보여줘, 일괄 반영 지연을 사용자가 체감하지 않게 한다.
+        long viewCount = question.getViewCount() + viewCountService.getPendingCount(questionId);
+
         return QuestionDetailResponse.of(
-                question, authorsById.get(question.getAuthorId()), likeCount, answerResponses);
+                question, authorsById.get(question.getAuthorId()), viewCount, likeCount, answerResponses);
     }
 
     @Transactional //여기의 경우는 더티체킹이 필요함
@@ -123,6 +134,18 @@ public class WorkiQuestionService {
         return QuestionResponse.from(question);
     }
 
+    private boolean hasCreatedQuestion(Long actorUserId) {
+        return questionRepository.existsByAuthorId(actorUserId);
+    }
+
+    private void earnQuestionCreatedPoint(Long actorUserId, Long questionId, boolean firstQuestion) {
+        if (firstQuestion) {
+            pointService.earnPoint(actorUserId, FIRST_QUESTION_POINT, PointReasonType.WORKI_FIRST_QUESTION_CREATED, QUESTION_RELATED_TYPE, questionId);
+            return;
+        }
+        pointService.earnPoint(actorUserId, QUESTION_POINT, PointReasonType.WORKI_QUESTION_CREATED, QUESTION_RELATED_TYPE, questionId);
+    }
+
     private WorkiQuestion getQuestionOrThrow(Long questionId) {
         return questionRepository.findByQuestionIdAndDeletedAtIsNull(questionId)
                 .orElseThrow(() -> new CustomException(ErrorType.WORKI_NOT_FOUND, "질문을 찾을 수 없습니다. id=" + questionId));
@@ -130,6 +153,7 @@ public class WorkiQuestionService {
 
     @Transactional
     public List<QuestionResponse> createBulk(Long actorUserId, List<QuestionCreateRequest> requests) {
+        boolean hasCreatedQuestion = hasCreatedQuestion(actorUserId);
         List<WorkiQuestion> questions = requests.stream()
                 .map(request -> WorkiQuestion.create(
                         actorUserId,
@@ -141,9 +165,11 @@ public class WorkiQuestionService {
 
         List<WorkiQuestion> savedQuestions = questionRepository.saveAll(questions);
 
-        savedQuestions.forEach(saved ->
-                eventPublisher.publishEvent(new WorkiQuestionChangedEvent(saved.getQuestionId()))
-        );
+        for (int index = 0; index < savedQuestions.size(); index++) {
+            WorkiQuestion saved = savedQuestions.get(index);
+            eventPublisher.publishEvent(new WorkiQuestionChangedEvent(saved.getQuestionId()));
+            earnQuestionCreatedPoint(actorUserId, saved.getQuestionId(), !hasCreatedQuestion && index == 0);
+        }
 
         return savedQuestions.stream()
                 .map(QuestionResponse::from)

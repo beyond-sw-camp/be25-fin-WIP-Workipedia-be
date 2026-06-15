@@ -3,6 +3,7 @@ package com.wip.workipedia.ticket.service;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.response.PageResponse;
+import com.wip.workipedia.notification.service.NotificationService;
 import com.wip.workipedia.ticket.domain.Ticket;
 import com.wip.workipedia.ticket.domain.TicketPriority;
 import com.wip.workipedia.ticket.domain.TicketStatus;
@@ -26,6 +27,7 @@ public class TicketService {
 	private final TicketRepository ticketRepository;
 	private final TicketRoutingService ticketRoutingService;
 	private final UserRepository userRepository;
+	private final NotificationService notificationService;
 
 	public TicketResponse create(Long requesterId, CreateTicketRequest request) {
 
@@ -47,7 +49,9 @@ public class TicketService {
 				routingResult.assignedDepartmentName(),
 				routingResult.confidenceScore(),
 				routingResult.decision());
-		return TicketResponse.from(ticketRepository.save(ticket), routingResult);
+		Ticket saved = ticketRepository.save(ticket);
+		notificationService.createTicketNotification(requesterId, saved);
+		return TicketResponse.from(saved, routingResult);
 	}
 
 	@Transactional(readOnly = true)
@@ -70,8 +74,13 @@ public class TicketService {
 	@Transactional
 	public TicketResponse changeStatus(Long ticketId, TicketStatus status) {
 		Ticket ticket = getTicket(ticketId);
+		TicketStatus previousStatus = ticket.getStatus();
 		ticket.changeStatus(status);
-		return TicketResponse.from(ticketRepository.save(ticket), emptyRoutingResult());
+		Ticket saved = ticketRepository.save(ticket);
+		if (previousStatus != status) {
+			notificationService.createTicketNotification(saved.getRequesterId(), saved);
+		}
+		return TicketResponse.from(saved, emptyRoutingResult());
 	}
 
 	@Transactional
@@ -118,5 +127,6 @@ public class TicketService {
 	@Transactional
 	public void moveExpiredTicketsToCommonQueue() {
 		ticketRepository.moveExpiredTicketsToCommonQueue();
+		ticketRepository.softDeleteExpiredCommonQueueTickets();
 	}
 }

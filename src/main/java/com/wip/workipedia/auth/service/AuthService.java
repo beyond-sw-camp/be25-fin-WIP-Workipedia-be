@@ -12,17 +12,20 @@ import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.security.JwtProvider;
 import com.wip.workipedia.department.domain.Department;
 import com.wip.workipedia.department.repository.DepartmentRepository;
+import com.wip.workipedia.point.service.PointService;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.domain.UserStatus;
 import com.wip.workipedia.user.repository.UserRepository;
 import java.security.SecureRandom;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
 	private static final String[] NICKNAME_PREFIXES = {
@@ -41,6 +44,7 @@ public class AuthService {
 	private final EmailVerificationService emailVerificationService;
 	private final RefreshTokenService refreshTokenService;
 	private final JwtProvider jwtProvider;
+	private final PointService pointService;
 	private final SecureRandom secureRandom = new SecureRandom();
 
 	// 로그인 성공 시 Access Token과 Refresh Token을 발급합니다.
@@ -59,6 +63,9 @@ public class AuthService {
 		String refreshToken = jwtProvider.createRefreshToken(user);
 		refreshTokenService.save(user.getUserId(), refreshToken);
 		user.updateLastLoginAt();
+		// 로그인 성공 후 로그인 포인트 적립을 처리합니다.
+		// 실제 중복 지급 여부와 일일 적립 한도는 PointService에서 검증합니다.
+		awardLoginPoint(user.getUserId());
 
 		return new LoginResult(
 			createLoginResponse(user, accessToken),
@@ -163,6 +170,14 @@ public class AuthService {
 	private void validateActiveUser(User user) {
 		if (user.getStatus() != UserStatus.ACTIVE) {
 			throw new CustomException(ErrorType.AUTH_INACTIVE_USER);
+		}
+	}
+
+	private void awardLoginPoint(Long userId) {
+		try {
+			pointService.earnLoginPoint(userId);
+		} catch (RuntimeException exception) {
+			log.warn("Login point earning failed. userId={}", userId, exception);
 		}
 	}
 

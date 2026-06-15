@@ -1,6 +1,7 @@
 package com.wip.workipedia.worki.domain;
 
 import com.wip.workipedia.common.domain.BaseTimeEntity;
+import com.wip.workipedia.common.domain.ModifiedSource;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -79,6 +80,12 @@ public class WorkiQuestion extends BaseTimeEntity {
     // 상태만 ANSWERED로 바꾸는 유틸리티(관리자 강제 변경/테스트 셋업).
     public void markAnswered() {
         this.status = QuestionStatus.ANSWERED;
+    }
+
+    public void deleteByAdmin() {
+        this.status = QuestionStatus.DELETED;
+        markDeleted();
+        touchModifiedSource(ModifiedSource.ADMIN);
     }
 
     // 더티 체킹 안하니까 필요 없.

@@ -8,7 +8,7 @@ AI 기반 사내 지식 공유 플랫폼 (한화 계열사 대상). 5인 팀 프
 - MariaDB (Spring Data JPA + Flyway), Redis
 - Spring Security (현재 permit-all skeleton, Auth 미구현)
 - Spring AI (ticket AI 라우팅 adapter)
-- Kafka, Quartz, Spring Mail
+- RabbitMQ, Spring Scheduler (`@Scheduled`), Spring Mail
 
 ## Package Structure
 
@@ -75,8 +75,10 @@ feat/*, docs/*, chore/* → dev → main
 
 | 이름 | 도메인 |
 |---|---|
-| 김진혁 | 티켓, RAG/챗봇 응답, 지식화, CI/CD |
-| 황희수 | 프론트엔드 |
-| 김가영 | 관리자 대시보드, 포인트, ESG |
-| 이슬이 | Auth, 챗봇 세션/메시지 |
-| 민정기 | 워키 게시판, FAQ, 알림, Elasticsearch |
+| 김진혁 | 티켓, AI/RAG 연동, 챗봇 답변·세션·메시지 저장, 지식화, CI/CD |
+| 이슬이 | Auth, 사용자 관리, 보안, 알림, 포인트, ESG 등급·지표 |
+| 민정기 | 워키 게시판, FAQ, Elasticsearch, 매뉴얼, 프론트엔드 |
+| 김가영 | 관리자 기능, 부서 관리, 관리자 대시보드 |
+| 황희수 | 프론트엔드 공동 담당 |
+
+관리자 기능의 세부 도메인은 위 담당을 우선한다. 사용자 관리는 이슬이, 매뉴얼은 민정기, 부서 관리는 김가영이 담당한다.

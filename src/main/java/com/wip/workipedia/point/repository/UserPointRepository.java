@@ -9,5 +9,7 @@ public interface UserPointRepository extends JpaRepository<UserPoint, Long> {
 
 	Optional<UserPoint> findByUserIdAndDeletedAtIsNull(Long userId);
 
+	List<UserPoint> findByUserIdInAndDeletedAtIsNull(List<Long> userIds);
+
 	List<UserPoint> findByDeletedAtIsNull();
 }

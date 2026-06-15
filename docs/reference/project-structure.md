@@ -45,7 +45,7 @@ Spring Boot API
   +-- RDB: MariaDB
   +-- Redis (Refresh Token)
   +-- Elasticsearch (Vector Store)
-  +-- Kafka (이벤트 브로커)
+  +-- RabbitMQ (비동기 이벤트·작업 큐)
   +-- LLM API
   +-- Embedding API
   +-- Object Storage (R2 / S3 / MinIO)
@@ -302,10 +302,11 @@ src/main/resources/db/migration/
 
 - 채팅 세션 생성
 - 메시지 저장
-- ChromaDB retriever + 고객사별 LLM/Embedding provider
+- Qdrant retriever + 고객사별 LLM/Embedding provider
 - Cross-Encoder reranking
 - 출처 포함 응답
-- `NO_RESULT` 시 Tool·해결 티켓 RAG·티켓 생성 순서로 전환
+- `NO_RESULT` 시 매뉴얼→워키→지식 RAG→Tool 순서로 전환
+- 지식 RAG는 분리 저장된 `KNOWLEDGE_DATA`와 `MANUAL_KNOWLEDGE` 후보를 함께 reranking
 
 ### Step 6: 티켓
 
@@ -322,7 +323,7 @@ src/main/resources/db/migration/
 - 처리 완료 티켓의 지식화 생성/승인
 - 개인 사례/개인정보 제거
 - TEAM_ADMIN 검수
-- ChromaDB 비동기 동기화
+- Qdrant 비동기 동기화
 
 ### Step 8: AI 운영 연결
 
@@ -372,21 +373,21 @@ src/test/java/com/wip/workipedia/
 
 | 담당 | 범위 |
 |---|---|
-| 민정기 | worki, FAQ, Elasticsearch, chatbot/mobile/CDN frontend after BE, docs |
-| 김가영 | admin, point, esggrade, ESG metrics |
-| 김진혁 | ticket, TEAM_ADMIN transfer request, AI 연동 계약, chatbot answer flow, docs |
-| 이슬이 | auth, user, security, chatbot sessions/messages, notification |
+| 민정기 | worki, FAQ, Elasticsearch, manual, chatbot/mobile/CDN frontend after BE, docs |
+| 김가영 | admin, department, admin dashboard |
+| 김진혁 | ticket, TEAM_ADMIN transfer request, AI 연동 계약, chatbot sessions/messages/answer flow, docs |
+| 이슬이 | auth, user, security, notification, point, esggrade, ESG metrics |
 | 황희수 | frontend core flow |
 
-단, 챗봇은 이슬이와 김진혁의 경계를 초반에 맞춘다. 이슬이는 세션/메시지 저장, 김진혁은 AI RAG 연동·출처·전환 정책을 담당한다.
+챗봇 세션·메시지 저장과 AI RAG 연동·출처·전환 정책은 김진혁이 담당한다.
 
 ## 10. 지금 결정하면 좋은 것
 
 | 결정 | 추천 |
 |---|---|
 | DB | 현재 의존성 기준 MariaDB로 MVP 시작. Vector Store는 별도 adapter로 둔다 |
-| Vector Store | AI RAG는 ChromaDB, BE 전문 검색은 Elasticsearch로 분리한다 |
+| Vector Store | AI RAG는 Qdrant, BE 전문 검색은 Elasticsearch로 분리한다 |
 | 인증 | 자체 JWT 먼저. SSO는 Phase 3 |
-| RAG | 고객사별 LLM/Embedding provider + ChromaDB. 출처 저장과 구조화된 `NO_RESULT` 전환을 필수로 둔다 |
+| RAG | 고객사별 LLM/Embedding provider + Qdrant. 출처 저장과 구조화된 `NO_RESULT` 전환을 필수로 둔다 |
 | 배치 | 이벤트 기반 동기화 + 일일 정합성 점검으로 구성한다 |
 | 모듈 분리 | 패키지 모듈러 모놀리스. 멀티모듈 Gradle은 MVP 이후 |

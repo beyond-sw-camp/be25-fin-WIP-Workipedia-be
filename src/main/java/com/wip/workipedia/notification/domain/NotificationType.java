@@ -1,11 +1,14 @@
 package com.wip.workipedia.notification.domain;
 
-// notifications.type CHECK 제약과 1:1 (V1__create_initial_schema.sql)
+// notifications.type CHECK 제약조건과 동일하게 유지해야 한다.
 public enum NotificationType {
-    WORKI_ANSWER_CREATED,
+    TICKET_ASSIGNED,
+    TICKET_REASSIGNED,
+    TICKET_COMPLETED,
+    TICKET_DELETED,
+    WORKI_QUESTION_CREATED,
+    WORKI_QUESTION_ANSWERED,
     WORKI_ANSWER_ACCEPTED,
-    TICKET_STATUS_CHANGED,
-    TICKET_TRANSFER_REQUESTED,
-    COMMON_QUEUE_ASSIGNED,
-    POINT_EARNED
+    MANUAL_UPDATED,
+    DIRECT_DATA_ACTIVATED
 }

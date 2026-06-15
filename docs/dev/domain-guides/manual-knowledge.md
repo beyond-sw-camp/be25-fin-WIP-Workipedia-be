@@ -12,27 +12,27 @@
 
 ```text
 SYSTEM_ADMIN 등록·수정
-→ BE가 마스킹된 원문과 sync_status=PENDING 저장
-→ 커밋 후 AI 동기화 요청
-→ AI chunking/embedding/ChromaDB upsert
+→ BE가 원문과 동기화 작업을 같은 트랜잭션으로 저장
+→ `@Scheduled` 워커가 PENDING 동기화 작업을 AI 서버에 전달
+→ AI가 민감정보 마스킹 후 chunking/embedding/Qdrant upsert
 → SYNCED 또는 FAILED
 ```
 
-삭제 시에도 RDB soft delete 후 ChromaDB 문서를 비동기 제거한다.
+삭제 시에도 RDB soft delete 후 Qdrant 문서를 비동기 제거한다.
 
 ## BE 책임
 
 - 수기 지식 CRUD와 SYSTEM_ADMIN 권한
 - 제목, 내용, 활성 상태, 수정자와 수정일 저장
-- `PENDING`, `SYNCED`, `FAILED` 상태와 실패 사유 저장
+- `ai_sync_jobs`에 `PENDING`, `PROCESSING`, `SYNCED`, `FAILED` 상태와 실패 사유 저장
 - 동기화 재시도 API와 감사 로그
 
 ## AI 책임
 
-- 민감정보 마스킹 검증
-- chunking, embedding, ChromaDB upsert/delete
+- 모델 호출 전과 Qdrant 저장 전 민감정보 마스킹
+- chunking, embedding, Qdrant upsert/delete
 - 출처 제목과 수정일 메타데이터 구성
 
 ## 구현 전 migration
 
-`manual_knowledge` 테이블과 Vector Store 문서 ID·동기화 상태 컬럼이 필요하다. 현재 V17까지는 아직 생성되지 않았다.
+`manual_knowledge`와 공통 `ai_sync_jobs` 테이블이 필요하다. 현재 migration에는 아직 생성되지 않았다.
