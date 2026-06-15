@@ -4,8 +4,8 @@
 > 상태: Accepted
 > 정본 위치: `docs/adr/004-ticket-routing-strategy.md`
 > 관련 문서: `docs/reference/service-flow.md`, `docs/dev/domain-guides/ticket-routing-ai.md`, `docs/api/api-contract.md`
-> 버전: v0.2
-> 최종 수정: 2026-06-09
+> 버전: v0.3
+> 최종 수정: 2026-06-15
 
 ## Context
 
@@ -16,27 +16,30 @@
 - AI는 부서까지만 추천하고 개인 담당자는 TEAM_ADMIN이 배정한다.
 - SYSTEM_ADMIN이 작성한 부서 R&R과 TEAM_ADMIN이 승인한 최종 처리 사례를 검색 근거로 사용한다.
 - Vector Search로 부서 후보 Top 3를 찾고 Cross-Encoder로 재정렬한다.
-- 1위 점수와 1·2위 점수 차이가 기준을 통과하면 담당 부서 큐로 배정한다.
-- 기준 미달이면 후보와 점수를 기록하고 `COMMON_QUEUE`로 보낸다.
+- AI가 1위 점수와 점수 차이를 기준으로 `decision`을 반환하고 BE가 이를 실제 티켓 상태로 반영한다.
+- 기준 미달 또는 AI 호출 실패 시 후보와 사유를 기록하고 `COMMON_QUEUE`로 보낸다.
 - 최종 처리 완료와 TEAM_ADMIN 승인이 확인된 사례만 해당 부서의 라우팅 사례로 반영한다.
 - 모델 온라인 학습이나 부서 벡터 직접 이동은 하지 않는다.
 - 부서 R&R 설정은 시스템 구동의 필수 조건이 아니다. 미설정 부서는 승인 사례와 공통 접수 큐로 처리할 수 있지만 cold start 품질이 낮아진다.
 
-Reranker 반환 계약:
+라우팅 반환 계약:
 
 ```json
 {
-  "recommendedDepartmentId": 2,
-  "topScore": 5.14,
+  "assignedDepartmentId": 2,
+  "assignedDepartmentName": "개발팀",
+  "confidenceScore": 5.14,
   "scoreMargin": 1.27,
-  "candidates": [
+  "decision": "AUTO_ASSIGNED",
+  "candidateDepartments": [
     {
-      "candidateId": "department-2",
       "departmentId": 2,
-      "score": 5.14,
-      "rank": 1
+      "departmentName": "개발팀",
+      "confidenceScore": 5.14
     }
-  ]
+  ],
+  "model": "cross-encoder-v1",
+  "provider": "local"
 }
 ```
 

@@ -4,7 +4,7 @@
 > 상태: Draft
 > 정본 위치: `docs/dev/domain-guides/department-routing-prompt.md`
 > 대상: 부서 R&R 관리와 AI 연동 담당자
-> 최종 수정: 2026-06-09
+> 최종 수정: 2026-06-15
 
 ## 목적
 
@@ -106,9 +106,36 @@ AI 응답:
 - `src/main/java/com/wip/workipedia/department/ai/FallbackRoutingPromptEditor.java`
 - `src/main/java/com/wip/workipedia/department/service/DepartmentService.java`
 
+## R&R 지식 동기화
+
+R&R 저장 후 변경된 부서마다 AI 지식 동기화 API를 호출한다.
+
+`POST /api/v1/knowledge/sync`
+
+```json
+{
+  "sourceId": 2,
+  "sourceType": "DEPT_RR",
+  "title": "개발팀",
+  "content": "개발팀은 RAG를 담당한다.",
+  "departmentId": 2,
+  "departmentName": "개발팀"
+}
+```
+
+- `DEPT_RR`은 `sourceId`와 `departmentId`가 같아야 한다.
+- 여러 부서가 변경되면 부서별로 한 번씩 호출한다.
+- 동기화 실패 시 해당 R&R 변경 요청을 실패 처리한다.
+- 부서 삭제 시 `DELETE /api/v1/knowledge/{departmentId}?sourceType=DEPT_RR`을 호출한다.
+
+텍스트를 직접 수정할 때는 다음 관리 API를 사용하며 저장 후 동일하게 동기화한다.
+
+`PATCH /api/v1/admin/departments/{departmentId}/routing-prompt`
+
 ## 완료 기준
 
 - 추가·수정·삭제 지시가 부서별 최종 R&R로 반영된다.
 - 존재하지 않는 부서 ID와 빈 R&R을 거부한다.
 - AI 오류 시 기존 R&R을 보존한다.
+- R&R 저장·삭제가 AI 지식 저장소에 반영된다.
 - 변경 작업이 `admin_logs`에 기록된다.

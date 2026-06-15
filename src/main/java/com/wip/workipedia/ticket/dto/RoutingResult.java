@@ -8,6 +8,8 @@ public record RoutingResult(
 	Long assignedDepartmentId,
 	String assignedDepartmentName,
 	BigDecimal confidenceScore,
+	BigDecimal scoreMargin,
+	String modelVersion,
 	RoutingDecision decision,
 	List<String> reasons,
 	List<CandidateDepartmentResponse> candidateDepartments

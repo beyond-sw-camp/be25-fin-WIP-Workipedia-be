@@ -152,6 +152,6 @@ public class TeamTicketService {
 	}
 
 	private RoutingResult emptyRoutingResult() {
-		return new RoutingResult(null, null, null, null, List.of(), List.of());
+		return new RoutingResult(null, null, null, null, null, null, List.of(), List.of());
 	}
 }

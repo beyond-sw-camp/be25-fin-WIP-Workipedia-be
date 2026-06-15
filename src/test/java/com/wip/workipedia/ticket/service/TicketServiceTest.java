@@ -7,9 +7,19 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wip.workipedia.notification.service.NotificationService;
+import com.wip.workipedia.ticket.domain.RoutingDecision;
+import com.wip.workipedia.ticket.domain.Ticket;
+import com.wip.workipedia.ticket.domain.TicketRoutingLog;
+import com.wip.workipedia.ticket.dto.CreateTicketRequest;
+import com.wip.workipedia.ticket.dto.RoutingResult;
 import com.wip.workipedia.ticket.repository.TicketRepository;
+import com.wip.workipedia.ticket.repository.TicketRoutingLogRepository;
 import com.wip.workipedia.user.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,8 +27,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.springframework.data.domain.Pageable;
-
-import static org.mockito.Mockito.mock;
 
 class TicketServiceTest {
 
@@ -29,6 +37,7 @@ class TicketServiceTest {
 		TicketService service = new TicketService(
 			ticketRepository,
 			mock(TicketRoutingService.class),
+			logRepository,
 			mock(UserRepository.class),
 			notificationService
 		);
@@ -127,5 +136,52 @@ class TicketServiceTest {
 				return title;
 			}
 		};
+	}
+
+	@Test
+	void saveTicket_시_라우팅_로그가_저장된다() {
+		TicketRepository ticketRepository = mock(TicketRepository.class);
+		TicketRoutingLogRepository logRepository = mock(TicketRoutingLogRepository.class);
+		TicketService service = buildService(ticketRepository, logRepository);
+
+		Ticket savedTicket = mock(Ticket.class);
+		when(savedTicket.getTicketId()).thenReturn(1L);
+		when(savedTicket.getRequesterId()).thenReturn(1L);
+		when(ticketRepository.save(any())).thenReturn(savedTicket);
+
+		RoutingResult result = new RoutingResult(
+			null, null, null, null, null,
+			RoutingDecision.COMMON_QUEUE,
+			List.of("테스트"),
+			List.of()
+		);
+
+		service.saveTicket(1L, new CreateTicketRequest(null, null, "제목", "내용"), result);
+
+		verify(logRepository).save(any(TicketRoutingLog.class));
+	}
+
+	@Test
+	void saveTicket_시_라우팅_로그에_decision이_저장된다() {
+		TicketRepository ticketRepository = mock(TicketRepository.class);
+		TicketRoutingLogRepository logRepository = mock(TicketRoutingLogRepository.class);
+		TicketService service = buildService(ticketRepository, logRepository);
+
+		Ticket savedTicket = mock(Ticket.class);
+		when(savedTicket.getTicketId()).thenReturn(1L);
+		when(savedTicket.getRequesterId()).thenReturn(1L);
+		when(ticketRepository.save(any())).thenReturn(savedTicket);
+
+		RoutingResult result = new RoutingResult(
+			2L, "개발팀", null, null, "cross-encoder-v1@local",
+			RoutingDecision.AUTO_ASSIGNED,
+			List.of("R&R 매칭"),
+			List.of()
+		);
+
+		service.saveTicket(1L, new CreateTicketRequest(null, null, "제목", "내용"), result);
+
+		assertThat(result.decision()).isEqualTo(RoutingDecision.AUTO_ASSIGNED);
+		assertThat(result.modelVersion()).isEqualTo("cross-encoder-v1@local");
 	}
 }

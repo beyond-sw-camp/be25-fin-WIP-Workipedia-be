@@ -385,6 +385,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 		long getTotalTicketCount();
 
 		long getAutoAssignedTicketCount();
+	}
+
 	interface ExpiredCommonQueueTicketProjection {
 		Long getTicketId();
 
