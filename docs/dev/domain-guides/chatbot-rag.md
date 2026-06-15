@@ -4,7 +4,7 @@
 > 상태: Draft
 > 정본 위치: `docs/dev/domain-guides/chatbot-rag.md`
 > 관련 문서: `docs/adr/002-rag-strategy.md`, `docs/adr/008-local-llm-security-strategy.md`, `docs/api/api-contract.md`
-> 버전: v0.5
+> 버전: v0.6
 > 최종 수정: 2026-06-15
 
 ## 개발 목표
@@ -81,7 +81,35 @@ BE는 세션 이력을 조립해 AI의 `POST /api/v1/chat`을 호출한다.
 }
 ```
 
-AI 응답의 핵심 필드는 `answer`, `sources`, `route`, `action`이다. BE는 답변과 출처를 세션 메시지에 저장한다. AI 호출 실패 시 임의 답변을 생성하지 않고 서비스 이용 불가 안내를 반환한다.
+세션 컨텍스트 규칙:
+
+- 같은 세션의 최근 메시지 최대 10개를 오래된 순서로 전달한다.
+- `USER`, `ASSISTANT` 메시지만 포함하고 `SYSTEM`은 제외한다.
+- 현재 질문은 `question`에만 넣고 `sessionContext`에 중복 포함하지 않는다.
+- soft-delete된 세션과 메시지는 조회하지 않는다.
+
+AI 응답의 핵심 필드는 `answer`, `sources`, `route`, `action`이다. BE는 답변과 출처를 세션 메시지에 저장한다. 활성 `custom_prompt`가 있으면 요청에 포함하고, 없거나 비활성이면 `null`을 전달한다.
+
+AI 호출 실패 시 임의 답변을 생성하지 않고 서비스 이용 불가 안내를 반환한다. `CREATE_TICKET` 같은 전환 액션은 `next_action`으로 저장하며 일반 근거 답변과 구분한다.
+
+## 세션과 메시지 저장
+
+- `chatbot_sessions`: 사용자별 대화 세션과 제목을 저장한다.
+- `chatbot_messages`: `USER`, `ASSISTANT`, `SYSTEM` 메시지와 출처 JSON, 다음 액션을 저장한다.
+- 세션 목록과 메시지 목록은 본인 소유 데이터만 조회할 수 있다.
+- 존재하지 않거나 삭제된 세션은 404, 다른 사용자의 세션은 403으로 처리한다.
+- AI의 `sources`는 `references_json`에 직렬화해 답변 근거를 보존한다.
+
+질문 처리 흐름:
+
+```text
+세션 소유권 확인 및 기존 context 조회
+→ USER 메시지 저장
+→ DB 트랜잭션 밖에서 AI 호출
+→ ASSISTANT 메시지와 references/action 저장
+```
+
+AI 호출 동안 DB 트랜잭션을 유지하지 않는다. AI 호출이 실패해도 저장된 사용자 질문은 보존하고 fallback 답변을 별도 메시지로 저장한다.
 
 ## 지식 동기화
 
