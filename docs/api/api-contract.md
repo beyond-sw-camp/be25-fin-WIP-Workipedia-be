@@ -119,6 +119,14 @@ Authorization: Bearer <accessToken>
 | POST   | `/chatbot/sessions/{sessionId}/messages`                           | 질문 전송 및 답변 생성                 | 필요  |
 | GET    | `/chatbot/sessions/{sessionId}/messages/{messageId}/worki-support` | 워키 질문 등록 지원 (챗봇 메시지 기반 초안 반환) | 필요  |
 
+챗봇 세션 API 공통 규칙:
+
+- 세션과 메시지는 인증 사용자 본인 소유 데이터만 조회·생성할 수 있다.
+- 질문은 공백을 허용하지 않으며 최대 2,000자다.
+- 메시지 응답은 `senderType`, `content`, `answerable`, `nextAction`, `referencesJson`, `createdAt`을 포함한다.
+- 삭제된 세션은 조회하지 않으며 없는 세션은 404, 타인 세션은 403을 반환한다.
+- 질문 전송 시 BE가 이전 대화와 활성 `custom_prompt`를 AI 서버에 전달하고 AI 답변을 저장한다.
+
 
 ### AI 운영 API (계획)
 
