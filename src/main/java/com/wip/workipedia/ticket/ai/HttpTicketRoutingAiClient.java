@@ -55,9 +55,10 @@ public class HttpTicketRoutingAiClient implements TicketRoutingAiClient {
 				.map(c -> new CandidateDepartmentResponse(c.departmentId(), c.departmentName(), c.confidenceScore()))
 				.toList();
 
+		boolean isCommonQueue = decision == RoutingDecision.COMMON_QUEUE;
 		return new RoutingResult(
-			response.assignedDepartmentId(),
-			response.assignedDepartmentName(),
+			isCommonQueue ? null : response.assignedDepartmentId(),
+			isCommonQueue ? null : response.assignedDepartmentName(),
 			response.confidenceScore(),
 			response.scoreMargin(),
 			buildModelVersion(response.model(), response.provider()),

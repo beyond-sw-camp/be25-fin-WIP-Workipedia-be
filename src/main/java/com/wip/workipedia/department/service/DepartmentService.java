@@ -24,9 +24,11 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DepartmentService {
@@ -106,6 +108,10 @@ public class DepartmentService {
 
 		editResults.forEach(editResult -> {
 			Department dept = departmentMap.get(editResult.departmentId());
+			if (dept == null) {
+				log.warn("AI가 반환한 departmentId가 존재하지 않아 건너뜁니다. departmentId={}", editResult.departmentId());
+				return;
+			}
 			upsertRoutingPrompt(dept, editResult.routingPrompt());
 			knowledgeSyncAiClient.sync(
 				KnowledgeSyncRequest.ofDeptRr(dept.getDepartmentId(), dept.getDepartmentName(), editResult.routingPrompt())
