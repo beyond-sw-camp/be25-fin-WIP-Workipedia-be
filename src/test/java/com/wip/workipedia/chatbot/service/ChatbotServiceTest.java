@@ -49,7 +49,7 @@ class ChatbotServiceTest {
         ChatbotSession session = ChatbotSession.create(99L, "남의 세션");
         ReflectionTestUtils.setField(session, "sessionId", 5L);
         when(sessionRepository.findBySessionIdAndIsDeleted(5L, "N")).thenReturn(Optional.of(session));
-        when(messageRepository.findTop10BySessionIdAndIsDeletedOrderByCreatedAtDesc(5L, "N"))
+        when(messageRepository.findTop10BySessionIdAndIsDeletedOrderByCreatedAtDescMessageIdDesc(5L, "N"))
                 .thenReturn(List.of());
 
         assertThatThrownBy(() -> service.prepareContextAndSaveUserMessage(1L, 5L, "질문"))
@@ -78,7 +78,7 @@ class ChatbotServiceTest {
         ChatbotMessage userMsg = ChatbotMessage.ofUser(5L, "이전 질문");
         ReflectionTestUtils.setField(systemMsg, "messageId", 1L);
         ReflectionTestUtils.setField(userMsg, "messageId", 2L);
-        when(messageRepository.findTop10BySessionIdAndIsDeletedOrderByCreatedAtDesc(5L, "N"))
+        when(messageRepository.findTop10BySessionIdAndIsDeletedOrderByCreatedAtDescMessageIdDesc(5L, "N"))
                 .thenReturn(List.of(userMsg, systemMsg));
         when(messageRepository.save(any())).thenReturn(userMsg);
 

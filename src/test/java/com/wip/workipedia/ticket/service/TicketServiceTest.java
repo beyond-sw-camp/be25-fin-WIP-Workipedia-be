@@ -3,12 +3,10 @@ package com.wip.workipedia.ticket.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,13 +31,15 @@ class TicketServiceTest {
 	@Test
 	void moveExpiredTicketsToCommonQueue_thenSoftDeletesExpiredCommonQueueTicketsAndCreatesNotifications() {
 		TicketRepository ticketRepository = mock(TicketRepository.class);
+		TicketRoutingLogRepository logRepository = mock(TicketRoutingLogRepository.class);
 		NotificationService notificationService = mock(NotificationService.class);
 		TicketService service = new TicketService(
 			ticketRepository,
 			mock(TicketRoutingService.class),
 			logRepository,
 			mock(UserRepository.class),
-			notificationService
+			notificationService,
+			new ObjectMapper()
 		);
 		TicketRepository.ExpiredCommonQueueTicketProjection expiredTicket = expiredTicket(
 			100L,
@@ -74,8 +74,10 @@ class TicketServiceTest {
 		TicketService service = new TicketService(
 			ticketRepository,
 			mock(TicketRoutingService.class),
+			mock(TicketRoutingLogRepository.class),
 			mock(UserRepository.class),
-			notificationService
+			notificationService,
+			new ObjectMapper()
 		);
 		TicketRepository.ExpiredCommonQueueTicketProjection expiredTicket = expiredTicket(
 			100L,
@@ -103,8 +105,10 @@ class TicketServiceTest {
 		TicketService service = new TicketService(
 			ticketRepository,
 			mock(TicketRoutingService.class),
+			mock(TicketRoutingLogRepository.class),
 			mock(UserRepository.class),
-			notificationService
+			notificationService,
+			new ObjectMapper()
 		);
 		when(ticketRepository.findExpiredCommonQueueTickets(any(LocalDateTime.class), any(Pageable.class))).thenReturn(List.of());
 
@@ -136,6 +140,17 @@ class TicketServiceTest {
 				return title;
 			}
 		};
+	}
+
+	private TicketService buildService(TicketRepository ticketRepository, TicketRoutingLogRepository logRepository) {
+		return new TicketService(
+			ticketRepository,
+			mock(TicketRoutingService.class),
+			logRepository,
+			mock(UserRepository.class),
+			mock(NotificationService.class),
+			new ObjectMapper()
+		);
 	}
 
 	@Test

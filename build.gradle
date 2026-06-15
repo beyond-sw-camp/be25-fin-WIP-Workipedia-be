@@ -50,7 +50,6 @@ dependencies {
 compileTestJava {
 	exclude '**/AdminCommonQueueServiceTest.java'
 	exclude '**/TeamTicketServiceTest.java'
-	exclude '**/TicketServiceTest.java'
 }
 
 tasks.named('test') {
