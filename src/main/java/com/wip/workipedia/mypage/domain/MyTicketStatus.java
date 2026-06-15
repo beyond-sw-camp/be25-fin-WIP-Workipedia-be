@@ -6,7 +6,8 @@ import java.util.List;
 public enum MyTicketStatus {
 	WAITING(List.of(
 		TicketStatus.COMMON_QUEUE,
-		TicketStatus.ASSIGNED
+		TicketStatus.ASSIGNED,
+		TicketStatus.TRANSFERRED
 	)),
 	COMPLETED(List.of(TicketStatus.COMPLETED));
 

@@ -46,7 +46,7 @@ public class MyPageService {
 
 	public MyPageResponse getMyPage(Long userId) {
 		User user = userRepository.findById(userId)
-			.orElseThrow(() -> new CustomException(ErrorType.NOT_FOUND));
+			.orElseThrow(() -> new CustomException(ErrorType.MYPAGE_USER_NOT_FOUND));
 		UserPoint userPoint = userPointRepository.findByUserIdAndDeletedAtIsNull(userId)
 			.orElse(null);
 		long createdTicketCount = ticketRepository.countByRequesterIdAndDeletedAtIsNull(userId);
@@ -120,7 +120,7 @@ public class MyPageService {
 		List<EsgGrade> esgGrades
 	) {
 		if (esgGrades.isEmpty()) {
-			throw new CustomException(ErrorType.NOT_FOUND);
+			throw new CustomException(ErrorType.ESG_GRADE_NOT_FOUND);
 		}
 
 		if (userPoint == null) {
@@ -130,7 +130,7 @@ public class MyPageService {
 		return esgGrades.stream()
 			.filter(esgGrade -> esgGrade.getGradeId().equals(userPoint.getGradeId()))
 			.findFirst()
-			.orElseThrow(() -> new CustomException(ErrorType.NOT_FOUND));
+			.orElseThrow(() -> new CustomException(ErrorType.ESG_GRADE_NOT_FOUND));
 	}
 
 	private MyPageResponse.UserSummary toUserSummary(User user) {

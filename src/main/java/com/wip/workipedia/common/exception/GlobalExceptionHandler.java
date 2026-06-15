@@ -3,6 +3,7 @@ package com.wip.workipedia.common.exception;
 import com.wip.workipedia.common.response.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -21,8 +22,19 @@ public class GlobalExceptionHandler {
 	}
 
 	// 추가 오류 처리 여기다 넣기.
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public Object handleMethodArgumentNotValidException(MethodArgumentNotValidException exception) {
+		return exception.getBindingResult()
+			.getFieldErrors()
+			.stream()
+			.map(this::resolveFieldErrorType)
+			.filter(errorType -> errorType != null)
+			.findFirst()
+			.map(ApiResponse::error)
+			.orElseGet(() -> ApiResponse.error(ErrorType.BAD_REQUEST));
+	}
+
 	@ExceptionHandler({
-		MethodArgumentNotValidException.class, // 유효성 검사 실패시. 
 		HandlerMethodValidationException.class, // 메서드에 들어갈 파라미터가 잘못된 인수일때,
 		ConstraintViolationException.class,
 		MissingRequestHeaderException.class, // 헤더가 없을때 바로 예외 발생.
@@ -38,5 +50,39 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(Exception.class)
 	public Object handleException(Exception exception) {
 		return ApiResponse.error(ErrorType.INTERNAL_ERROR);
+	}
+
+	private boolean isInvalidPasswordFormat(FieldError fieldError) {
+		String field = fieldError.getField();
+		String code = fieldError.getCode();
+
+		return ("password".equals(field) || "newPassword".equals(field))
+			&& ("Size".equals(code) || "Pattern".equals(code));
+	}
+
+	private ErrorType resolveFieldErrorType(FieldError fieldError) {
+		if (isInvalidPasswordFormat(fieldError)) {
+			return ErrorType.AUTH_INVALID_PASSWORD_FORMAT;
+		}
+
+		if (isInvalidEmailFormat(fieldError)) {
+			return ErrorType.AUTH_INVALID_EMAIL_FORMAT;
+		}
+
+		if (isInvalidEmailCodeFormat(fieldError)) {
+			return ErrorType.AUTH_INVALID_EMAIL_CODE_FORMAT;
+		}
+
+		return null;
+	}
+
+	private boolean isInvalidEmailFormat(FieldError fieldError) {
+		return "email".equals(fieldError.getField())
+			&& "Email".equals(fieldError.getCode());
+	}
+
+	private boolean isInvalidEmailCodeFormat(FieldError fieldError) {
+		return "code".equals(fieldError.getField())
+			&& "Pattern".equals(fieldError.getCode());
 	}
 }

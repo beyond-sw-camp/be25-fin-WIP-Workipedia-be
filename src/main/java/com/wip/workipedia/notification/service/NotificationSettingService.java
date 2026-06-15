@@ -24,9 +24,9 @@ public class NotificationSettingService {
 		NotificationSetting notificationSetting = notificationSettingRepository.findByUserIdAndDeletedAtIsNull(userId)
 			.orElseGet(() -> NotificationSetting.createDefault(userId));
 
-		boolean ticketEnabled = request.allEnabled() && request.ticketEnabled();
-		boolean workiEnabled = request.allEnabled() && request.workiEnabled();
-		boolean manualEnabled = request.allEnabled() && request.manualEnabled();
+		boolean ticketEnabled = request.allEnabled() || request.ticketEnabled();
+		boolean workiEnabled = request.allEnabled() || request.workiEnabled();
+		boolean manualEnabled = request.allEnabled() || request.manualEnabled();
 
 		notificationSetting.update(ticketEnabled, workiEnabled, manualEnabled);
 		notificationSetting.touchModifiedSource(ModifiedSource.USER);

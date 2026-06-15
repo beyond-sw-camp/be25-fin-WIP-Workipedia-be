@@ -89,11 +89,20 @@ public class NotificationService {
                 )));
     }
 
-    public void createWorkiQuestionCreated(Long userId, Long questionId, String questionTitle) {
-        createWorkiQuestionCreated(userId, questionId, questionTitle, null);
+    public void createTicketReassignedNotification(Long userId, Ticket ticket) {
+        createAfterCommit("ticket reassigned notification", () ->
+                notificationRepository.save(Notification.create(
+                        userId,
+                        NotificationType.TICKET_REASSIGNED,
+                        ticketTitle(NotificationType.TICKET_REASSIGNED),
+                        ticket.getTitle(),
+                        NotificationTargetType.TICKET,
+                        ticket.getTicketId(),
+                        "/me/tickets/" + ticket.getTicketId()
+                )));
     }
 
-    public void createWorkiQuestionCreated(Long userId, Long questionId, String questionTitle, Integer pointAmount) {
+    public void createWorkiQuestionCreated(Long userId, Long questionId, String questionTitle) {
         createAfterCommit("worki question created notification", () ->
                 notificationRepository.save(Notification.create(
                         userId,
@@ -102,16 +111,10 @@ public class NotificationService {
                         questionTitle,
                         NotificationTargetType.WORKI_QUESTION,
                         questionId,
-                        "/worki/questions/" + questionId,
-                        pointAmount
+                        "/worki/questions/" + questionId
                 )));
     }
-
     public void createWorkiQuestionAnswered(Long userId, Long questionId, String questionTitle) {
-        createWorkiQuestionAnswered(userId, questionId, questionTitle, null);
-    }
-
-    public void createWorkiQuestionAnswered(Long userId, Long questionId, String questionTitle, Integer pointAmount) {
         createAfterCommit("worki question answered notification", () ->
                 notificationRepository.save(Notification.create(
                         userId,
@@ -120,22 +123,10 @@ public class NotificationService {
                         questionTitle,
                         NotificationTargetType.WORKI_QUESTION,
                         questionId,
-                        "/worki/questions/" + questionId,
-                        pointAmount
+                        "/worki/questions/" + questionId
                 )));
     }
-
     public void createWorkiAnswerAccepted(Long userId, Long answerId, Long questionId, String questionTitle) {
-        createWorkiAnswerAccepted(userId, answerId, questionId, questionTitle, null);
-    }
-
-    public void createWorkiAnswerAccepted(
-            Long userId,
-            Long answerId,
-            Long questionId,
-            String questionTitle,
-            Integer pointAmount
-    ) {
         createAfterCommit("worki answer accepted notification", () ->
                 notificationRepository.save(Notification.create(
                         userId,
@@ -144,28 +135,57 @@ public class NotificationService {
                         questionTitle,
                         NotificationTargetType.WORKI_ANSWER,
                         answerId,
-                        "/worki/questions/" + questionId,
-                        pointAmount
+                        "/worki/questions/" + questionId
                 )));
     }
 
     public void createManualUpdated(Long userId, Long manualId, String manualTitle) {
-        createManualUpdated(userId, manualId, manualTitle, null);
+        createManualUpdated(userId, manualId, manualTitle, null, null);
     }
 
     public void createManualUpdated(Long userId, Long manualId, String manualTitle, String manualVersion) {
+        createManualUpdated(userId, manualId, manualTitle, manualVersion, null);
+    }
+
+    // 매뉴얼 업데이트 알림은 알림창에서 버전 정보와 수정 요약을 함께 보여준다.
+    public void createManualUpdated(
+            Long userId,
+            Long manualId,
+            String manualTitle,
+            String manualVersion,
+            String updateSummary
+    ) {
         String versionText = manualVersion == null || manualVersion.isBlank()
                 ? "새 버전"
                 : manualVersion;
+        String summaryText = updateSummary == null || updateSummary.isBlank()
+                ? ""
+                : " 수정 내용: " + updateSummary;
         createAfterCommit("manual updated notification", () ->
                 notificationRepository.save(Notification.create(
                         userId,
                         NotificationType.MANUAL_UPDATED,
                         "매뉴얼이 업데이트되었습니다",
-                        manualTitle + " 매뉴얼이 " + versionText + "으로 업데이트 되었습니다.",
+                        manualTitle + " 매뉴얼이 " + versionText + "으로 업데이트 되었습니다." + summaryText,
                         NotificationTargetType.MANUAL,
                         manualId,
                         "/manuals/" + manualId
+                )));
+    }
+
+    // 활성화된 관리자 수기 지식은 매뉴얼 탭에서 함께 조회되는 지식성 콘텐츠 알림으로 생성한다.
+    public void createDirectDataActivated(Long userId, Long directDataId, String directDataTitle) {
+        // 수기 지식은 별도 탭을 만들지 않고 매뉴얼 탭에서 함께 조회되는 지식성 알림으로 저장한다.
+        createAfterCommit("direct data activated notification", () ->
+                notificationRepository.save(Notification.create(
+                        userId,
+                        NotificationType.DIRECT_DATA_ACTIVATED,
+                        "관리자 수기 지식 등록",
+                        directDataTitle,
+                        NotificationTargetType.DIRECT_DATA,
+                        directDataId,
+                        // 프론트는 알림 클릭 시 이 경로로 활성화된 수기 지식 상세 화면을 라우팅한다.
+                        "/direct-data/" + directDataId
                 )));
     }
 
@@ -201,12 +221,15 @@ public class NotificationService {
     private String ticketTitle(NotificationType type) {
         return switch (type) {
             case TICKET_ASSIGNED -> "티켓 부서 배정";
+            case TICKET_REASSIGNED -> "티켓 담당 부서 재배정";
             case TICKET_COMPLETED -> "티켓 답변 완료";
             case TICKET_DELETED -> "티켓 삭제";
             default -> "티켓 알림";
         };
     }
 
+    // 알림은 핵심 도메인 트랜잭션이 성공적으로 커밋된 뒤 생성한다.
+    // 알림 저장 실패가 답변 등록 및 티켓 상태 변경 같은 본 기능을 롤백시키지 않도록 분리한다.
     private void createAfterCommit(String context, Runnable notificationCreation) {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
             createInNewTransaction(context, notificationCreation);
@@ -221,6 +244,8 @@ public class NotificationService {
         });
     }
 
+    // 알림 저장은 별도 트랜잭션에서 수행하고, 실패 시 로그만 남긴다.
+    // 알림은 부가 기능이므로 저장 실패를 호출 도메인으로 전파하지 않는다.
     private void createInNewTransaction(String context, Runnable notificationCreation) {
         try {
             TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);

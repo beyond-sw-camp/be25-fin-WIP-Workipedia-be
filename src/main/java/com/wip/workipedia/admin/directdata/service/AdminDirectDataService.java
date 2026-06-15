@@ -7,8 +7,10 @@ import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.response.PageResponse;
 import com.wip.workipedia.directdata.domain.DirectData;
 import com.wip.workipedia.directdata.repository.DirectDataRepository;
+import com.wip.workipedia.notification.service.NotificationService;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.domain.UserRole;
+import com.wip.workipedia.user.domain.UserStatus;
 import com.wip.workipedia.user.repository.UserRepository;
 import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
@@ -26,6 +28,7 @@ public class AdminDirectDataService {
 
     private final DirectDataRepository directDataRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public PageResponse<AdminDirectDataResponse> findAll(Long actorUserId, Boolean isActive,
             String category, String keyword, Pageable pageable) {
@@ -53,7 +56,9 @@ public class AdminDirectDataService {
                 actorUserId
         );
 
-        return toResponse(directDataRepository.save(directData));
+        DirectData savedDirectData = directDataRepository.save(directData);
+        createDirectDataNotificationIfActive(savedDirectData);
+        return toResponse(savedDirectData);
     }
 
     @Transactional
@@ -61,6 +66,8 @@ public class AdminDirectDataService {
         assertSystemAdmin(actorUserId);
 
         DirectData directData = getActiveDirectData(directDataId);
+        // 기존 비활성 수기 지식이 활성화되는 경우에도 신규 공개 지식으로 보고 알림을 생성한다.
+        boolean wasActive = directData.isActive();
         directData.update(
                 request.title(),
                 request.content(),
@@ -68,6 +75,7 @@ public class AdminDirectDataService {
                 activeOrDefault(request.isActive()),
                 actorUserId
         );
+        createDirectDataNotificationIfActivated(wasActive, directData);
 
         return toResponse(directData);
     }
@@ -126,6 +134,28 @@ public class AdminDirectDataService {
 
     private boolean activeOrDefault(Boolean active) {
         return active == null || active;
+    }
+
+    private void createDirectDataNotificationIfActive(DirectData directData) {
+        if (!directData.isActive()) {
+            return;
+        }
+
+        // 알림창 이력은 notification_settings와 무관하게 전체 활성 사용자에게 생성한다.
+        userRepository.findByDeletedAtIsNullAndStatus(UserStatus.ACTIVE)
+                .forEach(user -> notificationService.createDirectDataActivated(
+                        user.getUserId(),
+                        directData.getDirectDataId(),
+                        directData.getTitle()
+                ));
+    }
+
+    private void createDirectDataNotificationIfActivated(boolean wasActive, DirectData directData) {
+        if (wasActive || !directData.isActive()) {
+            return;
+        }
+
+        createDirectDataNotificationIfActive(directData);
     }
 
     private AdminDirectDataResponse toResponse(DirectData directData) {

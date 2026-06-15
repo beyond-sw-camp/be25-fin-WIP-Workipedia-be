@@ -22,6 +22,9 @@ public record TicketResponse(
 	String title,
 	String content,
 	Long assigneeId,
+	String transferReason,
+	Long transferSuggestedDepartmentId,
+	String transferSuggestedDepartmentName,
 	LocalDateTime createdAt,
 	LocalDateTime updatedAt
 ) {
@@ -40,8 +43,38 @@ public record TicketResponse(
 			ticket.getTitle(),
 			ticket.getContent(),
 			ticket.getAssigneeId(),
+			null,
+			null,
+			null,
 			ticket.getCreatedAt(),
 			ticket.getUpdatedAt()
+		);
+	}
+
+	public TicketResponse withTransferInfo(
+		String transferReason,
+		Long transferSuggestedDepartmentId,
+		String transferSuggestedDepartmentName
+	) {
+		return new TicketResponse(
+			ticketId,
+			status,
+			assignedDepartmentId,
+			assignedDepartmentName,
+			routingConfidenceScore,
+			routingDecision,
+			routingReasons,
+			candidateDepartments,
+			sourceChatbotMessageId,
+			priority,
+			title,
+			content,
+			assigneeId,
+			transferReason,
+			transferSuggestedDepartmentId,
+			transferSuggestedDepartmentName,
+			createdAt,
+			updatedAt
 		);
 	}
 }

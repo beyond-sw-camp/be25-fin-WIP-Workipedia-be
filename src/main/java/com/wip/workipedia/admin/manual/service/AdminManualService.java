@@ -15,10 +15,12 @@ import com.wip.workipedia.manual.dto.ManualSummaryResponse;
 import com.wip.workipedia.manual.repository.ManualFileRepository;
 import com.wip.workipedia.manual.repository.ManualRepository;
 import com.wip.workipedia.manual.repository.ManualVersionRepository;
+import com.wip.workipedia.notification.service.NotificationService;
 import com.wip.workipedia.storage.dto.StoredObject;
 import com.wip.workipedia.storage.service.StorageService;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.domain.UserRole;
+import com.wip.workipedia.user.domain.UserStatus;
 import com.wip.workipedia.user.repository.UserRepository;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +50,7 @@ public class AdminManualService {
     private final ManualVersionRepository manualVersionRepository;
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
     private final ManualPdfValidator manualPdfValidator;
     private final PdfTextExtractor pdfTextExtractor;
     private final StorageService storageService;
@@ -59,6 +62,7 @@ public class AdminManualService {
             ManualVersionRepository manualVersionRepository,
             DepartmentRepository departmentRepository,
             UserRepository userRepository,
+            NotificationService notificationService,
             ManualPdfValidator manualPdfValidator,
             PdfTextExtractor pdfTextExtractor,
             StorageService storageService,
@@ -69,6 +73,7 @@ public class AdminManualService {
         this.manualVersionRepository = manualVersionRepository;
         this.departmentRepository = departmentRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
         this.manualPdfValidator = manualPdfValidator;
         this.pdfTextExtractor = pdfTextExtractor;
         this.storageService = storageService;
@@ -148,7 +153,9 @@ public class AdminManualService {
                 request.sourceUrl(),
                 manualNum
         );
-        saveVersion(manual, actorUserId, manualNum, request.updateReason());
+        ManualVersion version = saveVersion(manual, actorUserId, manualNum, request.updateReason());
+        // 기존 매뉴얼 수정 알림은 사용자에게 공개되는 PUBLISHED 상태에서만 생성한다.
+        createManualUpdateNotificationsIfPublished(manual, version);
         return ManualDetailResponse.from(manual, findFileUrls(manual.getManualId()));
     }
 
@@ -166,7 +173,9 @@ public class AdminManualService {
         List<ManualFile> previousFiles = findActiveFiles(manual.getManualId());
         List<StoredObject> storedObjects = uploadPdfFiles(uploads);
         replaceFiles(manual, previousFiles, storedObjects);
-        saveVersion(manual, actorUserId, manualNum, "PDF_UPLOAD");
+        ManualVersion version = saveVersion(manual, actorUserId, manualNum, "PDF_UPLOAD");
+        // PDF 교체도 기존 매뉴얼 수정으로 보고, 공개 상태인 경우에만 업데이트 알림을 보낸다.
+        createManualUpdateNotificationsIfPublished(manual, version);
         previousFiles.forEach(previousFile -> deleteStoredFileAfterCommit(previousFile.getFileKey()));
         return ManualDetailResponse.from(manual, toFileUrls(storedObjects));
     }
@@ -320,11 +329,28 @@ public class AdminManualService {
         });
     }
 
-    private void saveVersion(Manual manual, Long actorUserId, String manualNum, String updateReason) {
+    private void createManualUpdateNotificationsIfPublished(Manual manual, ManualVersion version) {
+        if (manual.getStatus() != ManualStatus.PUBLISHED) {
+            return;
+        }
+        // 알림창 이력은 notification_settings와 무관하게 전체 활성 사용자에게 생성한다.
+        userRepository.findByDeletedAtIsNullAndStatus(UserStatus.ACTIVE)
+                .forEach(user -> notificationService.createManualUpdated(
+                        user.getUserId(),
+                        manual.getManualId(),
+                        manual.getTitle(),
+                        version.getManualNum(),
+                        version.getUpdateReason()
+                ));
+    }
+
+    // 저장된 버전 이력을 반환해 매뉴얼 업데이트 알림의 버전 및 수정 요약으로 사용한다.
+    private ManualVersion saveVersion(Manual manual, Long actorUserId, String manualNum, String updateReason) {
         if (manualVersionRepository.existsByManualManualIdAndManualNumAndDeletedAtIsNull(manual.getManualId(), manualNum)) {
             throw new CustomException(ErrorType.CONFLICT, "Manual version already exists. manualNum=" + manualNum);
         }
-        manualVersionRepository.save(ManualVersion.create(manual, actorUserId, manualNum, normalizeUpdateReason(updateReason)));
+        return manualVersionRepository.save(
+                ManualVersion.create(manual, actorUserId, manualNum, normalizeUpdateReason(updateReason)));
     }
 
     private String resolveNextVersion(Manual manual, int nextFileCount) {

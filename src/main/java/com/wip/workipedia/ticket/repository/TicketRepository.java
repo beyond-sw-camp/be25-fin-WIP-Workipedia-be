@@ -1,8 +1,12 @@
 package com.wip.workipedia.ticket.repository;
 
+import com.wip.workipedia.ticket.domain.RoutingDecision;
 import com.wip.workipedia.ticket.domain.Ticket;
+import com.wip.workipedia.ticket.domain.TicketPriority;
+import com.wip.workipedia.ticket.domain.TicketTransferRequestStatus;
 import com.wip.workipedia.ticket.domain.TicketStatus;
 import jakarta.persistence.LockModeType;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -46,6 +50,66 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 	Page<Ticket> findByDeletedAtIsNull(Pageable pageable);
 
 	Page<Ticket> findByStatusAndDeletedAtIsNullOrderByCreatedAtDesc(TicketStatus status, Pageable pageable);
+
+	Page<Ticket> findByStatusInAndDeletedAtIsNullOrderByCreatedAtDesc(Collection<TicketStatus> statuses, Pageable pageable);
+
+	@Query(
+		value = """
+		SELECT
+		  t.ticketId AS ticketId,
+		  t.status AS status,
+		  t.assignedDepartmentId AS assignedDepartmentId,
+		  t.routingConfidenceScore AS routingConfidenceScore,
+		  t.routingDecision AS routingDecision,
+		  t.sourceChatbotMessageId AS sourceChatbotMessageId,
+		  t.priority AS priority,
+		  t.title AS title,
+		  t.content AS content,
+		  t.assigneeId AS assigneeId,
+		  tr.reason AS transferReason,
+		  tr.suggestedDepartmentId AS transferSuggestedDepartmentId,
+		  d.departmentName AS transferSuggestedDepartmentName,
+		  t.createdAt AS createdAt,
+		  t.updatedAt AS updatedAt
+		FROM Ticket t
+		LEFT JOIN TicketTransferRequest tr
+		  ON tr.ticketId = t.ticketId
+		 AND tr.status = :transferStatus
+		 AND tr.deletedAt IS NULL
+		 AND tr.transferRequestId = (
+		   SELECT MAX(tr3.transferRequestId)
+		   FROM TicketTransferRequest tr3
+		   WHERE tr3.ticketId = t.ticketId
+		     AND tr3.status = :transferStatus
+		     AND tr3.deletedAt IS NULL
+		     AND tr3.createdAt = (
+		       SELECT MAX(tr2.createdAt)
+		       FROM TicketTransferRequest tr2
+		       WHERE tr2.ticketId = t.ticketId
+		         AND tr2.status = :transferStatus
+		         AND tr2.deletedAt IS NULL
+		     )
+		 )
+		LEFT JOIN Department d
+		  ON d.departmentId = tr.suggestedDepartmentId
+		 AND d.deletedAt IS NULL
+		WHERE t.status IN :statuses
+		  AND t.deletedAt IS NULL
+		ORDER BY t.createdAt DESC
+		""",
+		countQuery = """
+		SELECT COUNT(t)
+		FROM Ticket t
+		WHERE t.status IN :statuses
+		  AND t.deletedAt IS NULL
+		  AND (:transferStatus IS NULL OR :transferStatus IS NOT NULL)
+		"""
+	)
+	Page<CommonQueueTicketProjection> findCommonQueueTickets(
+		@Param("statuses") Collection<TicketStatus> statuses,
+		@Param("transferStatus") TicketTransferRequestStatus transferStatus,
+		Pageable pageable
+	);
 
 	long countByRequesterIdAndDeletedAtIsNull(Long requesterId);
 
@@ -145,5 +209,37 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 		String getMonth();
 
 		long getCount();
+	}
+
+	interface CommonQueueTicketProjection {
+		Long getTicketId();
+
+		TicketStatus getStatus();
+
+		Long getAssignedDepartmentId();
+
+		BigDecimal getRoutingConfidenceScore();
+
+		RoutingDecision getRoutingDecision();
+
+		Long getSourceChatbotMessageId();
+
+		TicketPriority getPriority();
+
+		String getTitle();
+
+		String getContent();
+
+		Long getAssigneeId();
+
+		String getTransferReason();
+
+		Long getTransferSuggestedDepartmentId();
+
+		String getTransferSuggestedDepartmentName();
+
+		LocalDateTime getCreatedAt();
+
+		LocalDateTime getUpdatedAt();
 	}
 }

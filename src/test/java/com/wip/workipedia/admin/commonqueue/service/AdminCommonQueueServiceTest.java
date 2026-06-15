@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.wip.workipedia.admin.commonqueue.dto.CommonQueueAssignDepartmentRequest;
@@ -12,13 +13,22 @@ import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.department.domain.Department;
 import com.wip.workipedia.department.repository.DepartmentRepository;
 import com.wip.workipedia.notification.service.NotificationService;
+import com.wip.workipedia.ticket.domain.RoutingDecision;
 import com.wip.workipedia.ticket.domain.Ticket;
 import com.wip.workipedia.ticket.domain.TicketPriority;
+import com.wip.workipedia.ticket.domain.TicketTransferRequest;
+import com.wip.workipedia.ticket.domain.TicketTransferRequestStatus;
 import com.wip.workipedia.ticket.domain.TicketStatus;
 import com.wip.workipedia.ticket.repository.TicketRepository;
+import com.wip.workipedia.ticket.repository.TicketTransferRequestRepository;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -35,14 +45,56 @@ class AdminCommonQueueServiceTest {
 	@Mock
 	private NotificationService notificationService;
 
+	@Mock
+	private TicketTransferRequestRepository ticketTransferRequestRepository;
+
+	@Test
+	void findCommonQueueTickets_usesProjectionWithoutAdditionalLookups() {
+		AdminCommonQueueService service = new AdminCommonQueueService(
+			ticketRepository, departmentRepository, notificationService, ticketTransferRequestRepository);
+		PageRequest pageable = PageRequest.of(0, 20);
+		LocalDateTime createdAt = LocalDateTime.of(2026, 6, 15, 9, 0);
+		LocalDateTime updatedAt = LocalDateTime.of(2026, 6, 15, 9, 10);
+		TicketRepository.CommonQueueTicketProjection projection = commonQueueProjection(
+			100L,
+			TicketStatus.TRANSFERRED,
+			"다른 부서 업무입니다.",
+			10L,
+			"IT",
+			createdAt,
+			updatedAt
+		);
+		when(ticketRepository.findCommonQueueTickets(
+			List.of(TicketStatus.COMMON_QUEUE, TicketStatus.TRANSFERRED),
+			TicketTransferRequestStatus.REQUESTED,
+			pageable
+		)).thenReturn(new PageImpl<>(List.of(projection), pageable, 1));
+
+		var response = service.findCommonQueueTickets(pageable);
+
+		assertThat(response.content()).hasSize(1);
+		assertThat(response.content().getFirst().ticketId()).isEqualTo(100L);
+		assertThat(response.content().getFirst().status()).isEqualTo(TicketStatus.TRANSFERRED);
+		assertThat(response.content().getFirst().transferReason()).isEqualTo("다른 부서 업무입니다.");
+		assertThat(response.content().getFirst().transferSuggestedDepartmentId()).isEqualTo(10L);
+		assertThat(response.content().getFirst().transferSuggestedDepartmentName()).isEqualTo("IT");
+		assertThat(response.content().getFirst().createdAt()).isEqualTo(createdAt);
+		assertThat(response.content().getFirst().updatedAt()).isEqualTo(updatedAt);
+		verifyNoInteractions(departmentRepository, ticketTransferRequestRepository);
+	}
+
 	@Test
 	void assignDepartment_movesCommonQueueTicketToAssigned() {
 		AdminCommonQueueService service = new AdminCommonQueueService(
-			ticketRepository, departmentRepository, notificationService);
+			ticketRepository, departmentRepository, notificationService, ticketTransferRequestRepository);
 		Ticket ticket = commonQueueTicket(100L);
 		Department department = department(10L, "IT");
 		when(ticketRepository.findActiveByTicketIdForUpdate(100L)).thenReturn(Optional.of(ticket));
 		when(departmentRepository.findByDepartmentIdAndDeletedAtIsNull(10L)).thenReturn(Optional.of(department));
+		when(ticketTransferRequestRepository.findFirstByTicketIdAndStatusAndDeletedAtIsNullOrderByCreatedAtDesc(
+			100L,
+			TicketTransferRequestStatus.REQUESTED
+		)).thenReturn(Optional.empty());
 
 		var response = service.assignDepartment(100L, new CommonQueueAssignDepartmentRequest(10L));
 
@@ -58,7 +110,7 @@ class AdminCommonQueueServiceTest {
 	@Test
 	void assignDepartment_rejectsNonCommonQueueTicket() {
 		AdminCommonQueueService service = new AdminCommonQueueService(
-			ticketRepository, departmentRepository, notificationService);
+			ticketRepository, departmentRepository, notificationService, ticketTransferRequestRepository);
 		Ticket ticket = commonQueueTicket(100L);
 		ticket.assignDepartment(10L);
 		when(ticketRepository.findActiveByTicketIdForUpdate(100L)).thenReturn(Optional.of(ticket));
@@ -67,6 +119,36 @@ class AdminCommonQueueServiceTest {
 			.isInstanceOf(CustomException.class)
 			.extracting("errorType")
 			.isEqualTo(ErrorType.TICKET_INVALID_ASSIGNMENT);
+	}
+
+	@Test
+	void assignDepartment_movesTransferredTicketToAssignedAndClosesTransferRequest() {
+		AdminCommonQueueService service = new AdminCommonQueueService(
+			ticketRepository, departmentRepository, notificationService, ticketTransferRequestRepository);
+		Ticket ticket = commonQueueTicket(100L);
+		ticket.assignDepartment(20L);
+		ticket.requestTransfer();
+		Department department = department(10L, "IT");
+		TicketTransferRequest transferRequest = TicketTransferRequest.create(
+			100L,
+			1L,
+			20L,
+			10L,
+			"다른 부서 업무입니다."
+		);
+		when(ticketRepository.findActiveByTicketIdForUpdate(100L)).thenReturn(Optional.of(ticket));
+		when(departmentRepository.findByDepartmentIdAndDeletedAtIsNull(10L)).thenReturn(Optional.of(department));
+		when(ticketTransferRequestRepository.findFirstByTicketIdAndStatusAndDeletedAtIsNullOrderByCreatedAtDesc(
+			100L,
+			TicketTransferRequestStatus.REQUESTED
+		)).thenReturn(Optional.of(transferRequest));
+
+		var response = service.assignDepartment(100L, new CommonQueueAssignDepartmentRequest(10L));
+
+		assertThat(response.status()).isEqualTo(TicketStatus.ASSIGNED);
+		assertThat(ticket.getStatus()).isEqualTo(TicketStatus.ASSIGNED);
+		assertThat(transferRequest.getStatus()).isEqualTo(TicketTransferRequestStatus.ASSIGNED_FROM_QUEUE);
+		verify(notificationService).createTicketReassignedNotification(ticket.getRequesterId(), ticket);
 	}
 
 	private Ticket commonQueueTicket(Long ticketId) {
@@ -80,5 +162,92 @@ class AdminCommonQueueServiceTest {
 		when(department.getDepartmentId()).thenReturn(departmentId);
 		when(department.getDepartmentName()).thenReturn(name);
 		return department;
+	}
+
+	private TicketRepository.CommonQueueTicketProjection commonQueueProjection(
+		Long ticketId,
+		TicketStatus status,
+		String transferReason,
+		Long transferSuggestedDepartmentId,
+		String transferSuggestedDepartmentName,
+		LocalDateTime createdAt,
+		LocalDateTime updatedAt
+	) {
+		return new TicketRepository.CommonQueueTicketProjection() {
+			@Override
+			public Long getTicketId() {
+				return ticketId;
+			}
+
+			@Override
+			public TicketStatus getStatus() {
+				return status;
+			}
+
+			@Override
+			public Long getAssignedDepartmentId() {
+				return null;
+			}
+
+			@Override
+			public BigDecimal getRoutingConfidenceScore() {
+				return BigDecimal.valueOf(0.75);
+			}
+
+			@Override
+			public RoutingDecision getRoutingDecision() {
+				return RoutingDecision.COMMON_QUEUE;
+			}
+
+			@Override
+			public Long getSourceChatbotMessageId() {
+				return null;
+			}
+
+			@Override
+			public TicketPriority getPriority() {
+				return TicketPriority.MEDIUM;
+			}
+
+			@Override
+			public String getTitle() {
+				return "title";
+			}
+
+			@Override
+			public String getContent() {
+				return "content";
+			}
+
+			@Override
+			public Long getAssigneeId() {
+				return null;
+			}
+
+			@Override
+			public String getTransferReason() {
+				return transferReason;
+			}
+
+			@Override
+			public Long getTransferSuggestedDepartmentId() {
+				return transferSuggestedDepartmentId;
+			}
+
+			@Override
+			public String getTransferSuggestedDepartmentName() {
+				return transferSuggestedDepartmentName;
+			}
+
+			@Override
+			public LocalDateTime getCreatedAt() {
+				return createdAt;
+			}
+
+			@Override
+			public LocalDateTime getUpdatedAt() {
+				return updatedAt;
+			}
+		};
 	}
 }
