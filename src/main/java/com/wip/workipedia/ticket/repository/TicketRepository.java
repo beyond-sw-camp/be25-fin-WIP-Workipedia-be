@@ -102,7 +102,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 		         AND tr2.isDeleted = 'N'
 		     )
 		 )
-		WHERE t.status IN :statuses
+		WHERE t.status = com.wip.workipedia.ticket.domain.TicketStatus.COMMON_QUEUE
 		  AND t.deletedAt IS NULL
 		  AND t.isDeleted = 'N'
 		ORDER BY t.createdAt DESC
@@ -110,14 +110,13 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 		countQuery = """
 		SELECT COUNT(t)
 		FROM Ticket t
-		WHERE t.status IN :statuses
+		WHERE t.status = com.wip.workipedia.ticket.domain.TicketStatus.COMMON_QUEUE
 		  AND t.deletedAt IS NULL
 		  AND t.isDeleted = 'N'
 		  AND (:transferStatus IS NULL OR :transferStatus IS NOT NULL)
 		"""
 	)
 	Page<CommonQueueTicketProjection> findCommonQueueTickets(
-		@Param("statuses") Collection<TicketStatus> statuses,
 		@Param("transferStatus") TicketTransferRequestStatus transferStatus,
 		Pageable pageable
 	);

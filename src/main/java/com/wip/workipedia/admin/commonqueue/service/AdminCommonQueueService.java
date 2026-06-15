@@ -34,7 +34,6 @@ public class AdminCommonQueueService {
 	public PageResponse<TicketResponse> findCommonQueueTickets(Pageable pageable) {
 		return PageResponse.from(
 			ticketRepository.findCommonQueueTickets(
-					List.of(TicketStatus.COMMON_QUEUE),
 					TicketTransferRequestStatus.REQUESTED,
 					pageable
 				)
