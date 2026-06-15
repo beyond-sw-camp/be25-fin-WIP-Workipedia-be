@@ -205,6 +205,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 				SUM(
 					CASE
 						WHEN t.routing_decision = 'AUTO_ASSIGNED'
+							AND t.initial_auto_assigned_department_id IS NOT NULL
 							AND t.status <> 'COMMON_QUEUE'
 							AND NOT EXISTS (
 								SELECT 1
@@ -220,7 +221,6 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 			FROM tickets t
 			WHERE t.created_at >= :startAt
 				AND t.created_at < :endAt
-				AND t.initial_assigned_department_id IS NOT NULL
 				AND t.deleted_at IS NULL
 				AND t.is_deleted = 'N'
 			GROUP BY DATE_FORMAT(t.created_at, '%Y-%m')
@@ -252,7 +252,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 	@Query(
 		value = """
 			SELECT
-				t.initial_assigned_department_id AS departmentId,
+				t.initial_auto_assigned_department_id AS departmentId,
 				COUNT(*) AS totalTicketCount,
 				SUM(
 					CASE
@@ -270,10 +270,10 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 					END
 				) AS autoAssignedTicketCount
 			FROM tickets t
-			WHERE t.initial_assigned_department_id IS NOT NULL
+			WHERE t.initial_auto_assigned_department_id IS NOT NULL
 				AND t.deleted_at IS NULL
 				AND t.is_deleted = 'N'
-			GROUP BY t.initial_assigned_department_id
+			GROUP BY t.initial_auto_assigned_department_id
 			""",
 		nativeQuery = true
 	)

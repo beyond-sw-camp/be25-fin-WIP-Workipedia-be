@@ -40,7 +40,7 @@ public class Ticket {
 
 	private Long assigneeId;
 	private Long assignedDepartmentId;
-	private Long initialAssignedDepartmentId;
+	private Long initialAutoAssignedDepartmentId;
 	private LocalDateTime assignedAt;
 
 	@Column(precision = 5, scale = 2)
@@ -103,8 +103,8 @@ public class Ticket {
 
 	public void applyRouting(Long departmentId, String departmentName, BigDecimal confidenceScore, RoutingDecision decision) {
 		this.assignedDepartmentId = departmentId;
-		if (this.initialAssignedDepartmentId == null && decision == RoutingDecision.AUTO_ASSIGNED) {
-			this.initialAssignedDepartmentId = departmentId;
+		if (this.initialAutoAssignedDepartmentId == null && decision == RoutingDecision.AUTO_ASSIGNED) {
+			this.initialAutoAssignedDepartmentId = departmentId;
 		}
 		this.assignedAt = departmentId == null ? null : LocalDateTime.now();
 		this.routingConfidenceScore = confidenceScore;
