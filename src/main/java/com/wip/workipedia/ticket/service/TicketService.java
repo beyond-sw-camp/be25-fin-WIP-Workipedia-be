@@ -31,7 +31,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class TicketService {
 	private static final int COMMON_QUEUE_EXPIRATION_DAYS = 7;
 	private static final int COMMON_QUEUE_EXPIRATION_BATCH_SIZE = 500;
@@ -106,12 +105,6 @@ public class TicketService {
 			ticket.getPriority(),
 			ticket.getAssigneeId(),
 			assignee.getNickname());
-	}
-
-	@Transactional
-	public void moveExpiredTicketsToCommonQueue() {
-		ticketRepository.moveExpiredTicketsToCommonQueue();
-		ticketRepository.softDeleteExpiredCommonQueueTickets();
 	}
 
 	private void saveRoutingLog(Ticket ticket, RoutingResult result) {
