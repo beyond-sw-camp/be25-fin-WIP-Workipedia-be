@@ -14,9 +14,6 @@ import com.wip.workipedia.department.domain.Department;
 import com.wip.workipedia.department.repository.DepartmentRepository;
 import com.wip.workipedia.ticket.domain.TicketStatus;
 import com.wip.workipedia.ticket.repository.TicketRepository;
-import com.wip.workipedia.user.domain.User;
-import com.wip.workipedia.user.domain.UserRole;
-import com.wip.workipedia.user.repository.UserRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -45,10 +42,8 @@ public class AdminDashboardService {
 
 	private final TicketRepository ticketRepository;
 	private final DepartmentRepository departmentRepository;
-	private final UserRepository userRepository;
 
-	public MonthlyAutoAssignmentRateResponse getMonthlyAutoAssignmentRate(Long actorUserId, Integer months) {
-		assertSystemAdmin(actorUserId);
+	public MonthlyAutoAssignmentRateResponse getMonthlyAutoAssignmentRate(Integer months) {
 		int normalizedMonths = normalizeMonths(months);
 		Range range = range(normalizedMonths);
 		Map<String, TicketRepository.MonthlyAutoAssignmentRateProjection> rates =
@@ -78,8 +73,7 @@ public class AdminDashboardService {
 		return new MonthlyAutoAssignmentRateResponse(normalizedMonths, points);
 	}
 
-	public MonthlyTicketTrendResponse getMonthlyTicketTrend(Long actorUserId, Integer months) {
-		assertSystemAdmin(actorUserId);
+	public MonthlyTicketTrendResponse getMonthlyTicketTrend(Integer months) {
 		int normalizedMonths = normalizeMonths(months);
 		Range range = range(normalizedMonths);
 		Map<String, Long> counts = ticketRepository.countMonthlyIssuedTickets(range.startAt(), range.endAt())
@@ -100,8 +94,7 @@ public class AdminDashboardService {
 		return new MonthlyTicketTrendResponse(normalizedMonths, points);
 	}
 
-	public DepartmentTicketStatusResponse getDepartmentTicketStatus(Long actorUserId) {
-		assertSystemAdmin(actorUserId);
+	public DepartmentTicketStatusResponse getDepartmentTicketStatus() {
 		List<Department> departments = departmentRepository.findActiveDepartments();
 		Map<Long, Map<TicketStatus, Long>> countsByDepartment = new java.util.HashMap<>();
 		ticketRepository.countActiveTicketsByDepartmentAndStatus()
@@ -130,8 +123,7 @@ public class AdminDashboardService {
 		return new DepartmentTicketStatusResponse(items);
 	}
 
-	public DepartmentAutoAssignmentRateResponse getDepartmentAutoAssignmentRate(Long actorUserId) {
-		assertSystemAdmin(actorUserId);
+	public DepartmentAutoAssignmentRateResponse getDepartmentAutoAssignmentRate() {
 		List<Department> departments = departmentRepository.findActiveDepartments();
 		Map<Long, TicketRepository.DepartmentAutoAssignmentRateProjection> rates =
 			ticketRepository.countDepartmentAutoAssignmentRate()
@@ -157,17 +149,6 @@ public class AdminDashboardService {
 			.toList();
 
 		return new DepartmentAutoAssignmentRateResponse(items);
-	}
-
-	private void assertSystemAdmin(Long actorUserId) {
-		if (actorUserId == null) {
-			throw new CustomException(ErrorType.FORBIDDEN);
-		}
-		User user = userRepository.findById(actorUserId)
-			.orElseThrow(() -> new CustomException(ErrorType.FORBIDDEN));
-		if (user.getRole() != UserRole.SYSTEM_ADMIN) {
-			throw new CustomException(ErrorType.FORBIDDEN);
-		}
 	}
 
 	private int normalizeMonths(Integer months) {

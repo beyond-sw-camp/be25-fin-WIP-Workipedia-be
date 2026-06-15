@@ -202,10 +202,25 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 			SELECT
 				DATE_FORMAT(t.created_at, '%Y-%m') AS month,
 				COUNT(*) AS totalTicketCount,
-				SUM(CASE WHEN t.routing_decision = 'AUTO_ASSIGNED' THEN 1 ELSE 0 END) AS autoAssignedTicketCount
+				SUM(
+					CASE
+						WHEN t.routing_decision = 'AUTO_ASSIGNED'
+							AND t.status <> 'COMMON_QUEUE'
+							AND NOT EXISTS (
+								SELECT 1
+								FROM ticket_transfer_requests tr
+								WHERE tr.ticket_id = t.ticket_id
+									AND tr.deleted_at IS NULL
+									AND tr.is_deleted = 'N'
+							)
+						THEN 1
+						ELSE 0
+					END
+				) AS autoAssignedTicketCount
 			FROM tickets t
 			WHERE t.created_at >= :startAt
 				AND t.created_at < :endAt
+				AND t.initial_assigned_department_id IS NOT NULL
 				AND t.deleted_at IS NULL
 				AND t.is_deleted = 'N'
 			GROUP BY DATE_FORMAT(t.created_at, '%Y-%m')
