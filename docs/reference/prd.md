@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/reference/prd.md`
 > 관련 문서: `docs/reference/constitution.md`, `docs/reference/service-flow.md`, `docs/reference/trd.md`, `docs/reference/ai-architecture-overview.md`, `docs/adr/013-object-storage-strategy.md`
-> 버전: v0.3
-> 최종 수정: 2026-06-09
+> 버전: v0.4
+> 최종 수정: 2026-06-15
 
 ---
 
@@ -80,8 +80,8 @@ Workipedia는 사내 구성원이 회사 규정·매뉴얼·동료의 경험 지
 | KNOIT_004 | 질문·답변을 메시지 단위로 저장 (대화 세션) | 상 |
 | KNOIT_005 | 답변 실패, 사용자 불만족, 실제 처리 필요 시 워키 질문 또는 요청 티켓 흐름으로 연결 | 상 |
 | KNOIT_006 | 신규/수정 워키·매뉴얼 임베딩 업데이트 | 중 |
-| KNOIT_007 | 개인정보 마스킹 수집 | 상 |
-| KNOIT_008 | 개인정보 유출 가능성이 있는 질문 답변 거부 | 상 |
+| KNOIT_007 | 사용자에게 반환하는 AI 응답의 개인정보 마스킹 | 상 |
+| KNOIT_008 | 개인정보 유출 가능성이 있는 AI 응답 차단 | 상 |
 | KNOIT_009 | 고객사별 로컬/클라우드 LLM·Embedding provider를 추상화하고 지식 제공은 RAG로 통일 | 중 |
 | KNOIT_010 | 출처가 오래된 경우 응답에 최신성 경고 표시 | 중 |
 | KNOIT_011 | SYSTEM_ADMIN은 API Tool을 등록·테스트·활성화하고, AI는 활성 Tool과 허용 파라미터만 선택 | 중 |
@@ -183,7 +183,7 @@ Workipedia는 사내 구성원이 회사 규정·매뉴얼·동료의 경험 지
 
 | 항목 | 요구사항 |
 |---|---|
-| 보안 | 사번/이메일 기반 인증, 개인정보 마스킹, 개인정보성 질문 답변 거부 |
+| 보안 | BE RDB 암호화 저장, 사용자에게 반환하는 AI 응답 마스킹, 비밀정보 로그 기록 금지 |
 | 신뢰성 | 매뉴얼·워키 기반 답변은 출처·인용 필수 |
 | 데이터 보존 | 사용자는 질문 자체 삭제 불가, 답변·티켓·지식화 이력 보존 |
 | 임시 데이터 | Flash Chat 메시지는 Redis TTL로 자동 삭제하며 영구 보존하지 않음 |
@@ -282,3 +282,38 @@ Workipedia는 사내 구성원이 회사 규정·매뉴얼·동료의 경험 지
 - 실시간 음성 챗봇
 - 외부 SaaS(예: Slack, MS Teams) 직접 통합 (추후 검토)
 - 매뉴얼 외부 시스템 자동 동기화 (Phase 3 이후)
+
+---
+
+## 11. AI 서버 요구사항
+
+> BE는 업무 데이터와 동기화 상태의 정본을 관리하고, AI 서버는 LLM·Embedding·Qdrant 기반 추론과 검색을 담당한다.
+
+### 11.1 RAG와 챗봇
+
+| ID | 요구사항 | 우선순위 |
+|---|---|---|
+| AI_RAG_001 | 매뉴얼 → 워키 → 승인 지식·수기 지식 → Tool Calling 순서로 폴백한다 | 상 |
+| AI_RAG_002 | Vector Search 후보를 Cross-Encoder로 재정렬하고 근거가 검증된 답변만 반환한다 | 상 |
+| AI_RAG_003 | 응답 출처에 `sourceType`, `sourceId`, `chunkIndex`, 제목과 점수를 포함한다 | 상 |
+| AI_RAG_004 | BE가 전달한 최근 대화로 검색 쿼리를 재작성하되, 최종 답변에는 현재 질문 원문과 대화 이력을 사용한다 | 중 |
+| AI_RAG_005 | 사용자에게 반환하는 최종 LLM 응답에 민감정보 마스킹을 적용한다 | 상 |
+
+### 11.2 티켓 라우팅과 지식 동기화
+
+| ID | 요구사항 | 우선순위 |
+|---|---|---|
+| AI_ROUTE_001 | 티켓 제목·내용을 부서 R&R과 승인 사례에 비교해 후보 부서 Top 3와 점수를 반환한다 | 상 |
+| AI_ROUTE_002 | AI는 `AUTO_ASSIGNED` 또는 `COMMON_QUEUE` 결정을 반환하고 BE가 실제 티켓 상태를 반영한다 | 상 |
+| AI_SYNC_001 | 부서 R&R과 승인 사례를 `sourceType + sourceId` 기반 deterministic point ID로 멱등 upsert한다 | 상 |
+| AI_SYNC_002 | BE는 `ai_sync_jobs`로 동일 source 작업 순서, 재시도와 최종 동기화 상태를 관리한다 | 상 |
+
+### 11.3 Tool Calling과 운영 경계
+
+| ID | 요구사항 | 우선순위 |
+|---|---|---|
+| AI_TOOL_001 | AI는 활성·승인 Tool과 입력을 선택하고 JSON Schema로 검증한다 | 중 |
+| AI_TOOL_002 | BE는 실제 HTTP/DB 실행, credential, 권한과 감사 로그를 담당한다 | 중 |
+| AI_TOOL_003 | AI가 SQL을 생성하거나 임의로 수정하지 않는다 | 중 |
+| AI_NFR_001 | 고객사별 로컬/클라우드 provider는 배포 설정으로 선택한다 | 중 |
+| AI_NFR_002 | BE RDB를 정본으로 사용하고 Qdrant는 재구축 가능한 검색 인덱스로 취급한다 | 상 |
