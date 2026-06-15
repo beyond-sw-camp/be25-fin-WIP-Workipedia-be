@@ -38,14 +38,14 @@ public class DepartmentService {
 
 	@Transactional(readOnly = true)
 	public List<DepartmentResponse> findAll() {
-		return departmentRepository.findByDeletedAtIsNullOrderByDepartmentIdAsc().stream()
+		return departmentRepository.findActiveDepartments().stream()
 			.map(DepartmentResponse::from)
 			.toList();
 	}
 
 	@Transactional(readOnly = true)
 	public List<AdminDepartmentResponse> findAllForAdmin() {
-		List<Department> departments = departmentRepository.findByDeletedAtIsNullOrderByDepartmentIdAsc();
+		List<Department> departments = departmentRepository.findActiveDepartments();
 		Map<Long, DepartmentRoutingPrompt> routingPrompts = findRoutingPromptMap(departments);
 		Map<Long, Long> memberCounts = findMemberCountMap(departments);
 
@@ -83,7 +83,7 @@ public class DepartmentService {
 
 	@Transactional
 	public List<AdminDepartmentResponse> editRoutingPrompts(RoutingPromptEditRequest request) {
-		List<Department> departments = departmentRepository.findByDeletedAtIsNullOrderByDepartmentIdAsc();
+		List<Department> departments = departmentRepository.findActiveDepartments();
 		Map<Long, DepartmentRoutingPrompt> routingPrompts = findRoutingPromptMap(departments);
 		List<RoutingPromptEditTarget> targets = departments.stream()
 			.map(department -> new RoutingPromptEditTarget(
