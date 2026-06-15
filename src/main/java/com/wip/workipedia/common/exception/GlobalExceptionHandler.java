@@ -2,6 +2,7 @@ package com.wip.workipedia.common.exception;
 
 import com.wip.workipedia.common.response.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,6 +14,7 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 // 공통 예외처리는 여기다 추가하기.
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -24,6 +26,7 @@ public class GlobalExceptionHandler {
 	// 추가 오류 처리 여기다 넣기.
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public Object handleMethodArgumentNotValidException(MethodArgumentNotValidException exception) {
+		logValidationFailure(exception);
 		return exception.getBindingResult()
 			.getFieldErrors()
 			.stream()
@@ -84,5 +87,20 @@ public class GlobalExceptionHandler {
 	private boolean isInvalidEmailCodeFormat(FieldError fieldError) {
 		return "code".equals(fieldError.getField())
 			&& "Pattern".equals(fieldError.getCode());
+	}
+
+	private void logValidationFailure(MethodArgumentNotValidException exception) {
+		if (!log.isDebugEnabled()) {
+			return;
+		}
+
+		String fields = exception.getBindingResult()
+			.getFieldErrors()
+			.stream()
+			.map(fieldError -> fieldError.getField() + ":" + fieldError.getCode())
+			.distinct()
+			.toList()
+			.toString();
+		log.debug("Validation failed. fields={}", fields);
 	}
 }
