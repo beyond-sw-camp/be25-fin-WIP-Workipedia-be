@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wip.workipedia.admin.aiprompt.service.AdminAiPromptService;
 import com.wip.workipedia.chatbot.ai.ChatbotAiClient;
 import com.wip.workipedia.chatbot.ai.ChatbotAiResponse;
 import com.wip.workipedia.chatbot.domain.ChatbotMessage;
@@ -29,8 +30,9 @@ class ChatbotServiceTest {
     private final ChatbotSessionRepository sessionRepository = mock(ChatbotSessionRepository.class);
     private final ChatbotMessageRepository messageRepository = mock(ChatbotMessageRepository.class);
     private final ChatbotAiClient aiClient = mock(ChatbotAiClient.class);
+    private final AdminAiPromptService adminAiPromptService = mock(AdminAiPromptService.class);
     private final ChatbotService service = new ChatbotService(
-            sessionRepository, messageRepository, aiClient, new ObjectMapper());
+            sessionRepository, messageRepository, aiClient, adminAiPromptService, new ObjectMapper());
 
     @Test
     void createSession_저장하고_세션을_반환한다() {
