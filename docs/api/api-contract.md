@@ -117,6 +117,7 @@ Authorization: Bearer <accessToken>
 | GET    | `/chatbot/sessions`                                                | 내 세션 목록                       | 필요  |
 | GET    | `/chatbot/sessions/{sessionId}/messages`                           | 세션 메시지 조회                     | 필요  |
 | POST   | `/chatbot/sessions/{sessionId}/messages`                           | 질문 전송 및 답변 생성                 | 필요  |
+| POST   | `/chatbot/sessions/{sessionId}/messages/stream`                    | 질문 전송 및 답변 스트리밍(SSE, 타자 효과)   | 필요  |
 | GET    | `/chatbot/sessions/{sessionId}/messages/{messageId}/worki-support` | 워키 질문 등록 지원 (챗봇 메시지 기반 초안 반환) | 필요  |
 
 챗봇 세션 API 공통 규칙:
@@ -126,6 +127,8 @@ Authorization: Bearer <accessToken>
 - 메시지 응답은 `senderType`, `content`, `answerable`, `nextAction`, `referencesJson`, `createdAt`을 포함한다.
 - 삭제된 세션은 조회하지 않으며 없는 세션은 404, 타인 세션은 403을 반환한다.
 - 질문 전송 시 BE가 이전 대화와 활성 `custom_prompt`를 AI 서버에 전달하고 AI 답변을 저장한다.
+- 스트리밍 엔드포인트(`.../messages/stream`)는 `text/event-stream`으로 응답한다. `token` 이벤트(`{"content":"..."}`)를 토큰 단위로 반복 전송한 뒤, 마지막에 `done` 이벤트로 위 메시지 응답 객체(저장된 `messageId` 포함) 1건을 전송한다. 프론트는 `token`으로 글자를 출력하고 `done`을 최종 확정값으로 사용한다. AI 호출 실패 시에도 안내 메시지를 저장하고 `done`으로 전달한다.
+- 일반/스트리밍 엔드포인트 모두 답변·USER 메시지 저장 로직은 동일하며, 빈 답변이면 워키 질문 등록 유도 메시지로 대체한다.
 
 
 ### AI 운영 API (계획)
@@ -151,12 +154,31 @@ Authorization: Bearer <accessToken>
 | Method | AI Path | 용도 | 핵심 계약 |
 |---|---|---|---|
 | POST | `/api/v1/chat` | 챗봇 추론 | `question`, 선택적 `customPrompt`, 최근 `sessionContext` → `answer`, `sources`, `route`, `action`, `stepHistory` |
+| POST | `/api/v1/chat/stream` | 챗봇 추론(스트리밍) | 요청 본문은 `/api/v1/chat`과 동일. 응답은 `text/event-stream`. 아래 SSE 계약 참조 |
 | POST | `/api/v1/tickets/routing` | 티켓 부서 추천 | `title`, `content`, 선택적 `sourceChatbotMessageId` → 배정 부서, 후보 Top 3, 점수·margin, decision |
 | POST | `/api/v1/department/routing-prompt` | 부서 R&R 문장 생성 | `instruction`, 전체 부서 `targets` → 변경 대상 `results` |
 | POST | `/api/v1/knowledge/sync` | 부서 R&R·승인 사례 동기화 | `sourceId`, `sourceType`, 제목·내용·부서 메타데이터 → `syncedChunks` |
 | DELETE | `/api/v1/knowledge/{sourceId}?sourceType=...` | 라우팅 지식 삭제 | 없는 데이터도 성공하며 `deletedChunks: 0` 반환 |
 | POST | `/api/v1/documents/ingest` | 매뉴얼·워키·지식 파일 인덱싱 | multipart `source_id`, `source_type`, `title`, `file` → `indexed_chunks` |
 | DELETE | `/api/v1/documents/{sourceId}?source_type=...` | 문서 인덱스 삭제 | 문서의 Qdrant 청크 삭제 |
+
+`/api/v1/chat/stream` SSE 계약 (AI 서버 구현 완료):
+
+- 응답 `Content-Type`은 `text/event-stream`. event 이름 없이 `data:` 프레임만 보내며, JSON 안의 `type` 필드로 종류를 구분한다.
+
+  ```
+  data: {"type":"token","content":"안녕"}
+
+  data: {"type":"token","content":"하세요"}
+
+  data: {"type":"done","route":"...","action":"CREATE_TICKET","sources":[...],"step_history":[...]}
+  ```
+
+- `token`: `{"type":"token","content":"<조각>"}`. BE는 조각을 이어붙여 최종 답변을 만든다.
+- `done`: 토큰이 모두 끝난 뒤 1회. `sources`(snake_case 키), `route`, `action`, `step_history`를 담는다. BE는 이때 누적 답변 + 메타로 DB에 저장한다.
+- `error`: `{"type":"error","message":"<사용자용 안전 메시지>"}`. BLOCKED·내부 오류 시 발생하며 done 없이 스트림이 끝난다. BE는 비스트리밍 `/chat`과 동일하게 이 메시지를 답변으로 저장한다.
+- 답을 찾지 못한 경우(NO_RESULT): `token` 없이 `done`만(`sources` 빈 배열) 보낸다. BE는 누적 답변이 비어 있으면 워키 질문 등록 유도 메시지로 대체한다.
+- AI 서버 연결 자체가 끊기는 전송 오류는 BE가 감지해 Fallback 안내 메시지로 저장·전달한다.
 
 챗봇 세션 컨텍스트 규칙:
 
