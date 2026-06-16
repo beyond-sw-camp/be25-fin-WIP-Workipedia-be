@@ -35,6 +35,17 @@ public enum ErrorType {
 	// ai
 	AI_SYNC_FAILED("ai-001", "AI 동기화에 실패했습니다.", HttpStatus.BAD_GATEWAY),
 
+	// ai tool
+	AI_TOOL_NOT_FOUND("ai-tool-001", "Tool을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+	AI_TOOL_INVALID_TYPE("ai-tool-002", "지원하지 않는 Tool 타입입니다.", HttpStatus.BAD_REQUEST),
+	AI_TOOL_INVALID_AUTH_TYPE("ai-tool-003", "지원하지 않는 인증 방식입니다.", HttpStatus.BAD_REQUEST),
+	AI_TOOL_NOT_EXECUTABLE("ai-tool-004", "비활성 또는 미승인 Tool은 실행할 수 없습니다.", HttpStatus.CONFLICT),
+	AI_TOOL_PARAMETER_MISMATCH("ai-tool-005", "등록된 입력 스키마와 일치하지 않는 파라미터입니다.", HttpStatus.BAD_REQUEST),
+	AI_TOOL_UNSAFE_ENDPOINT("ai-tool-006", "허용되지 않은 endpoint host입니다.", HttpStatus.BAD_REQUEST),
+
+	// internal
+	INTERNAL_API_UNAUTHORIZED("internal-001", "내부 API 인증에 실패했습니다.", HttpStatus.UNAUTHORIZED),
+
 	// department
 	DEPARTMENT_NOT_FOUND("department-001", "부서를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 	DEPARTMENT_DUPLICATE_NAME("department-002", "이미 사용 중인 부서명입니다.", HttpStatus.CONFLICT),
