@@ -66,3 +66,16 @@ app:
     # Access Token 만료 시간은 로컬 테스트 편의를 위해 임시로 12시간으로 설정합니다.
     access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:12h}
     refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:14d}
+
+tool:
+  allowed-hosts: ${TOOL_ALLOWED_HOSTS:}
+  db:
+    # 로컬은 별도 read-only DB를 따로 안 두고 기본 워키피디아 DB 접속정보(위 spring.datasource와 동일 계정)를 그대로 재사용한다.
+    datasources:
+      workipediaReadonly:
+        url: ${TOOL_DB_READONLY_URL:jdbc:mariadb://localhost:3306/workipedia}
+        username: ${TOOL_DB_READONLY_USERNAME:wip}
+        password: ${TOOL_DB_READONLY_PASSWORD:}
+
+internal:
+  api-key: ${INTERNAL_API_KEY:local-dev-internal-key}

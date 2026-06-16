@@ -48,3 +48,19 @@ ai:
   timeout:
     routing-ms: ${AI_TIMEOUT_ROUTING_MS:5000}
     chatbot-ms: ${AI_TIMEOUT_CHATBOT_MS:30000}
+
+internal:
+  api-key: ${INTERNAL_API_KEY}
+
+tool:
+  allowed-hosts: ${TOOL_ALLOWED_HOSTS:}
+  db:
+    allowed-datasources: ${TOOL_DB_ALLOWED_DATASOURCES:}
+    datasources:
+      workipediaReadonly:
+        # DB Query Tool이 실제 사내 DB에 접속하는 정보라 internal.api-key와 같은 원칙을 적용한다 —
+        # 운영에서 env var를 빠뜨리면 기본값으로 조용히 기동되지 않고 바로 실패해야 한다.
+        # 로컬/테스트 기본값은 application-local.yaml/application-test.yaml에만 둔다.
+        url: ${TOOL_DB_READONLY_URL}
+        username: ${TOOL_DB_READONLY_USERNAME}
+        password: ${TOOL_DB_READONLY_PASSWORD}
