@@ -4,8 +4,8 @@
 > 상태: Draft
 > 정본 위치: `docs/api/api-contract.md`
 > 관련 문서: `docs/reference/prd.md`, `docs/reference/trd.md`, `docs/planning/wbs.md`, `docs/adr/013-object-storage-strategy.md`
-> 버전: v0.4
-> 최종 수정: 2026-06-09
+> 버전: v0.6
+> 최종 수정: 2026-06-15
 
 ## 1. 목적
 
@@ -119,6 +119,14 @@ Authorization: Bearer <accessToken>
 | POST   | `/chatbot/sessions/{sessionId}/messages`                           | 질문 전송 및 답변 생성                 | 필요  |
 | GET    | `/chatbot/sessions/{sessionId}/messages/{messageId}/worki-support` | 워키 질문 등록 지원 (챗봇 메시지 기반 초안 반환) | 필요  |
 
+챗봇 세션 API 공통 규칙:
+
+- 세션과 메시지는 인증 사용자 본인 소유 데이터만 조회·생성할 수 있다.
+- 질문은 공백을 허용하지 않으며 최대 2,000자다.
+- 메시지 응답은 `senderType`, `content`, `answerable`, `nextAction`, `referencesJson`, `createdAt`을 포함한다.
+- 삭제된 세션은 조회하지 않으며 없는 세션은 404, 타인 세션은 403을 반환한다.
+- 질문 전송 시 BE가 이전 대화와 활성 `custom_prompt`를 AI 서버에 전달하고 AI 답변을 저장한다.
+
 
 ### AI 운영 API (계획)
 
@@ -135,6 +143,32 @@ Authorization: Bearer <accessToken>
 | POST   | `/admin/ai-tools/{aiToolId}/test`| Tool 테스트 실행                           | SYSTEM_ADMIN   |
 
 `base_prompt`, provider 설정, credential, DB 접속정보와 SQL 원문은 관리자 API로 변경하지 않는다. 위 API는 아직 Controller가 구현되지 않은 계획 계약이며, V16에는 `ai_tools` 테이블만 반영되어 있다.
+
+### BE → AI 내부 API
+
+> 아래 경로는 프론트엔드 공개 API가 아니다. BE가 `AI_BASE_URL`의 AI 서버를 내부 호출하며 JSON 필드는 camelCase를 사용한다.
+
+| Method | AI Path | 용도 | 핵심 계약 |
+|---|---|---|---|
+| POST | `/api/v1/chat` | 챗봇 추론 | `question`, 선택적 `customPrompt`, 최근 `sessionContext` → `answer`, `sources`, `route`, `action`, `stepHistory` |
+| POST | `/api/v1/tickets/routing` | 티켓 부서 추천 | `title`, `content`, 선택적 `sourceChatbotMessageId` → 배정 부서, 후보 Top 3, 점수·margin, decision |
+| POST | `/api/v1/department/routing-prompt` | 부서 R&R 문장 생성 | `instruction`, 전체 부서 `targets` → 변경 대상 `results` |
+| POST | `/api/v1/knowledge/sync` | 부서 R&R·승인 사례 동기화 | `sourceId`, `sourceType`, 제목·내용·부서 메타데이터 → `syncedChunks` |
+| DELETE | `/api/v1/knowledge/{sourceId}?sourceType=...` | 라우팅 지식 삭제 | 없는 데이터도 성공하며 `deletedChunks: 0` 반환 |
+| POST | `/api/v1/documents/ingest` | 매뉴얼·워키·지식 파일 인덱싱 | multipart `source_id`, `source_type`, `title`, `file` → `indexed_chunks` |
+| DELETE | `/api/v1/documents/{sourceId}?source_type=...` | 문서 인덱스 삭제 | 문서의 Qdrant 청크 삭제 |
+
+챗봇 세션 컨텍스트 규칙:
+
+- `sessionContext`는 `messageId`, `senderType`, `content`를 포함하며 `USER`, `ASSISTANT`만 허용한다.
+- BE는 현재 질문을 중복 포함하지 않고 같은 세션의 최근 메시지를 오래된 순서로 전달한다.
+- AI 출처의 `sourceType`, `sourceId`, `chunkIndex`를 사용해 BE의 인용 대상을 식별한다.
+
+동기화 규칙:
+
+- `DEPT_RR`의 `sourceId`는 `departmentId`와 같고, `ROUTING_CASE`의 `sourceId`는 승인 사례 고유 ID다.
+- BE는 원문과 `ai_sync_jobs`를 같은 트랜잭션에 저장하고 워커에서 AI API를 호출한다.
+- AI 호출 실패를 업무 데이터 저장 성공으로 숨기지 않으며, 비동기 작업은 `FAILED`와 실패 사유를 남겨 재시도한다.
 
 
 ## 6. Worki API
@@ -192,6 +226,42 @@ Authorization: Bearer <accessToken>
 | GET    | `/faq/worki/popular`   | 인기 워키     | USER  |
 | GET    | `/faq/manuals/popular` | 인기 매뉴얼    | USER  |
 | GET    | `/faq/manuals/recent`  | 최근 등록 매뉴얼 | USER  |
+
+
+## 8-1. Search API (통합검색)
+
+담당: 민정기
+
+| Method | Path                              | 설명                          | 인증   |
+| ------ | --------------------------------- | --------------------------- | ---- |
+| GET    | `/search`                         | 통합검색(워키+매뉴얼, 도메인별 분리)        | USER |
+| GET    | `/search/worki`                   | 워키 질문 검색(Elasticsearch)      | USER |
+| GET    | `/search/worki/autocomplete`      | 워키 검색어 자동완성(DB)             | USER |
+| GET    | `/search/manuals`                 | 매뉴얼 검색(DB, 발행본만)            | USER |
+| POST   | `/search/worki/reindex`           | 워키 ES 전체 재색인(관리자용 임시)        | 필요   |
+
+- `keyword`: 필수, 2~100자.
+- 페이지 파라미터: `page`(0-base), `size`. 응답은 공통 `PageResponse`(§2.4).
+- **통합검색**(`GET /search?keyword=&size=`): 워키·매뉴얼을 각각 미리보기 크기(`size`, 기본 5)만큼 page 0으로 조회해 **도메인별로 분리**해 반환. 각 도메인 `pageInfo.totalElements` 로 전체 건수 표시. 워키(ES) 조회가 실패해도 매뉴얼(DB) 결과는 반환(워키는 빈 결과).
+- **매뉴얼 검색**: Elasticsearch 색인 없이 DB에서 `status=PUBLISHED` 매뉴얼의 제목·본문을 검색(ADR-009 참고). 미발행/삭제 매뉴얼은 노출하지 않는다.
+
+```jsonc
+// GET /api/v1/search?keyword=휴가&size=5
+{
+  "worki": {
+    "content": [
+      { "questionId": 7, "title": "휴가 신청은 어디서?", "status": "WAITING", "viewCount": 12, "createdAt": "2026-06-14T10:00:00" }
+    ],
+    "pageInfo": { "page": 1, "size": 5, "totalElements": 3, "totalPages": 1, "hasNext": false, "hasPrevious": false }
+  },
+  "manuals": {
+    "content": [
+      { "manualId": 2, "title": "연차 휴가 규정", "status": "PUBLISHED", "departmentId": 1, "version": "1.0", "createdAt": "2026-06-10T09:00:00" }
+    ],
+    "pageInfo": { "page": 1, "size": 5, "totalElements": 1, "totalPages": 1, "hasNext": false, "hasPrevious": false }
+  }
+}
+```
 
 
 ## 9. Notification API
@@ -308,6 +378,7 @@ Authorization: Bearer <accessToken>
 | PATCH  | `/admin/departments/{departmentId}`             | 부서 정보 수정                      | SYSTEM_ADMIN |
 | DELETE | `/admin/departments/{departmentId}`             | 부서 삭제                         | SYSTEM_ADMIN |
 | PATCH  | `/admin/departments/routing-prompt/instruction` | 부서 라우팅 프롬프트                   | SYSTEM_ADMIN |
+| PATCH  | `/admin/departments/{departmentId}/routing-prompt` | 부서별 R&R 직접 수정                 | SYSTEM_ADMIN |
 | GET    | `/admin/users`                                  | 전체 사용자 목록 조회                    | SYSTEM_ADMIN |
 | GET    | `/admin/users/search`                           | 사번으로 사용자 조회                   | SYSTEM_ADMIN |
 | PATCH  | `/admin/users/{userId}/status`                  | 사용자 활성화/비활성화 변경               | SYSTEM_ADMIN |

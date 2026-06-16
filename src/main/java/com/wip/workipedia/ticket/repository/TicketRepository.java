@@ -180,6 +180,105 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 		@Param("endAt") LocalDateTime endAt
 	);
 
+	@Query(
+		value = """
+			SELECT DATE_FORMAT(t.created_at, '%Y-%m') AS month, COUNT(*) AS count
+			FROM tickets t
+			WHERE t.created_at >= :startAt
+				AND t.created_at < :endAt
+				AND t.deleted_at IS NULL
+				AND t.is_deleted = 'N'
+			GROUP BY DATE_FORMAT(t.created_at, '%Y-%m')
+			""",
+		nativeQuery = true
+	)
+	List<MonthlyCountProjection> countMonthlyIssuedTickets(
+		@Param("startAt") LocalDateTime startAt,
+		@Param("endAt") LocalDateTime endAt
+	);
+
+	@Query(
+		value = """
+			SELECT
+				DATE_FORMAT(t.created_at, '%Y-%m') AS month,
+				COUNT(*) AS totalTicketCount,
+				SUM(
+					CASE
+						WHEN t.routing_decision = 'AUTO_ASSIGNED'
+							AND t.initial_auto_assigned_department_id IS NOT NULL
+							AND t.status <> 'COMMON_QUEUE'
+							AND NOT EXISTS (
+								SELECT 1
+								FROM ticket_transfer_requests tr
+								WHERE tr.ticket_id = t.ticket_id
+									AND tr.deleted_at IS NULL
+									AND tr.is_deleted = 'N'
+							)
+						THEN 1
+						ELSE 0
+					END
+				) AS autoAssignedTicketCount
+			FROM tickets t
+			WHERE t.created_at >= :startAt
+				AND t.created_at < :endAt
+				AND t.deleted_at IS NULL
+				AND t.is_deleted = 'N'
+			GROUP BY DATE_FORMAT(t.created_at, '%Y-%m')
+			""",
+		nativeQuery = true
+	)
+	List<MonthlyAutoAssignmentRateProjection> countMonthlyAutoAssignmentRate(
+		@Param("startAt") LocalDateTime startAt,
+		@Param("endAt") LocalDateTime endAt
+	);
+
+	@Query(
+		value = """
+			SELECT
+				t.assigned_department_id AS departmentId,
+				t.status AS status,
+				COUNT(*) AS count
+			FROM tickets t
+			WHERE t.assigned_department_id IS NOT NULL
+				AND t.status IN ('ASSIGNED', 'COMPLETED')
+				AND t.deleted_at IS NULL
+				AND t.is_deleted = 'N'
+			GROUP BY t.assigned_department_id, t.status
+			""",
+		nativeQuery = true
+	)
+	List<DepartmentTicketStatusCountProjection> countActiveTicketsByDepartmentAndStatus();
+
+	@Query(
+		value = """
+			SELECT
+				t.initial_auto_assigned_department_id AS departmentId,
+				COUNT(*) AS totalTicketCount,
+				SUM(
+					CASE
+						WHEN t.routing_decision = 'AUTO_ASSIGNED'
+							AND t.status <> 'COMMON_QUEUE'
+							AND NOT EXISTS (
+								SELECT 1
+								FROM ticket_transfer_requests tr
+								WHERE tr.ticket_id = t.ticket_id
+									AND tr.deleted_at IS NULL
+									AND tr.is_deleted = 'N'
+							)
+						THEN 1
+						ELSE 0
+					END
+				) AS autoAssignedTicketCount
+			FROM tickets t
+			WHERE t.initial_auto_assigned_department_id IS NOT NULL
+				AND t.deleted_at IS NULL
+				AND t.is_deleted = 'N'
+			GROUP BY t.initial_auto_assigned_department_id
+			""",
+		nativeQuery = true
+	)
+	List<DepartmentAutoAssignmentRateProjection> countDepartmentAutoAssignmentRate();
+
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("""
 		SELECT t
@@ -212,6 +311,25 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 	)
 	int moveExpiredTicketsToCommonQueue();
 
+	@Query(
+		value = """
+        SELECT t.ticket_id AS ticketId,
+               t.requester_id AS requesterId,
+               t.title AS title
+        FROM tickets t
+        WHERE t.status = 'COMMON_QUEUE'
+          AND t.created_at <= :expiredBefore
+          AND t.deleted_at IS NULL
+          AND t.is_deleted = 'N'
+        ORDER BY t.ticket_id ASC
+    """,
+		nativeQuery = true
+	)
+	List<ExpiredCommonQueueTicketProjection> findExpiredCommonQueueTickets(
+		@Param("expiredBefore") LocalDateTime expiredBefore,
+		Pageable pageable
+	);
+
 	@Modifying
 	@Query(
 		value = """
@@ -220,14 +338,18 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
             deleted_at = NOW(),
             is_deleted = 'Y',
             updated_at = NOW()
-        WHERE status = 'COMMON_QUEUE'
-          AND created_at <= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        WHERE ticket_id = :ticketId
+          AND status = 'COMMON_QUEUE'
+          AND created_at <= :expiredBefore
           AND deleted_at IS NULL
           AND is_deleted = 'N'
     """,
 		nativeQuery = true
 	)
-	int softDeleteExpiredCommonQueueTickets();
+	int softDeleteExpiredCommonQueueTicket(
+		@Param("ticketId") Long ticketId,
+		@Param("expiredBefore") LocalDateTime expiredBefore
+	);
 
 	interface TicketStatusCountProjection {
 		TicketStatus getStatus();
@@ -239,6 +361,38 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 		String getMonth();
 
 		long getCount();
+	}
+
+	interface MonthlyAutoAssignmentRateProjection {
+		String getMonth();
+
+		long getTotalTicketCount();
+
+		long getAutoAssignedTicketCount();
+	}
+
+	interface DepartmentTicketStatusCountProjection {
+		Long getDepartmentId();
+
+		TicketStatus getStatus();
+
+		long getCount();
+	}
+
+	interface DepartmentAutoAssignmentRateProjection {
+		Long getDepartmentId();
+
+		long getTotalTicketCount();
+
+		long getAutoAssignedTicketCount();
+	}
+
+	interface ExpiredCommonQueueTicketProjection {
+		Long getTicketId();
+
+		Long getRequesterId();
+
+		String getTitle();
 	}
 
 	interface CommonQueueTicketProjection {

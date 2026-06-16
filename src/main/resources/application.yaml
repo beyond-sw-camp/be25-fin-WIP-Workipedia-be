@@ -20,6 +20,7 @@ logging:
   level:
     '[org.springframework.web]': info
     '[org.springframework.security]': info
+    '[org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver]': error
     '[org.mariadb.jdbc.client.impl]': info
     '[org.springframework.data.redis]': info
     '[io.lettuce.core]': info
@@ -41,3 +42,9 @@ management:
   metrics:
     tags:
       application: Workipedia
+
+ai:
+  base-url: ${AI_BASE_URL:http://localhost:8000}
+  timeout:
+    routing-ms: ${AI_TIMEOUT_ROUTING_MS:5000}
+    chatbot-ms: ${AI_TIMEOUT_CHATBOT_MS:30000}

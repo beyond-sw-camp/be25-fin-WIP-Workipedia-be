@@ -8,8 +8,22 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface ManualRepository extends JpaRepository<Manual, Long> {
+
+    // 통합검색용. 발행(PUBLISHED)·미삭제 매뉴얼을 제목/본문에서 키워드로 찾는다.
+    // 본문(content, LONGTEXT)에 대한 LIKE는 인덱스를 타지 못해 풀스캔이므로, 매뉴얼 규모가 작다는 전제에서만 유효하다.
+    // (규모가 커지면 제목검색 축소 / MariaDB FULLTEXT / Elasticsearch 이행을 고려 — ADR-009 참고)
+    @Query("""
+            SELECT m FROM Manual m
+             WHERE m.deletedAt IS NULL
+               AND m.status = :status
+               AND (m.title LIKE %:keyword% OR m.content LIKE %:keyword%)
+            """)
+    Page<Manual> searchByKeyword(@Param("keyword") String keyword,
+                                 @Param("status") ManualStatus status,
+                                 Pageable pageable);
 
     Page<Manual> findByDeletedAtIsNullAndStatus(ManualStatus status, Pageable pageable);
 

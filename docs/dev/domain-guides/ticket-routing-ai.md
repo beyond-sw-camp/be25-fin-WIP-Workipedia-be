@@ -2,7 +2,7 @@
 
 > 문서 유형: Development Guide
 > 상태: Draft
-> 최종 수정: 2026-06-09
+> 최종 수정: 2026-06-15
 
 ## 흐름
 
@@ -50,37 +50,36 @@ ticket text
 
 1위 점수와 1·2위 점수 차이가 기준을 통과하면 해당 부서를 추천한다. 그렇지 않으면 공통 접수 큐로 전환한다.
 
-## 응답 필수값
+## BE-AI 연동 계약
 
-- `recommendedDepartmentId`
-- `topScore`
-- `scoreMargin`
-- 후보별 `candidateId`, `departmentId`, 원본 `score`, `rank`
-- 기준 미달 사유
+BE는 다음 API로 라우팅을 요청한다.
+
+`POST /api/v1/tickets/routing`
 
 ```json
 {
-  "recommendedDepartmentId": 2,
-  "topScore": 5.14,
+  "assignedDepartmentId": 2,
+  "assignedDepartmentName": "개발팀",
+  "confidenceScore": 5.14,
   "scoreMargin": 1.27,
-  "candidates": [
+  "decision": "AUTO_ASSIGNED",
+  "reasons": ["개발팀 R&R과 가장 유사함"],
+  "candidateDepartments": [
     {
-      "candidateId": "department-2",
       "departmentId": 2,
-      "score": 5.14,
-      "rank": 1
-    },
-    {
-      "candidateId": "department-5",
-      "departmentId": 5,
-      "score": 3.87,
-      "rank": 2
+      "departmentName": "개발팀",
+      "confidenceScore": 5.14
     }
-  ]
+  ],
+  "model": "cross-encoder-v1",
+  "provider": "local"
 }
 ```
 
-점수 범위는 모델마다 다르므로 정규화 방식이 확정되기 전까지 `0~1`로 가정하지 않는다.
+- AI가 `decision`과 추천 부서를 결정하고 BE는 결과를 티켓 상태로 매핑한다.
+- 점수 범위는 모델마다 다르므로 `0~1`로 가정하지 않는다.
+- 연결 실패, timeout, 응답 오류 시 `COMMON_QUEUE` fallback으로 티켓 생성은 계속한다.
+- 알 수 없는 `decision`도 `COMMON_QUEUE`로 처리한다.
 
 ## 피드백 반영
 
@@ -113,13 +112,16 @@ ticket text
 
 ## BE 저장 책임
 
-- 최초 후보와 점수
+- AI가 반환한 최초 추천 부서와 후보
+- `confidenceScore`, `scoreMargin`
+- `decision`, `reasons`
+- `model`, `provider`
 - 실제 배정 부서
 - 최종 처리 부서
 - 공통 접수 큐 전환 사유
 - 라우팅 사례 승인·비활성화 이력
 
-`ticket_routing_cases`와 상세 점수 저장 컬럼은 후속 migration 대상이다.
+라우팅 응답은 티켓 저장 트랜잭션에서 `ticket_routing_logs`에 함께 기록한다.
 
 ## 남은 결정
 

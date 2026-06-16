@@ -32,6 +32,9 @@ public enum ErrorType {
 	AUTH_INVALID_EMAIL_FORMAT("auth-014", "올바른 이메일 형식이 아닙니다.", HttpStatus.BAD_REQUEST),
 	AUTH_INVALID_EMAIL_CODE_FORMAT("auth-015", "인증코드는 6자리 숫자여야 합니다.", HttpStatus.BAD_REQUEST),
 
+	// ai
+	AI_SYNC_FAILED("ai-001", "AI 동기화에 실패했습니다.", HttpStatus.BAD_GATEWAY),
+
 	// department
 	DEPARTMENT_NOT_FOUND("department-001", "부서를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 	DEPARTMENT_DUPLICATE_NAME("department-002", "이미 사용 중인 부서명입니다.", HttpStatus.CONFLICT),
@@ -87,7 +90,14 @@ public enum ErrorType {
 	FLASH_CHAT_COOLDOWN("flash-chat-001", "메시지 전송 쿨다운 중입니다.", HttpStatus.TOO_MANY_REQUESTS),
 	FLASH_CHAT_BANNED_WORD("flash-chat-002", "금지어가 포함된 메시지입니다.", HttpStatus.BAD_REQUEST),
 	FLASH_CHAT_MESSAGE_NOT_FOUND("flash-chat-003", "메시지를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
-	FLASH_CHAT_POLICY_NOT_FOUND("flash-chat-004", "Flash Chat 정책을 찾을 수 없습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
+	FLASH_CHAT_POLICY_NOT_FOUND("flash-chat-004", "Flash Chat 정책을 찾을 수 없습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+
+	// chatbot
+	CHATBOT_SESSION_NOT_FOUND("chatbot-001", "챗봇 세션을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+	CHATBOT_SESSION_FORBIDDEN("chatbot-002", "본인의 챗봇 세션에만 접근할 수 있습니다.", HttpStatus.FORBIDDEN),
+
+	// ai prompt settings
+	AI_PROMPT_SETTING_NOT_FOUND("ai-prompt-001", "AI 프롬프트 설정을 찾을 수 없습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
 
 	private final String status;
 	private final String message;
