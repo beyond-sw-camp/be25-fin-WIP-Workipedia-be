@@ -11,6 +11,8 @@ public record SourceItem(
 	String sourceType,
 	String sourceId,
 	Integer chunkIndex,
+	Integer pageStart,
+	Integer pageEnd,
 	String title,
 	double score,
 	String link
