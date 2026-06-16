@@ -27,7 +27,7 @@ public class ChatbotSession {
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
 
-    @Column(nullable = false, length = 1)
+    @Column(nullable = false, columnDefinition = "CHAR(1)")
     private String isDeleted = "N";
 
     public static ChatbotSession create(Long userId, String title) {
