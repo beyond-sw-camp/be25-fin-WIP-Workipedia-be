@@ -11,6 +11,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wip.workipedia.admin.aiprompt.service.AdminAiPromptService;
 import com.wip.workipedia.chatbot.ai.ChatbotAiClient;
 import com.wip.workipedia.chatbot.ai.ChatbotAiResponse;
+import com.wip.workipedia.chatbot.ai.FallbackChatbotAiClient;
+import com.wip.workipedia.chatbot.ai.HttpChatbotAiStreamClient;
 import com.wip.workipedia.chatbot.ai.SessionMessage;
 import com.wip.workipedia.chatbot.domain.ChatbotMessage;
 import com.wip.workipedia.chatbot.domain.ChatbotSession;
@@ -32,9 +34,12 @@ class ChatbotServiceTest {
     private final ChatbotSessionRepository sessionRepository = mock(ChatbotSessionRepository.class);
     private final ChatbotMessageRepository messageRepository = mock(ChatbotMessageRepository.class);
     private final ChatbotAiClient aiClient = mock(ChatbotAiClient.class);
+    private final HttpChatbotAiStreamClient aiStreamClient = mock(HttpChatbotAiStreamClient.class);
+    private final FallbackChatbotAiClient fallbackAiClient = mock(FallbackChatbotAiClient.class);
     private final AdminAiPromptService adminAiPromptService = mock(AdminAiPromptService.class);
     private final ChatbotService service = new ChatbotService(
-            sessionRepository, messageRepository, aiClient, adminAiPromptService, new ObjectMapper());
+            sessionRepository, messageRepository, aiClient, aiStreamClient, fallbackAiClient,
+            adminAiPromptService, new ObjectMapper());
 
     @Test
     void createSession_저장하고_세션을_반환한다() {

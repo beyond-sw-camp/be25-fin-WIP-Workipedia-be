@@ -1,11 +1,16 @@
 package com.wip.workipedia.chatbot.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wip.workipedia.admin.aiprompt.service.AdminAiPromptService;
 import com.wip.workipedia.chatbot.ai.ChatbotAiClient;
 import com.wip.workipedia.chatbot.ai.ChatbotAiRequest;
 import com.wip.workipedia.chatbot.ai.ChatbotAiResponse;
+import com.wip.workipedia.chatbot.ai.ChatbotStreamDone;
+import com.wip.workipedia.chatbot.ai.ChatbotStreamToken;
+import com.wip.workipedia.chatbot.ai.FallbackChatbotAiClient;
+import com.wip.workipedia.chatbot.ai.HttpChatbotAiStreamClient;
 import com.wip.workipedia.chatbot.ai.SessionMessage;
 import com.wip.workipedia.chatbot.domain.ChatbotMessage;
 import com.wip.workipedia.chatbot.domain.ChatbotSession;
@@ -22,13 +27,18 @@ import com.wip.workipedia.common.response.PageResponse;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @Slf4j
 @Service
@@ -42,6 +52,8 @@ public class ChatbotService {
     private final ChatbotSessionRepository sessionRepository;
     private final ChatbotMessageRepository messageRepository;
     private final ChatbotAiClient chatbotAiClient;
+    private final HttpChatbotAiStreamClient chatbotAiStreamClient;
+    private final FallbackChatbotAiClient fallbackChatbotAiClient;
     private final AdminAiPromptService adminAiPromptService;
     private final ObjectMapper objectMapper;
 
@@ -95,6 +107,101 @@ public class ChatbotService {
 
         // 3단계: ASSISTANT 응답 저장 (트랜잭션 커밋)
         return self.saveAssistantMessage(sessionId, aiResponse);
+    }
+
+    // 질문 전송 + 스트리밍 진입점 — 타자 효과(SSE)용
+    // 흐름은 sendMessage와 동일하지만, AI 답변을 한 번에 받지 않고 토큰 단위로 프론트에 흘려보낸다.
+    //   1) prepareContextAndSaveUserMessage: 컨텍스트 수집 + USER 메시지 저장 (트랜잭션, 서블릿 스레드에서 즉시 실행)
+    //   2) AI 스트림 구독 → token 이벤트를 프론트로 중계하며 answerBuffer에 누적, done 메타데이터는 보관
+    //   3) 스트림 종료 후 누적 답변 + 메타데이터로 ASSISTANT 응답 저장(트랜잭션) → done 이벤트로 최종 메시지 전달
+    // 프론트 SSE 이벤트: token({content}) 반복 → done(ChatbotMessageResponse) 1회. 실패 시에도 done으로 안내 메시지 전달.
+    public Flux<ServerSentEvent<Object>> sendMessageStream(Long userId, Long sessionId, ChatbotMessageRequest request) {
+        // 1단계: 컨텍스트 빌드 + USER 메시지 저장 (여기서 예외가 나면 Flux 생성 전이라 일반 JSON 에러로 응답됨)
+        List<SessionMessage> context = self.prepareContextAndSaveUserMessage(userId, sessionId, request.question());
+        String customPrompt = adminAiPromptService.findActiveCustomPrompt();
+        ChatbotAiRequest aiRequest = new ChatbotAiRequest(request.question(), customPrompt, context);
+
+        // 스트림 전체에서 공유되는 가변 누적 상태:
+        //   - answerBuffer: token 조각을 이어붙여 최종 답변 완성
+        //   - doneMeta: done 이벤트로 받은 sources/route/action 보관 (없으면 빈 답변으로 처리됨)
+        // 단일 구독·순차 파이프라인이라 동기화 문제는 없다.
+        StringBuilder answerBuffer = new StringBuilder();
+        AtomicReference<ChatbotStreamDone> doneMeta = new AtomicReference<>(ChatbotStreamDone.empty());
+
+        // 2단계: AI 스트림 → token 이벤트만 프론트로 중계 (done은 메타 저장 후 걸러냄)
+        Flux<ServerSentEvent<Object>> tokenFlux = chatbotAiStreamClient.askStream(aiRequest)
+                .mapNotNull(sse -> relayUpstreamEvent(sse, answerBuffer, doneMeta));
+
+        // 3단계: 스트림이 끝난 뒤 ASSISTANT 메시지 저장 + done 이벤트.
+        // JPA 저장은 블로킹이므로 reactor-netty 이벤트 루프가 아닌 boundedElastic 스레드에서 실행한다.
+        Mono<ServerSentEvent<Object>> doneFlux = Mono.defer(() -> {
+            ChatbotStreamDone meta = doneMeta.get();
+            ChatbotAiResponse aiResponse = new ChatbotAiResponse(
+                    answerBuffer.toString(), meta.sources(), meta.route(), meta.action());
+            ChatbotMessageResponse saved = self.saveAssistantMessage(sessionId, aiResponse);
+            return Mono.just(doneEvent(saved));
+        }).subscribeOn(Schedulers.boundedElastic());
+
+        // AI 호출/스트림 실패 시: Fallback 안내 메시지를 저장하고 done 이벤트로 전달 (프론트는 동일하게 처리 가능)
+        return tokenFlux.concatWith(doneFlux)
+                .onErrorResume(e -> streamFallback(sessionId, aiRequest, e));
+    }
+
+    // AI 서버 SSE 프레임 1건을 프론트로 보낼 token 이벤트로 변환한다.
+    // AI 서버는 event 이름 없이 data JSON 안의 "type" 필드로 종류를 구분한다:
+    //   - token: {"type":"token","content":"..."}  → 누적 + 프론트로 중계
+    //   - error: {"type":"error","message":"..."}   → AI가 만든 사용자용 안전 메시지. 비스트리밍 /chat 과 동일하게 답변으로 취급
+    //   - done : {"type":"done","sources":[...],"route":...,"action":...} → 메타만 보관(저장 단계에서 사용), null 반환해 걸러짐
+    private ServerSentEvent<Object> relayUpstreamEvent(
+            ServerSentEvent<String> sse, StringBuilder answerBuffer, AtomicReference<ChatbotStreamDone> doneMeta) {
+        String data = sse.data();
+        if (data == null || data.isBlank()) {
+            return null;
+        }
+        JsonNode node;
+        try {
+            node = objectMapper.readTree(data);
+        } catch (JsonProcessingException ex) {
+            log.warn("스트림 이벤트 파싱 실패: {}", ex.getMessage());
+            return null;
+        }
+        String type = node.path("type").asText("");
+        if ("done".equals(type)) {
+            doneMeta.set(toStreamDone(node));
+            return null;
+        }
+        // token은 content, error는 message를 본문으로 사용 (둘 다 누적 후 프론트로 흘려보냄)
+        String content = "error".equals(type)
+                ? node.path("message").asText("")
+                : node.path("content").asText("");
+        if (content.isEmpty()) {
+            return null;
+        }
+        answerBuffer.append(content);
+        return ServerSentEvent.builder((Object) new ChatbotStreamToken(content)).event("token").build();
+    }
+
+    // 스트림 실패 시 Fallback 메시지를 저장하고 done 이벤트로 내보낸다 (블로킹 저장이라 boundedElastic에서 실행)
+    private Flux<ServerSentEvent<Object>> streamFallback(Long sessionId, ChatbotAiRequest aiRequest, Throwable e) {
+        log.error("AI 챗봇 스트리밍 실패: {}", e.getMessage());
+        return Mono.defer(() -> {
+            ChatbotMessageResponse saved = self.saveAssistantMessage(sessionId, fallbackChatbotAiClient.ask(aiRequest));
+            return Mono.just(doneEvent(saved));
+        }).subscribeOn(Schedulers.boundedElastic()).flux();
+    }
+
+    private ServerSentEvent<Object> doneEvent(ChatbotMessageResponse saved) {
+        return ServerSentEvent.builder((Object) saved).event("done").build();
+    }
+
+    // done 프레임 JSON에서 sources/route/action만 추출 (type·step_history 등 나머지는 무시)
+    private ChatbotStreamDone toStreamDone(JsonNode node) {
+        try {
+            return objectMapper.treeToValue(node, ChatbotStreamDone.class);
+        } catch (JsonProcessingException ex) {
+            log.warn("스트림 done 이벤트 파싱 실패: {}", ex.getMessage());
+            return ChatbotStreamDone.empty();
+        }
     }
 
     // 1단계 트랜잭션: 컨텍스트 빌드 → USER 메시지 저장
