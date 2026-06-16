@@ -228,6 +228,42 @@ Authorization: Bearer <accessToken>
 | GET    | `/faq/manuals/recent`  | 최근 등록 매뉴얼 | USER  |
 
 
+## 8-1. Search API (통합검색)
+
+담당: 민정기
+
+| Method | Path                              | 설명                          | 인증   |
+| ------ | --------------------------------- | --------------------------- | ---- |
+| GET    | `/search`                         | 통합검색(워키+매뉴얼, 도메인별 분리)        | USER |
+| GET    | `/search/worki`                   | 워키 질문 검색(Elasticsearch)      | USER |
+| GET    | `/search/worki/autocomplete`      | 워키 검색어 자동완성(DB)             | USER |
+| GET    | `/search/manuals`                 | 매뉴얼 검색(DB, 발행본만)            | USER |
+| POST   | `/search/worki/reindex`           | 워키 ES 전체 재색인(관리자용 임시)        | 필요   |
+
+- `keyword`: 필수, 2~100자.
+- 페이지 파라미터: `page`(0-base), `size`. 응답은 공통 `PageResponse`(§2.4).
+- **통합검색**(`GET /search?keyword=&size=`): 워키·매뉴얼을 각각 미리보기 크기(`size`, 기본 5)만큼 page 0으로 조회해 **도메인별로 분리**해 반환. 각 도메인 `pageInfo.totalElements` 로 전체 건수 표시. 워키(ES) 조회가 실패해도 매뉴얼(DB) 결과는 반환(워키는 빈 결과).
+- **매뉴얼 검색**: Elasticsearch 색인 없이 DB에서 `status=PUBLISHED` 매뉴얼의 제목·본문을 검색(ADR-009 참고). 미발행/삭제 매뉴얼은 노출하지 않는다.
+
+```jsonc
+// GET /api/v1/search?keyword=휴가&size=5
+{
+  "worki": {
+    "content": [
+      { "questionId": 7, "title": "휴가 신청은 어디서?", "status": "WAITING", "viewCount": 12, "createdAt": "2026-06-14T10:00:00" }
+    ],
+    "pageInfo": { "page": 1, "size": 5, "totalElements": 3, "totalPages": 1, "hasNext": false, "hasPrevious": false }
+  },
+  "manuals": {
+    "content": [
+      { "manualId": 2, "title": "연차 휴가 규정", "status": "PUBLISHED", "departmentId": 1, "version": "1.0", "createdAt": "2026-06-10T09:00:00" }
+    ],
+    "pageInfo": { "page": 1, "size": 5, "totalElements": 1, "totalPages": 1, "hasNext": false, "hasPrevious": false }
+  }
+}
+```
+
+
 ## 9. Notification API
 
 담당: 민정기

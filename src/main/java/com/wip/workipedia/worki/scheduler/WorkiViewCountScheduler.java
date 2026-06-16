@@ -22,7 +22,7 @@ public class WorkiViewCountScheduler {
 
     private final WorkiViewCountService viewCountService;
 
-    @Scheduled(fixedDelayString = "${worki.view-count.flush-interval-ms:60000}")
+    @Scheduled(fixedDelayString = "${worki.view-count.flush-interval-ms:60000}") // application.yaml에 설정된 값을 쓰되, 없으면 기본 60000ms(=60초) 를 씁니다. :60000의 콜론 뒷부분이 기본값.
     public void flushViewCounts() {
         try {
             viewCountService.flushToDatabase();
