@@ -2,6 +2,7 @@ package com.wip.workipedia.chatbot.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wip.workipedia.admin.aiprompt.service.AdminAiPromptService;
 import com.wip.workipedia.chatbot.ai.ChatbotAiClient;
 import com.wip.workipedia.chatbot.ai.ChatbotAiRequest;
 import com.wip.workipedia.chatbot.ai.ChatbotAiResponse;
@@ -37,6 +38,7 @@ public class ChatbotService {
     private final ChatbotSessionRepository sessionRepository;
     private final ChatbotMessageRepository messageRepository;
     private final ChatbotAiClient chatbotAiClient;
+    private final AdminAiPromptService adminAiPromptService;
     private final ObjectMapper objectMapper;
 
     // self-injection: @Transactional 서브메서드를 같은 빈 내에서 프록시로 호출하기 위해 필요
@@ -82,8 +84,9 @@ public class ChatbotService {
         List<SessionMessage> context = self.prepareContextAndSaveUserMessage(userId, sessionId, request.question());
 
         // 2단계: AI 서버 호출 (실패 시 FallbackChatbotAiClient 가 안내 메시지 반환)
+        String customPrompt = adminAiPromptService.findActiveCustomPrompt();
         ChatbotAiResponse aiResponse = chatbotAiClient.ask(
-                new ChatbotAiRequest(request.question(), null, context)
+                new ChatbotAiRequest(request.question(), customPrompt, context)
         );
 
         // 3단계: ASSISTANT 응답 저장 (트랜잭션 커밋)
