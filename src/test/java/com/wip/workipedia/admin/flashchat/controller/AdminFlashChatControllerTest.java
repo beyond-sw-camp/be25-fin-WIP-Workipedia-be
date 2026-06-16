@@ -2,6 +2,7 @@ package com.wip.workipedia.admin.flashchat.controller;
 
 import com.wip.workipedia.admin.flashchat.dto.FlashChatPolicyResponse;
 import com.wip.workipedia.admin.flashchat.service.AdminFlashChatService;
+import com.wip.workipedia.common.security.InternalApiKeyFilter;
 import com.wip.workipedia.common.security.JwtFilter;
 import com.wip.workipedia.common.security.JwtProvider;
 import java.util.List;
@@ -34,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         excludeAutoConfiguration = {SecurityAutoConfiguration.class, SecurityFilterAutoConfiguration.class},
         excludeFilters = @ComponentScan.Filter(
                 type = FilterType.ASSIGNABLE_TYPE,
-                classes = {JwtFilter.class, JwtProvider.class}
+                classes = {JwtFilter.class, JwtProvider.class, InternalApiKeyFilter.class}
         )
 )
 class AdminFlashChatControllerTest {

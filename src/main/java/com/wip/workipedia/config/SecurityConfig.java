@@ -2,6 +2,7 @@ package com.wip.workipedia.config;
 
 import com.wip.workipedia.auth.handler.AccessDeniedHandlerImpl;
 import com.wip.workipedia.auth.handler.AuthenticationEntryPointImpl;
+import com.wip.workipedia.common.security.InternalApiKeyFilter;
 import com.wip.workipedia.common.security.JwtFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -30,6 +31,7 @@ public class SecurityConfig {
 	private final AuthenticationEntryPointImpl authenticationEntryPoint;
 	private final AccessDeniedHandlerImpl accessDeniedHandler;
 	private final JwtFilter jwtFilter;
+	private final InternalApiKeyFilter internalApiKeyFilter;
 
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
@@ -74,8 +76,10 @@ public class SecurityConfig {
 						.requestMatchers("/api/v1/admin/team/**").hasRole("TEAM_ADMIN")
 						.requestMatchers("/api/v1/admin/**").hasRole("SYSTEM_ADMIN")
 						.requestMatchers("/api/v1/faq/**").permitAll()
+						.requestMatchers("/api/v1/internal/**").permitAll()
 						.anyRequest().authenticated())
 				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+				.addFilterBefore(internalApiKeyFilter, JwtFilter.class)
 				.build();
 	}
 
