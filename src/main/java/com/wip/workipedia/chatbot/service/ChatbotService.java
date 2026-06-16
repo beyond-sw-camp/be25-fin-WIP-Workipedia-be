@@ -35,6 +35,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ChatbotService {
 
+    // AI가 답을 찾지 못해 빈 답변을 반환했을 때 사용자에게 보여줄 안내 메시지
+    private static final String NO_ANSWER_MESSAGE =
+            "워키 게시판·매뉴얼에서 답을 찾지 못했습니다. 질문을 등록하시겠습니까?";
+
     private final ChatbotSessionRepository sessionRepository;
     private final ChatbotMessageRepository messageRepository;
     private final ChatbotAiClient chatbotAiClient;
@@ -107,14 +111,20 @@ public class ChatbotService {
 
     // 3단계 트랜잭션: AI 응답을 ASSISTANT 메시지로 저장
     // answerable: CREATE_TICKET 액션이면 false (챗봇이 더 이상 답변하지 않고 티켓 등록 유도)
+    // AI가 빈 답변을 반환하면(매뉴얼·게시판에서 답을 찾지 못한 경우) 빈 메시지를 저장하지 않고
+    // 워키 질문 등록 유도 메시지로 대체한다. (빈 content 저장 시 다음 턴 컨텍스트로 전달되어 AI 422 유발)
     @Transactional
     public ChatbotMessageResponse saveAssistantMessage(Long sessionId, ChatbotAiResponse aiResponse) {
-        NextAction nextAction = parseNextAction(aiResponse.action());
-        boolean answerable = nextAction != NextAction.CREATE_TICKET;
+        String answer = aiResponse.answer();
+        boolean hasAnswer = answer != null && !answer.isBlank();
+
+        String content = hasAnswer ? answer : NO_ANSWER_MESSAGE;
+        NextAction nextAction = hasAnswer ? parseNextAction(aiResponse.action()) : NextAction.CREATE_WORKI;
+        boolean answerable = hasAnswer && nextAction != NextAction.CREATE_TICKET;
         String referencesJson = toJson(aiResponse.sources());
 
         ChatbotMessage assistant = messageRepository.save(
-                ChatbotMessage.ofAssistant(sessionId, aiResponse.answer(), answerable, nextAction, referencesJson)
+                ChatbotMessage.ofAssistant(sessionId, content, answerable, nextAction, referencesJson)
         );
         return ChatbotMessageResponse.from(assistant);
     }
@@ -133,13 +143,14 @@ public class ChatbotService {
 
     // 최근 메시지 최대 10개를 AI 컨텍스트로 변환
     // DB는 최신순으로 조회하므로 reverse 후 오래된 순으로 전달
-    // SYSTEM 메시지는 AI API가 422를 반환하므로 제외
+    // SYSTEM 메시지 및 빈/공백 content 메시지는 AI API가 422를 반환하므로 제외
     private List<SessionMessage> buildContext(Long sessionId) {
         List<ChatbotMessage> recent = new ArrayList<>(messageRepository
                 .findTop10BySessionIdAndIsDeletedOrderByCreatedAtDescMessageIdDesc(sessionId, "N"));
         Collections.reverse(recent); // 오래된 순으로 정렬
         return recent.stream()
                 .filter(m -> m.getSenderType() != SenderType.SYSTEM)
+                .filter(m -> m.getContent() != null && !m.getContent().isBlank())
                 .map(m -> new SessionMessage(m.getMessageId(), m.getSenderType().name(), m.getContent()))
                 .toList();
     }
