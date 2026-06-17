@@ -13,8 +13,8 @@
 - 고객사가 API를 제공하면 HTTP API Tool을 우선한다.
 - API가 없고 고객사 동의·네트워크·읽기 권한이 확보된 경우에만 DB Query Tool을 사용한다.
 - AI는 SQL을 생성하지 않는다.
-- 개발자가 SELECT 템플릿과 허용 파라미터·반환 컬럼을 검증한다.
-- SYSTEM_ADMIN은 API Tool을 관리하고 승인된 DB Query Tool의 활성 상태만 변경한다.
+- SYSTEM_ADMIN(지원팀·개발팀 권한을 함께 가진 운영자)이 SELECT 템플릿과 허용 파라미터·반환 컬럼을 검증하며 등록한다.
+- Tool은 등록 즉시 승인(APPROVED) 상태이며, SYSTEM_ADMIN은 이후 활성 상태만 별도로 변경한다.
 - DB 접속정보, SQL 원문, credential은 관리자와 AI에 노출하지 않는다.
 
 ## 실행 흐름
@@ -53,7 +53,7 @@ SYSTEM_ADMIN이 다음 항목을 등록·테스트·활성화한다.
 
 ### DB Query Tool
 
-개발자가 생성·검증하며 SYSTEM_ADMIN은 승인된 Tool의 활성 여부만 관리한다. SQL 원문, datasource 주소와 credential은 관리자 화면에 노출하지 않는다.
+SYSTEM_ADMIN이 SELECT 템플릿을 검증해서 직접 생성하며, 생성 즉시 승인 상태가 된다. SYSTEM_ADMIN은 이후 활성 여부만 별도로 관리한다. SQL 원문, datasource 주소와 credential은 관리자 화면에 노출하지 않는다.
 
 ## BE 책임
 

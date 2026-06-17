@@ -31,3 +31,15 @@ storage:
     access-key: test-access-key
     secret-key: test-secret-key
     account-id: test-account-id
+
+tool:
+  allowed-hosts: hr.example.com
+  db:
+    datasources:
+      workipediaReadonly:
+        url: jdbc:mariadb://localhost:${MARIADB_PORT:3306}/${MARIADB_TEST_DATABASE:workipedia_test}
+        username: ${MARIADB_USER:workipedia}
+        password: ${MARIADB_PASSWORD:workipedia}
+
+internal:
+  api-key: test-internal-api-key
