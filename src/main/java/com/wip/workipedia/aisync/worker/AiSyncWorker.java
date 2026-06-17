@@ -26,23 +26,23 @@ public class AiSyncWorker {
     // MANUAL (PDF 포함) — 파일 다운로드가 있어 느린 작업이므로 별도 주기로 처리
     @Scheduled(cron = "${ai-sync.worker.document-cron}")
     public void processDocuments() {
-        log.info("[AI 동기화] MANUAL 워커 시작");
+        log.info("[AI-SYNC] MANUAL worker started");
         aiSyncJobService.recoverExpiredLeases();
         List<AiSyncJob> jobs = aiSyncJobService.claimPendingDocumentJobs();
-        log.info("[AI 동기화] MANUAL 처리 대상: {}건", jobs.size());
+        log.info("[AI-SYNC] MANUAL jobs claimed: {}", jobs.size());
         processJobs(jobs);
-        log.info("[AI 동기화] MANUAL 워커 종료");
+        log.info("[AI-SYNC] MANUAL worker finished");
     }
 
     // 텍스트 계열 (WORKI, KNOWLEDGE_DATA, MANUAL_KNOWLEDGE, DEPT_RR)
     @Scheduled(cron = "${ai-sync.worker.text-cron}")
     public void processText() {
-        log.info("[AI 동기화] 텍스트 워커 시작");
+        log.info("[AI-SYNC] text worker started");
         aiSyncJobService.recoverExpiredLeases();
         List<AiSyncJob> jobs = aiSyncJobService.claimPendingTextJobs();
-        log.info("[AI 동기화] 텍스트 처리 대상: {}건", jobs.size());
+        log.info("[AI-SYNC] text jobs claimed: {}", jobs.size());
         processJobs(jobs);
-        log.info("[AI 동기화] 텍스트 워커 종료");
+        log.info("[AI-SYNC] text worker finished");
     }
 
     private void processJobs(List<AiSyncJob> jobs) {
@@ -50,7 +50,7 @@ public class AiSyncWorker {
             long jobId = job.getAiSyncJobId();
             try {
                 if (aiSyncJobService.isSkippable(job)) {
-                    log.info("최신 job 존재로 스킵: jobId={}, sourceType={}, sourceId={}",
+                    log.info("[AI-SYNC] skipped (newer job exists): jobId={}, sourceType={}, sourceId={}",
                         jobId, job.getSourceType(), job.getSourceId());
                     aiSyncJobService.markSynced(jobId);
                     continue;

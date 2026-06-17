@@ -32,7 +32,7 @@ public class AiSyncJobService {
     public void recoverExpiredLeases() {
         List<AiSyncJob> expired = aiSyncJobRepository.findLeaseExpiredJobs(LocalDateTime.now());
         expired.forEach(job -> {
-            log.warn("lease 만료 작업 복구: jobId={}", job.getAiSyncJobId());
+            log.warn("[AI-SYNC] recovering expired lease: jobId={}", job.getAiSyncJobId());
             job.resetToRetry();
         });
     }
@@ -65,7 +65,7 @@ public class AiSyncJobService {
     public void markSynced(Long jobId) {
         aiSyncJobRepository.findById(jobId).ifPresent(job -> {
             job.markSynced();
-            log.info("AI 동기화 완료: jobId={}, sourceType={}, sourceId={}",
+            log.info("[AI-SYNC] synced: jobId={}, sourceType={}, sourceId={}",
                 jobId, job.getSourceType(), job.getSourceId());
         });
     }
@@ -75,10 +75,10 @@ public class AiSyncJobService {
         aiSyncJobRepository.findById(jobId).ifPresent(job -> {
             job.markFailed(error);
             if (job.isRetryable()) {
-                log.warn("AI 동기화 실패 (재시도 {}회차): jobId={}, error={}",
+                log.warn("[AI-SYNC] failed (retry {}): jobId={}, error={}",
                     job.getRetryCount(), jobId, error);
             } else {
-                log.error("AI 동기화 최대 재시도 초과: jobId={}, sourceType={}, sourceId={}",
+                log.error("[AI-SYNC] max retries exceeded: jobId={}, sourceType={}, sourceId={}",
                     jobId, job.getSourceType(), job.getSourceId());
             }
         });
