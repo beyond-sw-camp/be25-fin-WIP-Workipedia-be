@@ -48,6 +48,13 @@ ai:
   timeout:
     routing-ms: ${AI_TIMEOUT_ROUTING_MS:5000}
     chatbot-ms: ${AI_TIMEOUT_CHATBOT_MS:30000}
+    sync-ms: ${AI_TIMEOUT_SYNC_MS:30000}
+
+ai-sync:
+  worker:
+    fixed-delay-ms: ${AI_SYNC_WORKER_DELAY_MS:300000}
+    batch-size: ${AI_SYNC_WORKER_BATCH_SIZE:5}
+    lease-minutes: ${AI_SYNC_WORKER_LEASE_MINUTES:10}
 
 internal:
   api-key: ${INTERNAL_API_KEY}

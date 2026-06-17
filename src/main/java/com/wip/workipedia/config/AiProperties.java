@@ -7,5 +7,5 @@ public record AiProperties(
 	String baseUrl,
 	Timeout timeout
 ) {
-	public record Timeout(long routingMs, long chatbotMs) {}
+	public record Timeout(long routingMs, long chatbotMs, long syncMs) {}
 }
