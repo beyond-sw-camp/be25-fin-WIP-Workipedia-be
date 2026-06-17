@@ -2,6 +2,9 @@ package com.wip.workipedia.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.SchedulingConfigurer;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 
 /**
  * @Scheduled 활성화. 워키 조회수 일괄 반영처럼 주기적으로 도는 가벼운 작업에 사용한다.
@@ -9,5 +12,14 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  */
 @Configuration
 @EnableScheduling
-public class SchedulingConfig {
+public class SchedulingConfig implements SchedulingConfigurer {
+
+    @Override
+    public void configureTasks(ScheduledTaskRegistrar registrar) {
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(4);
+        scheduler.setThreadNamePrefix("scheduler-");
+        scheduler.initialize();
+        registrar.setTaskScheduler(scheduler);
+    }
 }

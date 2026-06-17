@@ -37,12 +37,17 @@ public class AiSyncJobService {
         });
     }
 
-    // PENDING 작업을 PROCESSING으로 전이해 반환
     @Transactional
-    public List<AiSyncJob> claimPendingJobs() {
-        List<AiSyncJob> jobs = aiSyncJobRepository.claimPendingJobs(
-            LocalDateTime.now(), aiSyncProperties.batchSize()
-        );
+    public List<AiSyncJob> claimPendingDocumentJobs() {
+        return claim(aiSyncJobRepository.claimPendingDocumentJobs(LocalDateTime.now(), aiSyncProperties.batchSize()));
+    }
+
+    @Transactional
+    public List<AiSyncJob> claimPendingTextJobs() {
+        return claim(aiSyncJobRepository.claimPendingTextJobs(LocalDateTime.now(), aiSyncProperties.batchSize()));
+    }
+
+    private List<AiSyncJob> claim(List<AiSyncJob> jobs) {
         LocalDateTime leaseExpiresAt = LocalDateTime.now().plusMinutes(aiSyncProperties.leaseMinutes());
         jobs.forEach(job -> job.startProcessing(leaseExpiresAt));
         return jobs;

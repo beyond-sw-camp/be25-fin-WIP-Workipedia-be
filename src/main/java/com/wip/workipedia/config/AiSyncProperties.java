@@ -4,7 +4,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("ai-sync.worker")
 public record AiSyncProperties(
-    long fixedDelayMs,
+    String documentCron,
+    String textCron,
     int batchSize,
     int leaseMinutes
 ) {}

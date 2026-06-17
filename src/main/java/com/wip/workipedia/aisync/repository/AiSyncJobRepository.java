@@ -13,12 +13,13 @@ import java.util.List;
 
 public interface AiSyncJobRepository extends JpaRepository<AiSyncJob, Long> {
 
-    // SKIP LOCKED: 다른 워커 인스턴스가 처리 중인 행은 건너뜀
+    // MANUAL 전용 (PDF 포함) — document-delay-ms 주기로 처리
     @Modifying
     @Query(
         value = """
             SELECT * FROM ai_sync_jobs
             WHERE status = 'PENDING'
+              AND source_type = 'MANUAL'
               AND (next_retry_at IS NULL OR next_retry_at <= :now)
               AND deleted_at IS NULL
             ORDER BY created_at ASC
@@ -27,7 +28,27 @@ public interface AiSyncJobRepository extends JpaRepository<AiSyncJob, Long> {
             """,
         nativeQuery = true
     )
-    List<AiSyncJob> claimPendingJobs(
+    List<AiSyncJob> claimPendingDocumentJobs(
+        @Param("now") LocalDateTime now,
+        @Param("limit") int limit
+    );
+
+    // 텍스트 계열 (WORKI, KNOWLEDGE_DATA, MANUAL_KNOWLEDGE, DEPT_RR) — text-delay-ms 주기로 처리
+    @Modifying
+    @Query(
+        value = """
+            SELECT * FROM ai_sync_jobs
+            WHERE status = 'PENDING'
+              AND source_type IN ('WORKI', 'KNOWLEDGE_DATA', 'MANUAL_KNOWLEDGE', 'DEPT_RR')
+              AND (next_retry_at IS NULL OR next_retry_at <= :now)
+              AND deleted_at IS NULL
+            ORDER BY created_at ASC
+            LIMIT :limit
+            FOR UPDATE SKIP LOCKED
+            """,
+        nativeQuery = true
+    )
+    List<AiSyncJob> claimPendingTextJobs(
         @Param("now") LocalDateTime now,
         @Param("limit") int limit
     );
