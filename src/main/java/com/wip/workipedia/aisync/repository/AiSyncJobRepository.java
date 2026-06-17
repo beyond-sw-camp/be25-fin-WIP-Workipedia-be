@@ -2,7 +2,9 @@ package com.wip.workipedia.aisync.repository;
 
 import com.wip.workipedia.aisync.domain.AiSyncJob;
 import com.wip.workipedia.aisync.domain.AiSyncSourceType;
+import com.wip.workipedia.aisync.domain.AiSyncStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -12,6 +14,7 @@ import java.util.List;
 public interface AiSyncJobRepository extends JpaRepository<AiSyncJob, Long> {
 
     // SKIP LOCKED: 다른 워커 인스턴스가 처리 중인 행은 건너뜀
+    @Modifying
     @Query(
         value = """
             SELECT * FROM ai_sync_jobs
