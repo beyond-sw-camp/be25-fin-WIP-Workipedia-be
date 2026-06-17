@@ -108,7 +108,7 @@ AI 응답:
 
 ## R&R 지식 동기화
 
-R&R 저장 후 변경된 부서마다 AI 지식 동기화 API를 호출한다.
+R&R 저장 후 변경된 부서마다 `ai_sync_jobs` 작업을 생성한다. 저장 트랜잭션 안에서는 AI 서버를 직접 호출하지 않고, 커밋 이후 텍스트 계열 `@Scheduled` 워커가 AI 지식 동기화 API를 호출한다.
 
 `POST /api/v1/knowledge/sync`
 
@@ -124,9 +124,9 @@ R&R 저장 후 변경된 부서마다 AI 지식 동기화 API를 호출한다.
 ```
 
 - `DEPT_RR`은 `sourceId`와 `departmentId`가 같아야 한다.
-- 여러 부서가 변경되면 부서별로 한 번씩 호출한다.
-- 동기화 실패 시 해당 R&R 변경 요청을 실패 처리한다.
-- 부서 삭제 시 `DELETE /api/v1/knowledge/{departmentId}?sourceType=DEPT_RR`을 호출한다.
+- 여러 부서가 변경되면 부서별로 `DEPT_RR` `UPSERT` 작업을 만든다.
+- 동기화 실패 시 R&R 변경 자체를 롤백하지 않고 `ai_sync_jobs`에 실패 사유와 재시도 시각을 남긴다.
+- 부서 삭제 시 `DEPT_RR` `DELETE` 작업을 만들고 워커가 `DELETE /api/v1/knowledge/{departmentId}?sourceType=DEPT_RR`을 호출한다.
 
 텍스트를 직접 수정할 때는 다음 관리 API를 사용하며 저장 후 동일하게 동기화한다.
 
@@ -137,5 +137,5 @@ R&R 저장 후 변경된 부서마다 AI 지식 동기화 API를 호출한다.
 - 추가·수정·삭제 지시가 부서별 최종 R&R로 반영된다.
 - 존재하지 않는 부서 ID와 빈 R&R을 거부한다.
 - AI 오류 시 기존 R&R을 보존한다.
-- R&R 저장·삭제가 AI 지식 저장소에 반영된다.
+- R&R 저장·삭제와 `ai_sync_jobs` 생성이 하나의 트랜잭션으로 처리된다.
 - 변경 작업이 `admin_logs`에 기록된다.

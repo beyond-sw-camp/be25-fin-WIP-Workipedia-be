@@ -5,7 +5,7 @@
 > 정본 위치: `docs/adr/006-knowledge-conversion-strategy.md`
 > 관련 문서: `docs/reference/service-flow.md`, `docs/reference/prd.md`, `docs/api/api-contract.md`
 > 버전: v0.3
-> 최종 수정: 2026-06-12
+> 최종 수정: 2026-06-17
 
 ## Context
 
@@ -36,10 +36,10 @@
 
 - TEAM_ADMIN 승인 전 데이터가 RAG 근거로 노출되지 않는다.
 - RDB와 Qdrant 사이의 비동기 정합성 관리가 필요하다.
-- `ai_sync_jobs`와 라우팅/동기화 식별자는 후속 migration으로 추가해야 한다.
+- `ai_sync_jobs`는 V41 migration 기준으로 작업 상태와 재시도 이력을 관리한다.
 
 ## Open Questions
 
 - 문서 유형별 chunk 크기와 overlap
-- 실패 재시도 횟수와 dead-letter 처리
+- dead-letter 또는 관리자 수동 재처리 화면
 - 승인 지식 수정·삭제 시 Qdrant 보상 처리
