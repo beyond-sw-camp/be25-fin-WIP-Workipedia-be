@@ -82,11 +82,13 @@ public class AiSyncJob extends BaseTimeEntity {
         this.lastError = error;
         this.leaseExpiresAt = null;
         this.completedAt = LocalDateTime.now();
-        this.status = AiSyncStatus.FAILED;
         if (this.retryCount < MAX_RETRY) {
-            // 지수 백오프: retryCount² 분
+            // 재시도 가능: PENDING으로 복귀, nextRetryAt 백오프 설정
+            this.status = AiSyncStatus.PENDING;
             this.nextRetryAt = LocalDateTime.now().plusMinutes((long) retryCount * retryCount);
         } else {
+            // 최대 재시도 초과: 영구 FAILED
+            this.status = AiSyncStatus.FAILED;
             this.nextRetryAt = null;
         }
     }
