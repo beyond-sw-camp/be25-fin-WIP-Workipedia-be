@@ -4,8 +4,9 @@ import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.security.SecurityUtil;
 import com.wip.workipedia.department.ai.DepartmentRoutingPromptEditor;
-import com.wip.workipedia.department.ai.KnowledgeSyncAiClient;
-import com.wip.workipedia.department.ai.KnowledgeSyncRequest;
+import com.wip.workipedia.aisync.domain.AiSyncOperation;
+import com.wip.workipedia.aisync.domain.AiSyncSourceType;
+import com.wip.workipedia.aisync.service.AiSyncJobService;
 import com.wip.workipedia.department.ai.RoutingPromptEditResult;
 import com.wip.workipedia.department.ai.RoutingPromptEditTarget;
 import com.wip.workipedia.department.domain.Department;
@@ -38,7 +39,7 @@ public class DepartmentService {
 	private final DepartmentRepository departmentRepository;
 	private final RoutingPromptRepository routingPromptRepository;
 	private final DepartmentRoutingPromptEditor departmentRoutingPromptEditor;
-	private final KnowledgeSyncAiClient knowledgeSyncAiClient;
+	private final AiSyncJobService aiSyncJobService;
 	private final UserRepository userRepository;
 
 	@Transactional(readOnly = true)
@@ -113,9 +114,7 @@ public class DepartmentService {
 				return;
 			}
 			upsertRoutingPrompt(dept, editResult.routingPrompt());
-			knowledgeSyncAiClient.sync(
-				KnowledgeSyncRequest.ofDeptRr(dept.getDepartmentId(), dept.getDepartmentName(), editResult.routingPrompt())
-			);
+			aiSyncJobService.enqueue(AiSyncSourceType.DEPT_RR, dept.getDepartmentId(), AiSyncOperation.UPSERT);
 		});
 
 		return findAllForAdmin();
@@ -125,9 +124,7 @@ public class DepartmentService {
 	public AdminDepartmentResponse updateRoutingPromptDirect(Long departmentId, String routingPrompt) {
 		Department department = getDepartment(departmentId);
 		upsertRoutingPrompt(department, routingPrompt);
-		knowledgeSyncAiClient.sync(
-			KnowledgeSyncRequest.ofDeptRr(departmentId, department.getDepartmentName(), routingPrompt)
-		);
+		aiSyncJobService.enqueue(AiSyncSourceType.DEPT_RR, departmentId, AiSyncOperation.UPSERT);
 		long memberCount = userRepository.countByDepartment_DepartmentIdAndDeletedAtIsNullAndStatus(
 			departmentId, UserStatus.ACTIVE);
 		return AdminDepartmentResponse.from(department, routingPrompt, memberCount);
@@ -145,7 +142,7 @@ public class DepartmentService {
 		department.markDeleted();
 		routingPromptRepository.findByDepartment_DepartmentIdAndDeletedAtIsNull(departmentId)
 			.ifPresent(routingPrompt -> routingPrompt.markDeleted(actorUserId));
-		knowledgeSyncAiClient.delete(departmentId, "DEPT_RR");
+		aiSyncJobService.enqueue(AiSyncSourceType.DEPT_RR, departmentId, AiSyncOperation.DELETE);
 	}
 
 	private Map<Long, DepartmentRoutingPrompt> findRoutingPromptMap(List<Department> departments) {
