@@ -28,6 +28,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
@@ -45,6 +46,7 @@ public class AdminManualService {
     private static final String MANUAL_PDF_KEY_PREFIX = "manuals";
     private static final String PDF_CONTENT_TYPE = "application/pdf";
     private static final String INITIAL_VERSION = "1.0";
+    private static final String ACTIVE_TITLE_UNIQUE_CONSTRAINT = "uk_manuals_active_title";
 
     private final ManualRepository manualRepository;
     private final ManualFileRepository manualFileRepository;
@@ -217,7 +219,7 @@ public class AdminManualService {
         try {
             return manualRepository.saveAndFlush(manual);
         } catch (DataIntegrityViolationException exception) {
-            throw new CustomException(ErrorType.CONFLICT, "Manual title already exists.");
+            throw convertManualConstraintException(exception);
         }
     }
 
@@ -225,8 +227,27 @@ public class AdminManualService {
         try {
             manualRepository.flush();
         } catch (DataIntegrityViolationException exception) {
-            throw new CustomException(ErrorType.CONFLICT, "Manual title already exists.");
+            throw convertManualConstraintException(exception);
         }
+    }
+
+    private RuntimeException convertManualConstraintException(DataIntegrityViolationException exception) {
+        if (isActiveTitleUniqueConstraintViolation(exception)) {
+            return new CustomException(ErrorType.CONFLICT, "Manual title already exists.");
+        }
+        return exception;
+    }
+
+    private boolean isActiveTitleUniqueConstraintViolation(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (current instanceof ConstraintViolationException constraintViolationException
+                    && ACTIVE_TITLE_UNIQUE_CONSTRAINT.equals(constraintViolationException.getConstraintName())) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private void assertSystemAdmin(Long actorUserId) {
