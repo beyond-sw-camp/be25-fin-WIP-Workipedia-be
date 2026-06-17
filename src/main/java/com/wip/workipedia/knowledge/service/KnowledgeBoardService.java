@@ -15,19 +15,17 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class KnowledgeBoardService {
 
-	private static final String NOT_DELETED = "N";
-
 	private final KnowledgeDataRepository knowledgeDataRepository;
 
 	public PageResponse<KnowledgeBoardResponse> findAll(Pageable pageable) {
 		return PageResponse.from(
-			knowledgeDataRepository.findByDeletedAtIsNullAndIsDeleted(NOT_DELETED, pageable)
+			knowledgeDataRepository.findBoard(pageable)
 				.map(KnowledgeBoardResponse::from)
 		);
 	}
 
 	public KnowledgeBoardResponse findById(Long knowledgeDataId) {
-		return knowledgeDataRepository.findByKnowledgeDataIdAndDeletedAtIsNullAndIsDeleted(knowledgeDataId, NOT_DELETED)
+		return knowledgeDataRepository.findBoardById(knowledgeDataId)
 			.map(KnowledgeBoardResponse::from)
 			.orElseThrow(() -> new CustomException(ErrorType.KNOWLEDGE_DATA_NOT_FOUND));
 	}
