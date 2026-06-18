@@ -23,8 +23,10 @@ import com.wip.workipedia.storage.service.StorageService;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.domain.UserRole;
 import com.wip.workipedia.user.repository.UserRepository;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -72,7 +74,7 @@ class AdminManualServiceTest {
 		when(userRepository.findById(1L)).thenReturn(Optional.of(systemAdmin()));
 		when(manualRepository.existsByTitleAndDeletedAtIsNull("manual")).thenReturn(false);
 		when(manualRepository.saveAndFlush(any(Manual.class)))
-			.thenThrow(new DataIntegrityViolationException("duplicate active manual title"));
+			.thenThrow(activeTitleViolation());
 
 		assertThatThrownBy(() -> service.create(
 			1L,
@@ -94,7 +96,7 @@ class AdminManualServiceTest {
 		when(manualPdfValidator.validateAndRead(file)).thenReturn(pdfBytes);
 		when(pdfTextExtractor.extract(file, pdfBytes)).thenReturn("content");
 		when(manualRepository.saveAndFlush(any(Manual.class)))
-			.thenThrow(new DataIntegrityViolationException("duplicate active manual title"));
+			.thenThrow(activeTitleViolation());
 
 		assertThatThrownBy(() -> service.createFromPdf(
 			1L,
@@ -127,9 +129,9 @@ class AdminManualServiceTest {
 		when(manualVersionRepository.findTopByManualManualIdAndDeletedAtIsNullOrderByManualVersionIdDesc(100L))
 			.thenReturn(Optional.empty());
 		when(manualFileRepository.countByManualManualIdAndDeletedAtIsNull(100L)).thenReturn(0L);
-		org.mockito.Mockito.doThrow(new DataIntegrityViolationException("duplicate active manual title"))
-			.when(manualRepository)
-			.flush();
+			org.mockito.Mockito.doThrow(activeTitleViolation())
+				.when(manualRepository)
+				.flush();
 
 		assertThatThrownBy(() -> service.updateFromPdf(
 			1L,
@@ -161,6 +163,17 @@ class AdminManualServiceTest {
 			storageService,
 			Runnable::run,
 			aiSyncJobService
+		);
+	}
+
+	private DataIntegrityViolationException activeTitleViolation() {
+		return new DataIntegrityViolationException(
+			"duplicate active manual title",
+			new ConstraintViolationException(
+				"duplicate active manual title",
+				new SQLException("duplicate active manual title"),
+				"uk_manuals_active_title"
+			)
 		);
 	}
 
