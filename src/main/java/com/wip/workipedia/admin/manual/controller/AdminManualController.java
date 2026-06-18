@@ -8,6 +8,7 @@ import com.wip.workipedia.common.response.PageResponse;
 import com.wip.workipedia.manual.domain.ManualStatus;
 import com.wip.workipedia.manual.dto.ManualDetailResponse;
 import com.wip.workipedia.manual.dto.ManualSummaryResponse;
+import com.wip.workipedia.manual.dto.ManualVersionResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -58,11 +59,22 @@ public class AdminManualController {
             @AuthenticationPrincipal Long actorUserId,
             @RequestParam(required = false) Long departmentId,
             @RequestParam @NotBlank @Size(max = 255) String title,
+            @RequestParam(required = false) @Size(max = 1000) String description,
             @RequestParam(required = false) ManualStatus status,
             @RequestParam(required = false) @Size(max = 500) String sourceUrl,
-            @RequestParam("file") List<MultipartFile> files) {
+            @RequestParam(name = "file", required = false) List<MultipartFile> files,
+            @RequestParam(name = "files", required = false) List<MultipartFile> filesAlias,
+            @RequestParam(name = "file[]", required = false) List<MultipartFile> fileArrayAlias) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(adminManualService.createFromPdf(actorUserId, departmentId, title, status, sourceUrl, files));
+                .body(adminManualService.createFromPdf(
+                        actorUserId,
+                        departmentId,
+                        title,
+                        description,
+                        status,
+                        sourceUrl,
+                        resolveManualFiles(files, filesAlias, fileArrayAlias)
+                ));
     }
 
     @GetMapping("/{manualId}")
@@ -70,6 +82,13 @@ public class AdminManualController {
             @AuthenticationPrincipal Long actorUserId,
             @PathVariable Long manualId) {
         return ResponseEntity.ok(adminManualService.findById(actorUserId, manualId));
+    }
+
+    @GetMapping("/{manualId}/versions")
+    public ResponseEntity<List<ManualVersionResponse>> versions(
+            @AuthenticationPrincipal Long actorUserId,
+            @PathVariable Long manualId) {
+        return ResponseEntity.ok(adminManualService.findVersions(actorUserId, manualId));
     }
 
     @PatchMapping("/{manualId}")
@@ -86,11 +105,23 @@ public class AdminManualController {
             @PathVariable Long manualId,
             @RequestParam(required = false) Long departmentId,
             @RequestParam(required = false) @Size(max = 255) String title,
+            @RequestParam(required = false) @Size(max = 1000) String description,
             @RequestParam(required = false) ManualStatus status,
             @RequestParam(required = false) @Size(max = 500) String sourceUrl,
-            @RequestParam("file") List<MultipartFile> files) {
+            @RequestParam(name = "file", required = false) List<MultipartFile> files,
+            @RequestParam(name = "files", required = false) List<MultipartFile> filesAlias,
+            @RequestParam(name = "file[]", required = false) List<MultipartFile> fileArrayAlias) {
         return ResponseEntity.ok(
-                adminManualService.updateFromPdf(actorUserId, manualId, departmentId, title, status, sourceUrl, files)
+                adminManualService.updateFromPdf(
+                        actorUserId,
+                        manualId,
+                        departmentId,
+                        title,
+                        description,
+                        status,
+                        sourceUrl,
+                        resolveManualFiles(files, filesAlias, fileArrayAlias)
+                )
         );
     }
 
@@ -100,5 +131,22 @@ public class AdminManualController {
             @PathVariable Long manualId) {
         adminManualService.delete(actorUserId, manualId);
         return ResponseEntity.noContent().build();
+    }
+
+    private List<MultipartFile> resolveManualFiles(
+            List<MultipartFile> files,
+            List<MultipartFile> filesAlias,
+            List<MultipartFile> fileArrayAlias) {
+        List<MultipartFile> resolvedFiles = new java.util.ArrayList<>();
+        addFiles(resolvedFiles, files);
+        addFiles(resolvedFiles, filesAlias);
+        addFiles(resolvedFiles, fileArrayAlias);
+        return resolvedFiles;
+    }
+
+    private void addFiles(List<MultipartFile> target, List<MultipartFile> source) {
+        if (source != null) {
+            target.addAll(source);
+        }
     }
 }
