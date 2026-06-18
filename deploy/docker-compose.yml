@@ -42,7 +42,11 @@ services:
       retries: 10
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.18.8
+    # Nori 한국어 분석기 포함 커스텀 이미지. 배포 서버(Workipedia-infra)에도
+    # docker/elasticsearch/Dockerfile이 함께 배치되어야 빌드된다.
+    build:
+      context: ../docker/elasticsearch
+    image: workipedia-elasticsearch:8.18.8-nori
     restart: unless-stopped
     environment:
       discovery.type: single-node

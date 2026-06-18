@@ -27,10 +27,12 @@ public class WorkiQuestionDocument {
     private Long questionId;
 
     // Text: 형태소/토큰으로 쪼개서 "부분/유사 검색"이 가능한 타입.
-    @Field(type = FieldType.Text)
+    // analyzer = "nori": 한국어 형태소 분석기로 색인/검색해 "이름이" 같은 조사 결합어를
+    // "이름"으로도 검색되게 한다. (standard analyzer는 한글을 공백 단위로만 끊어 검색이 안 됨)
+    @Field(type = FieldType.Text, analyzer = "nori")
     private String title;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Text, analyzer = "nori")
     private String content;
 
     // Keyword: 쪼개지 않고 값 전체로 매칭(필터/정렬용).

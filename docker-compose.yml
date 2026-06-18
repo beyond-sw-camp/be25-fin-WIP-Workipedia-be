@@ -40,7 +40,10 @@ services:
       retries: 10
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.18.8
+    # Nori 한국어 분석기를 포함한 커스텀 이미지(docker/elasticsearch/Dockerfile)를 빌드해 사용한다.
+    build:
+      context: ./docker/elasticsearch
+    image: workipedia-elasticsearch:8.18.8-nori
     container_name: workipedia-elasticsearch
     restart: unless-stopped
     ports:
