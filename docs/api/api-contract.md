@@ -408,6 +408,7 @@ Authorization: Bearer <accessToken>
 | POST   | `/admin/manuals`                                | 매뉴얼 등록 (본문 직접 입력)             | SYSTEM_ADMIN |
 | POST   | `/admin/manuals/pdf`                            | 매뉴얼 등록 (PDF 업로드)              | SYSTEM_ADMIN |
 | GET    | `/admin/manuals/{manualId}`                     | 매뉴얼 상세 조회                     | SYSTEM_ADMIN |
+| GET    | `/admin/manuals/{manualId}/versions`            | 매뉴얼 버전 이력 및 본문 diff 조회       | SYSTEM_ADMIN |
 | PATCH  | `/admin/manuals/{manualId}`                     | 매뉴얼 수정 및 신규 버전 등록             | SYSTEM_ADMIN |
 | PATCH  | `/admin/manuals/{manualId}/pdf`                 | 매뉴얼 본문 PDF 교체                 | SYSTEM_ADMIN |
 | DELETE | `/admin/manuals/{manualId}`                     | 매뉴얼 삭제                        | SYSTEM_ADMIN |

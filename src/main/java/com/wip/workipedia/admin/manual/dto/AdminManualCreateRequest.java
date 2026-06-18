@@ -12,6 +12,7 @@ public record AdminManualCreateRequest(
         String title,
         @NotBlank
         String content,
+        String description,
         @NotNull
         ManualStatus status,
         @Size(max = 500)

@@ -32,6 +32,9 @@ public class Manual extends BaseTimeEntity {
     @Column(name = "title", nullable = false, length = 255)
     private String title;
 
+    @Column(name = "description", length = 1000)
+    private String description;
+
     @Lob
     @Column(name = "content", nullable = false, columnDefinition = "LONGTEXT")
     private String content;
@@ -55,10 +58,11 @@ public class Manual extends BaseTimeEntity {
     @Column(name = "created_by")
     private Long createdBy;
 
-    private Manual(Long departmentId, String title, String content, ManualStatus status,
+    private Manual(Long departmentId, String title, String description, String content, ManualStatus status,
             String sourceUrl, String version, Long createdBy) {
         this.departmentId = departmentId;
         this.title = title;
+        this.description = description;
         this.content = content;
         this.status = status == null ? ManualStatus.PUBLISHED : status;
         this.sourceUrl = sourceUrl;
@@ -69,16 +73,29 @@ public class Manual extends BaseTimeEntity {
 
     public static Manual create(Long departmentId, String title, String content, ManualStatus status,
             String sourceUrl, String version, Long createdBy) {
-        return new Manual(departmentId, title, content, status, sourceUrl, version, createdBy);
+        return create(departmentId, title, null, content, status, sourceUrl, version, createdBy);
+    }
+
+    public static Manual create(Long departmentId, String title, String description, String content, ManualStatus status,
+            String sourceUrl, String version, Long createdBy) {
+        return new Manual(departmentId, title, description, content, status, sourceUrl, version, createdBy);
     }
 
     public void update(Long departmentId, String title, String content, ManualStatus status,
+            String sourceUrl, String version) {
+        update(departmentId, title, null, content, status, sourceUrl, version);
+    }
+
+    public void update(Long departmentId, String title, String description, String content, ManualStatus status,
             String sourceUrl, String version) {
         if (departmentId != null) {
             this.departmentId = departmentId;
         }
         if (title != null) {
             this.title = title;
+        }
+        if (description != null) {
+            this.description = description;
         }
         if (content != null) {
             this.content = content;
@@ -103,6 +120,8 @@ public class Manual extends BaseTimeEntity {
 
     public void delete() {
         this.status = ManualStatus.DELETED;
+        this.fileKey = null;
+        this.fileUrl = null;
         markDeleted();
         touchModifiedSource(ModifiedSource.ADMIN);
     }

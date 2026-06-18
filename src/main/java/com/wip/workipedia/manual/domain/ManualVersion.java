@@ -45,8 +45,14 @@ public class ManualVersion {
     @Column(name = "title", length = 255)
     private String title;
 
+    @Column(name = "description", length = 1000)
+    private String description;
+
     @Column(name = "content", columnDefinition = "LONGTEXT")
     private String content;
+
+    @Column(name = "content_diff", columnDefinition = "LONGTEXT")
+    private String contentDiff;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 30)
@@ -67,20 +73,26 @@ public class ManualVersion {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    private ManualVersion(Manual manual, Long userId, String manualNum, String updateReason) {
+    private ManualVersion(Manual manual, Long userId, String manualNum, String updateReason, String contentDiff) {
         this.manual = manual;
         this.userId = userId;
         this.manualNum = manualNum;
         this.updateReason = updateReason;
         this.title = manual.getTitle();
+        this.description = manual.getDescription();
         this.content = manual.getContent();
+        this.contentDiff = contentDiff;
         this.status = manual.getStatus();
         this.sourceUrl = manual.getSourceUrl();
         this.version = manual.getVersion();
     }
 
     public static ManualVersion create(Manual manual, Long userId, String manualNum, String updateReason) {
-        return new ManualVersion(manual, userId, manualNum, updateReason);
+        return create(manual, userId, manualNum, updateReason, null);
+    }
+
+    public static ManualVersion create(Manual manual, Long userId, String manualNum, String updateReason, String contentDiff) {
+        return new ManualVersion(manual, userId, manualNum, updateReason, contentDiff);
     }
 
     @PrePersist

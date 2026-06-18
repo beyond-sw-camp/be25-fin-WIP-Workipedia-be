@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.knowledge.repository.KnowledgeDataRepository;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -27,9 +28,8 @@ class KnowledgeBoardServiceTest {
 	void findAll_returnsOnlyVisibleKnowledgeData() {
 		KnowledgeBoardService service = new KnowledgeBoardService(knowledgeDataRepository);
 		var pageable = PageRequest.of(0, 10);
-		var projection = projection(1L);
 		when(knowledgeDataRepository.findBoard(pageable))
-			.thenReturn(new PageImpl<>(List.of(projection), pageable, 1));
+			.thenReturn(new PageImpl<>(List.of(knowledgeBoard(1L)), pageable, 1));
 
 		var response = service.findAll(pageable);
 
@@ -41,9 +41,8 @@ class KnowledgeBoardServiceTest {
 	@Test
 	void findById_returnsVisibleKnowledgeData() {
 		KnowledgeBoardService service = new KnowledgeBoardService(knowledgeDataRepository);
-		var projection = projection(1L);
 		when(knowledgeDataRepository.findBoardById(1L))
-			.thenReturn(Optional.of(projection));
+			.thenReturn(Optional.of(knowledgeBoard(1L)));
 
 		var response = service.findById(1L);
 
@@ -63,14 +62,47 @@ class KnowledgeBoardServiceTest {
 			.isEqualTo(ErrorType.KNOWLEDGE_DATA_NOT_FOUND);
 	}
 
-	private KnowledgeDataRepository.KnowledgeBoardProjection projection(Long knowledgeDataId) {
-		KnowledgeDataRepository.KnowledgeBoardProjection projection =
-			mock(KnowledgeDataRepository.KnowledgeBoardProjection.class);
-		when(projection.getKnowledgeDataId()).thenReturn(knowledgeDataId);
-		when(projection.getDepartmentId()).thenReturn(10L);
-		when(projection.getDepartmentName()).thenReturn("부서");
-		when(projection.getQuestion()).thenReturn("question");
-		when(projection.getAnswer()).thenReturn("answer");
-		return projection;
+	private KnowledgeDataRepository.KnowledgeBoardProjection knowledgeBoard(Long knowledgeDataId) {
+		return new KnowledgeDataRepository.KnowledgeBoardProjection() {
+			@Override
+			public Long getKnowledgeDataId() {
+				return knowledgeDataId;
+			}
+
+			@Override
+			public Long getDepartmentId() {
+				return 10L;
+			}
+
+			@Override
+			public String getDepartmentName() {
+				return "department";
+			}
+
+			@Override
+			public String getQuestion() {
+				return "question";
+			}
+
+			@Override
+			public String getAnswer() {
+				return "answer";
+			}
+
+			@Override
+			public LocalDateTime getApprovedAt() {
+				return LocalDateTime.now();
+			}
+
+			@Override
+			public LocalDateTime getCreatedAt() {
+				return LocalDateTime.now();
+			}
+
+			@Override
+			public LocalDateTime getUpdatedAt() {
+				return LocalDateTime.now();
+			}
+		};
 	}
 }

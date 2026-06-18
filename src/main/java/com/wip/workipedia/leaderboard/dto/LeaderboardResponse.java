@@ -1,7 +1,9 @@
 package com.wip.workipedia.leaderboard.dto;
 
-import com.wip.workipedia.leaderboard.repository.LeaderboardRankerProjection;
+import com.wip.workipedia.leaderboard.domain.EsgMetricWeekly;
 import com.wip.workipedia.leaderboard.repository.LeaderboardMySummaryProjection;
+import com.wip.workipedia.leaderboard.repository.LeaderboardRankerProjection;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -12,12 +14,12 @@ public record LeaderboardResponse(
     LocalDateTime calculatedAt,
     List<LeaderboardRankerResponse> topRankers,
     LeaderboardMySummaryResponse mySummary,
-    long totalEsgScore
+    long totalEsgScore,
+    EnvironmentImpactResponse environmentImpact
 ) {
 
-    // 스냅샷이 아직 생성되지 않은 초기 상태에서는 화면이 빈 값과 0점을 표시하도록 응답한다.
     public static LeaderboardResponse empty() {
-        return new LeaderboardResponse(null, null, List.of(), null, 0L);
+        return new LeaderboardResponse(null, null, List.of(), null, 0L, EnvironmentImpactResponse.empty());
     }
 
     public static LeaderboardResponse from(
@@ -25,7 +27,8 @@ public record LeaderboardResponse(
         LocalDateTime calculatedAt,
         List<LeaderboardRankerProjection> rankers,
         Optional<LeaderboardMySummaryProjection> mySummary,
-        long totalEsgScore
+        long totalEsgScore,
+        Optional<EsgMetricWeekly> environmentImpact
     ) {
         return new LeaderboardResponse(
             rankingPeriodStart,
@@ -34,8 +37,30 @@ public record LeaderboardResponse(
                 .map(LeaderboardRankerResponse::from)
                 .toList(),
             mySummary.map(LeaderboardMySummaryResponse::from).orElse(null),
-            totalEsgScore
+            totalEsgScore,
+            environmentImpact
+                .map(EnvironmentImpactResponse::from)
+                .orElseGet(EnvironmentImpactResponse::empty)
         );
+    }
+
+    public record EnvironmentImpactResponse(
+        BigDecimal savedWorkHours,
+        BigDecimal electricitySavedKwh,
+        BigDecimal co2SavedKg
+    ) {
+
+        private static EnvironmentImpactResponse empty() {
+            return new EnvironmentImpactResponse(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
+        }
+
+        private static EnvironmentImpactResponse from(EsgMetricWeekly metric) {
+            return new EnvironmentImpactResponse(
+                metric.getSavedWorkHours(),
+                metric.getElectricitySavedKwh(),
+                metric.getCo2SavedKg()
+            );
+        }
     }
 
     public record LeaderboardRankerResponse(
