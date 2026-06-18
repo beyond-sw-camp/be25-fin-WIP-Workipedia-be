@@ -28,6 +28,7 @@ public class HttpTicketRoutingAiClient implements TicketRoutingAiClient {
 
 	@Override
 	public RoutingResult recommend(TicketRoutingPrompt prompt) {
+		log.info("[AI라우팅] 호출 시작 title={}, sourceChatbotMessageId={}", prompt.title(), prompt.sourceChatbotMessageId());
 		try {
 			AiRoutingResponse response = routingAiRestClient.post()
 				.uri("/api/v1/tickets/routing")
@@ -36,13 +37,18 @@ public class HttpTicketRoutingAiClient implements TicketRoutingAiClient {
 				.body(AiRoutingResponse.class);
 
 			if (response == null) {
-				log.error("AI 라우팅 응답이 null입니다.");
+				log.error("[AI라우팅] 응답이 null → 공통 큐로 폴백");
 				return fallback.recommend(prompt);
 			}
 
+			log.info("[AI라우팅] 응답 수신 decision={}, 부서id={}, 부서명={}, confidence={}, 후보수={}, reasons={}",
+				response.decision(), response.assignedDepartmentId(), response.assignedDepartmentName(),
+				response.confidenceScore(),
+				response.candidateDepartments() == null ? 0 : response.candidateDepartments().size(),
+				response.reasons());
 			return toRoutingResult(response);
 		} catch (Exception e) {
-			log.error("AI 라우팅 호출 실패: {}", e.getMessage());
+			log.error("[AI라우팅] 호출 실패 → 공통 큐로 폴백: {}", e.getMessage(), e);
 			return fallback.recommend(prompt);
 		}
 	}
