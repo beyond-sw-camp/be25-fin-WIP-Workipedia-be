@@ -23,7 +23,7 @@ CREATE TABLE direct_data (
         CHECK (is_active IN ('Y', 'N')),
     CONSTRAINT ck_direct_data_is_deleted
         CHECK (is_deleted IN ('Y', 'N'))
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 관리자 목록의 soft delete/활성 상태/category 필터 조회를 위한 복합 인덱스.
 CREATE INDEX idx_direct_data_deleted_active_category
