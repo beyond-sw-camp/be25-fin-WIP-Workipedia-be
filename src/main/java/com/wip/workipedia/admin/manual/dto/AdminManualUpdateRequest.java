@@ -8,6 +8,7 @@ public record AdminManualUpdateRequest(
         @Size(max = 255)
         String title,
         String content,
+        String description,
         ManualStatus status,
         @Size(max = 500)
         String sourceUrl,
