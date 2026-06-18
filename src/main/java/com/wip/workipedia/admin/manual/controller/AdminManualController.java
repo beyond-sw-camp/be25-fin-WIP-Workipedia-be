@@ -137,16 +137,19 @@ public class AdminManualController {
             List<MultipartFile> files,
             List<MultipartFile> filesAlias,
             List<MultipartFile> fileArrayAlias) {
-        List<MultipartFile> resolvedFiles = new java.util.ArrayList<>();
-        addFiles(resolvedFiles, files);
-        addFiles(resolvedFiles, filesAlias);
-        addFiles(resolvedFiles, fileArrayAlias);
-        return resolvedFiles;
+        if (hasFiles(files)) {
+            return files;
+        }
+        if (hasFiles(filesAlias)) {
+            return filesAlias;
+        }
+        if (hasFiles(fileArrayAlias)) {
+            return fileArrayAlias;
+        }
+        return List.of();
     }
 
-    private void addFiles(List<MultipartFile> target, List<MultipartFile> source) {
-        if (source != null) {
-            target.addAll(source);
-        }
+    private boolean hasFiles(List<MultipartFile> files) {
+        return files != null && !files.isEmpty();
     }
 }

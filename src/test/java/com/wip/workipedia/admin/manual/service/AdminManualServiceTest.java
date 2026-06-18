@@ -370,20 +370,13 @@ class AdminManualServiceTest {
 	}
 
 	@Test
-	void update_incrementsMinorVersionWhenManualContentChangesWithoutFileCountChange() {
+	void update_keepsVersionWhenManualContentChanges() {
 		AdminManualService service = service();
 		Manual manual = Manual.create(null, "old title", "old content", ManualStatus.PUBLISHED, null, "3.2", 1L);
 		ReflectionTestUtils.setField(manual, "manualId", 100L);
 		when(userRepository.findById(1L)).thenReturn(Optional.of(systemAdmin()));
 		when(manualRepository.findByManualIdAndDeletedAtIsNull(100L)).thenReturn(Optional.of(manual));
 		when(manualRepository.existsByTitleAndManualIdNotAndDeletedAtIsNull("manual", 100L)).thenReturn(false);
-		when(manualVersionRepository.findTopByManualManualIdAndDeletedAtIsNullOrderByManualVersionIdDesc(100L))
-			.thenReturn(Optional.empty());
-		when(manualFileRepository.countByManualManualIdAndDeletedAtIsNull(100L)).thenReturn(0L);
-		when(manualVersionRepository.existsByManualManualIdAndManualNumAndDeletedAtIsNull(100L, "3.3"))
-			.thenReturn(false);
-		when(manualVersionRepository.save(any(ManualVersion.class)))
-			.thenAnswer(invocation -> invocation.getArgument(0));
 
 		ManualDetailResponse response = service.update(
 			1L,
@@ -391,10 +384,9 @@ class AdminManualServiceTest {
 			new AdminManualUpdateRequest(null, "manual", "changed content", null, ManualStatus.PUBLISHED, null, "CONTENT_UPDATE")
 		);
 
-		assertThat(response.version()).isEqualTo("3.3");
-		ArgumentCaptor<ManualVersion> versionCaptor = ArgumentCaptor.forClass(ManualVersion.class);
-		verify(manualVersionRepository).save(versionCaptor.capture());
-		assertThat(versionCaptor.getValue().getManualNum()).isEqualTo("3.3");
+		assertThat(response.version()).isEqualTo("3.2");
+		assertThat(response.content()).isEqualTo("changed content");
+		verify(manualVersionRepository, never()).save(any());
 	}
 
 	private AdminManualService service() {

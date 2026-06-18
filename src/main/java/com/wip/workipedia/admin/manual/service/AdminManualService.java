@@ -169,7 +169,6 @@ public class AdminManualService {
 
         Manual manual = getManual(manualId);
         validateDuplicateTitleForUpdate(request.title(), manual.getManualId());
-        String manualNum = resolveNextVersion(manual, fileCount(manual));
         manual.update(
                 validateDepartmentId(request.departmentId()),
                 request.title(),
@@ -177,12 +176,10 @@ public class AdminManualService {
                 request.content(),
                 request.status(),
                 request.sourceUrl(),
-                manualNum
+                null
         );
         flushManualChanges();
-        ManualVersion version = saveVersion(manual, actorUserId, manualNum, request.updateReason());
         // 기존 매뉴얼 수정 알림은 사용자에게 공개되는 PUBLISHED 상태에서만 생성한다.
-        createManualUpdateNotificationsIfPublished(manual, version);
         return ManualDetailResponse.from(manual, findFileUrls(manual.getManualId()));
     }
 
