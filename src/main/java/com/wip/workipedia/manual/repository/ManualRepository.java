@@ -46,12 +46,14 @@ public interface ManualRepository extends JpaRepository<Manual, Long> {
                    m.title AS title,
                    m.department_id AS departmentId,
                    m.created_at AS createdAt,
-                   COUNT(mc.citation_id) AS citationCount
+                   COUNT(rc.citation_id) AS citationCount
             FROM manuals m
-            LEFT JOIN manual_citations mc
-              ON mc.manual_id = m.manual_id
-             AND mc.source_type = 'CHATBOT_MESSAGE'
-             AND mc.deleted_at IS NULL
+            LEFT JOIN rag_citations rc
+              ON rc.source_type = 'MANUAL'
+             AND rc.source_id = CAST(m.manual_id AS CHAR)
+             AND rc.cited_by_type = 'CHATBOT_MESSAGE'
+             AND rc.deleted_at IS NULL
+             AND rc.is_deleted = 'N'
             WHERE m.deleted_at IS NULL
               AND m.status = 'PUBLISHED'
             GROUP BY m.manual_id, m.title, m.department_id, m.created_at

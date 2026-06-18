@@ -24,6 +24,7 @@ import com.wip.workipedia.chatbot.repository.ChatbotSessionRepository;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.response.PageResponse;
+import com.wip.workipedia.ragcitation.service.RagCitationService;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -56,6 +57,7 @@ public class ChatbotService {
     private final FallbackChatbotAiClient fallbackChatbotAiClient;
     private final AdminAiPromptService adminAiPromptService;
     private final ObjectMapper objectMapper;
+    private final RagCitationService ragCitationService;
 
     // self-injection: @Transactional 서브메서드를 같은 빈 내에서 프록시로 호출하기 위해 필요
     // (직접 this.method()로 호출하면 트랜잭션이 적용되지 않음)
@@ -233,6 +235,7 @@ public class ChatbotService {
         ChatbotMessage assistant = messageRepository.save(
                 ChatbotMessage.ofAssistant(sessionId, content, answerable, nextAction, referencesJson)
         );
+        ragCitationService.replaceChatbotMessageCitations(assistant.getMessageId(), aiResponse.sources());
         return ChatbotMessageResponse.from(assistant);
     }
 
