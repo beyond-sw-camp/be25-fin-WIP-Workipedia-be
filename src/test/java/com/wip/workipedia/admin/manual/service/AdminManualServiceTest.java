@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.wip.workipedia.admin.manual.dto.AdminManualCreateRequest;
+import com.wip.workipedia.aisync.service.AiSyncJobService;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.department.domain.Department;
@@ -24,6 +25,7 @@ import com.wip.workipedia.user.domain.UserRole;
 import com.wip.workipedia.user.repository.UserRepository;
 import java.util.List;
 import java.util.Optional;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -62,13 +64,16 @@ class AdminManualServiceTest {
 	@Mock
 	private StorageService storageService;
 
+	@Mock
+	private AiSyncJobService aiSyncJobService;
+
 	@Test
 	void create_convertsActiveTitleUniqueViolationToConflict() {
 		AdminManualService service = service();
 		when(userRepository.findById(1L)).thenReturn(Optional.of(systemAdmin()));
 		when(manualRepository.existsByTitleAndDeletedAtIsNull("manual")).thenReturn(false);
 		when(manualRepository.saveAndFlush(any(Manual.class)))
-			.thenThrow(new DataIntegrityViolationException("duplicate active manual title"));
+			.thenThrow(activeTitleUniqueViolation());
 
 		assertThatThrownBy(() -> service.create(
 			1L,
@@ -90,7 +95,7 @@ class AdminManualServiceTest {
 		when(manualPdfValidator.validateAndRead(file)).thenReturn(pdfBytes);
 		when(pdfTextExtractor.extract(file, pdfBytes)).thenReturn("content");
 		when(manualRepository.saveAndFlush(any(Manual.class)))
-			.thenThrow(new DataIntegrityViolationException("duplicate active manual title"));
+			.thenThrow(activeTitleUniqueViolation());
 
 		assertThatThrownBy(() -> service.createFromPdf(
 			1L,
@@ -123,7 +128,7 @@ class AdminManualServiceTest {
 		when(manualVersionRepository.findTopByManualManualIdAndDeletedAtIsNullOrderByManualVersionIdDesc(100L))
 			.thenReturn(Optional.empty());
 		when(manualFileRepository.countByManualManualIdAndDeletedAtIsNull(100L)).thenReturn(0L);
-		org.mockito.Mockito.doThrow(new DataIntegrityViolationException("duplicate active manual title"))
+		org.mockito.Mockito.doThrow(activeTitleUniqueViolation())
 			.when(manualRepository)
 			.flush();
 
@@ -155,7 +160,19 @@ class AdminManualServiceTest {
 			manualPdfValidator,
 			pdfTextExtractor,
 			storageService,
-			Runnable::run
+			Runnable::run,
+			aiSyncJobService
+		);
+	}
+
+	private DataIntegrityViolationException activeTitleUniqueViolation() {
+		return new DataIntegrityViolationException(
+			"duplicate active manual title",
+			new ConstraintViolationException(
+				"duplicate active manual title",
+				null,
+				"uk_manuals_active_title"
+			)
 		);
 	}
 

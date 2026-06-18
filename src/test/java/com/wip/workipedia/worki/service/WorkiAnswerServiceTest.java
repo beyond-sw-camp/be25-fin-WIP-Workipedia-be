@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.wip.workipedia.aisync.service.AiSyncJobService;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.notification.service.NotificationService;
@@ -47,6 +48,9 @@ class WorkiAnswerServiceTest {
 
     @Mock
     private PointService pointService;
+
+    @Mock
+    private AiSyncJobService aiSyncJobService;
 
     @InjectMocks
     private WorkiAnswerService answerService;
