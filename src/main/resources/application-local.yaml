@@ -34,6 +34,11 @@ spring:
           starttls:
             enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:true}
 
+  servlet:
+    multipart:
+      max-file-size: ${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE:20MB}
+      max-request-size: ${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE:25MB}
+
 storage:
   provider: ${STORAGE_PROVIDER}
   bucket: ${STORAGE_BUCKET}
@@ -54,28 +59,36 @@ storage:
 ai:
   base-url: ${AI_BASE_URL:http://localhost:8000}
   timeout:
-    routing-ms: 5000
-    chatbot-ms: 30000
+    routing-ms: ${AI_TIMEOUT_ROUTING_MS:5000}
+    chatbot-ms: ${AI_TIMEOUT_CHATBOT_MS:30000}
+    sync-ms: ${AI_TIMEOUT_SYNC_MS:30000}
+
+ai-sync:
+  worker:
+    document-cron: ${AI_SYNC_WORKER_DOCUMENT_CRON:0 * * * * *}
+    text-cron: ${AI_SYNC_WORKER_TEXT_CRON:*/30 * * * * *}
+    batch-size: ${AI_SYNC_WORKER_BATCH_SIZE:5}
+    lease-minutes: ${AI_SYNC_WORKER_LEASE_MINUTES:10}
 
 app:
   jwt:
     # JWT_SECRET은 토큰 서명에 사용하는 민감값이므로 로컬 .env에 설정하고 Git에 커밋하지 않습니다.
     # 만료 시간을 변경해야 한다면 .env에서 JWT_ACCESS_TOKEN_EXPIRATION, JWT_REFRESH_TOKEN_EXPIRATION 값을 수정합니다.
     secret: ${JWT_SECRET}
-    # access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:30m}
     # Access Token 만료 시간은 로컬 테스트 편의를 위해 임시로 12시간으로 설정합니다.
     access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:12h}
     refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:14d}
 
+internal:
+  api-key: ${INTERNAL_API_KEY:local-dev-internal-key}
+
 tool:
   allowed-hosts: ${TOOL_ALLOWED_HOSTS:}
   db:
+    allowed-datasources: ${TOOL_DB_ALLOWED_DATASOURCES:}
     # 로컬은 별도 read-only DB를 따로 안 두고 기본 워키피디아 DB 접속정보(위 spring.datasource와 동일 계정)를 그대로 재사용한다.
     datasources:
       workipediaReadonly:
         url: ${TOOL_DB_READONLY_URL:jdbc:mariadb://localhost:3306/workipedia}
         username: ${TOOL_DB_READONLY_USERNAME:wip}
         password: ${TOOL_DB_READONLY_PASSWORD:}
-
-internal:
-  api-key: ${INTERNAL_API_KEY:local-dev-internal-key}

@@ -15,6 +15,9 @@ import com.wip.workipedia.user.repository.UserRepository;
 import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.List;
+import com.wip.workipedia.aisync.domain.AiSyncOperation;
+import com.wip.workipedia.aisync.domain.AiSyncSourceType;
+import com.wip.workipedia.aisync.service.AiSyncJobService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -29,6 +32,7 @@ public class AdminDirectDataService {
     private final DirectDataRepository directDataRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final AiSyncJobService aiSyncJobService;
 
     public PageResponse<AdminDirectDataResponse> findAll(Long actorUserId, Boolean isActive,
             String category, String keyword, Pageable pageable) {
@@ -58,6 +62,7 @@ public class AdminDirectDataService {
 
         DirectData savedDirectData = directDataRepository.save(directData);
         createDirectDataNotificationIfActive(savedDirectData);
+        aiSyncJobService.enqueue(AiSyncSourceType.MANUAL_KNOWLEDGE, savedDirectData.getDirectDataId(), AiSyncOperation.UPSERT);
         return toResponse(savedDirectData);
     }
 
@@ -76,7 +81,7 @@ public class AdminDirectDataService {
                 actorUserId
         );
         createDirectDataNotificationIfActivated(wasActive, directData);
-
+        aiSyncJobService.enqueue(AiSyncSourceType.MANUAL_KNOWLEDGE, directDataId, AiSyncOperation.UPSERT);
         return toResponse(directData);
     }
 
@@ -88,6 +93,7 @@ public class AdminDirectDataService {
                 .orElseThrow(() -> deletedOrNotFound(directDataId));
 
         directData.delete(actorUserId);
+        aiSyncJobService.enqueue(AiSyncSourceType.MANUAL_KNOWLEDGE, directDataId, AiSyncOperation.DELETE);
     }
 
     private Specification<DirectData> searchSpec(Boolean isActive, String category, String keyword) {

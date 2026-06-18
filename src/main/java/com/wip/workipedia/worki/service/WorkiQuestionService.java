@@ -27,6 +27,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import com.wip.workipedia.aisync.domain.AiSyncOperation;
+import com.wip.workipedia.aisync.domain.AiSyncSourceType;
+import com.wip.workipedia.aisync.service.AiSyncJobService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -50,6 +53,7 @@ public class WorkiQuestionService {
     private final WorkiViewCountService viewCountService;
     private final ApplicationEventPublisher eventPublisher;
     private final PointService pointService;
+    private final AiSyncJobService aiSyncJobService;
 
     @Transactional
     public QuestionResponse create(Long actorUserId, QuestionCreateRequest request) {
@@ -61,6 +65,7 @@ public class WorkiQuestionService {
         // 롤백 되면 색인 요청 삭제. 안하게 됨. 커밋과 색인 요청이 동시에 일어남.
         eventPublisher.publishEvent(new WorkiQuestionChangedEvent(saved.getQuestionId()));
         earnQuestionCreatedPoint(actorUserId, saved.getQuestionId(), firstQuestion);
+        aiSyncJobService.enqueue(AiSyncSourceType.WORKI, saved.getQuestionId(), AiSyncOperation.UPSERT);
         return QuestionResponse.from(saved);
     }
 
@@ -131,6 +136,7 @@ public class WorkiQuestionService {
         question.updateContent(request.title(), request.content());
         // 커밋 후 검색 색인이 반영되도록 이벤트만 발행한다(실제 색인은 search가 구독 즉, search 서비스에서 처리).
         eventPublisher.publishEvent(new WorkiQuestionChangedEvent(question.getQuestionId()));
+        aiSyncJobService.enqueue(AiSyncSourceType.WORKI, question.getQuestionId(), AiSyncOperation.UPSERT);
         return QuestionResponse.from(question);
     }
 

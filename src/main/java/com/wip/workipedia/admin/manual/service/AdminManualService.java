@@ -2,6 +2,9 @@ package com.wip.workipedia.admin.manual.service;
 
 import com.wip.workipedia.admin.manual.dto.AdminManualCreateRequest;
 import com.wip.workipedia.admin.manual.dto.AdminManualUpdateRequest;
+import com.wip.workipedia.aisync.domain.AiSyncOperation;
+import com.wip.workipedia.aisync.domain.AiSyncSourceType;
+import com.wip.workipedia.aisync.service.AiSyncJobService;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.response.PageResponse;
@@ -58,6 +61,7 @@ public class AdminManualService {
     private final PdfTextExtractor pdfTextExtractor;
     private final StorageService storageService;
     private final Executor manualPdfUploadExecutor;
+    private final AiSyncJobService aiSyncJobService;
 
     public AdminManualService(
             ManualRepository manualRepository,
@@ -69,7 +73,8 @@ public class AdminManualService {
             ManualPdfValidator manualPdfValidator,
             PdfTextExtractor pdfTextExtractor,
             StorageService storageService,
-            @Qualifier("manualPdfUploadExecutor") Executor manualPdfUploadExecutor
+            @Qualifier("manualPdfUploadExecutor") Executor manualPdfUploadExecutor,
+            AiSyncJobService aiSyncJobService
     ) {
         this.manualRepository = manualRepository;
         this.manualFileRepository = manualFileRepository;
@@ -81,6 +86,7 @@ public class AdminManualService {
         this.pdfTextExtractor = pdfTextExtractor;
         this.storageService = storageService;
         this.manualPdfUploadExecutor = manualPdfUploadExecutor;
+        this.aiSyncJobService = aiSyncJobService;
     }
 
     public PageResponse<ManualSummaryResponse> findAll(Long actorUserId, ManualStatus status, Pageable pageable) {
@@ -121,6 +127,7 @@ public class AdminManualService {
         );
         Manual savedManual = saveManual(manual);
         saveVersion(savedManual, actorUserId, manualNum, "INITIAL_CREATE");
+        aiSyncJobService.enqueue(AiSyncSourceType.MANUAL, savedManual.getManualId(), AiSyncOperation.UPSERT);
         return ManualDetailResponse.from(savedManual);
     }
 
@@ -138,6 +145,7 @@ public class AdminManualService {
         List<StoredObject> storedObjects = uploadPdfFiles(uploads);
         attachFiles(savedManual, storedObjects);
         saveVersion(savedManual, actorUserId, manualNum, "INITIAL_PDF_UPLOAD");
+        aiSyncJobService.enqueue(AiSyncSourceType.MANUAL, savedManual.getManualId(), AiSyncOperation.UPSERT);
         return ManualDetailResponse.from(savedManual, toFileUrls(storedObjects));
     }
 
@@ -160,6 +168,7 @@ public class AdminManualService {
         ManualVersion version = saveVersion(manual, actorUserId, manualNum, request.updateReason());
         // 기존 매뉴얼 수정 알림은 사용자에게 공개되는 PUBLISHED 상태에서만 생성한다.
         createManualUpdateNotificationsIfPublished(manual, version);
+        aiSyncJobService.enqueue(AiSyncSourceType.MANUAL, manual.getManualId(), AiSyncOperation.UPSERT);
         return ManualDetailResponse.from(manual, findFileUrls(manual.getManualId()));
     }
 
@@ -182,6 +191,7 @@ public class AdminManualService {
         // PDF 교체도 기존 매뉴얼 수정으로 보고, 공개 상태인 경우에만 업데이트 알림을 보낸다.
         createManualUpdateNotificationsIfPublished(manual, version);
         previousFiles.forEach(previousFile -> deleteStoredFileAfterCommit(previousFile.getFileKey()));
+        aiSyncJobService.enqueue(AiSyncSourceType.MANUAL, manual.getManualId(), AiSyncOperation.UPSERT);
         return ManualDetailResponse.from(manual, toFileUrls(storedObjects));
     }
 
@@ -193,6 +203,7 @@ public class AdminManualService {
         manual.delete();
         files.forEach(ManualFile::delete);
         files.forEach(file -> deleteStoredFileAfterCommit(file.getFileKey()));
+        aiSyncJobService.enqueue(AiSyncSourceType.MANUAL, manualId, AiSyncOperation.DELETE);
     }
 
     private Manual getManual(Long manualId) {
