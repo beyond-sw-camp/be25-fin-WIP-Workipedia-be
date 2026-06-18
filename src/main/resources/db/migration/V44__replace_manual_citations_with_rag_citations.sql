@@ -1,5 +1,3 @@
-DROP INDEX idx_manual_citations_manual_chunk_id ON manual_citations;
-DROP INDEX idx_manual_citations_source ON manual_citations;
 DROP TABLE manual_citations;
 
 CREATE TABLE rag_citations (
