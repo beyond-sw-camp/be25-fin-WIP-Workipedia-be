@@ -188,7 +188,6 @@ public class AdminManualService {
         );
         flushManualChanges();
         // 기존 매뉴얼 수정 알림은 사용자에게 공개되는 PUBLISHED 상태에서만 생성한다.
-        createManualUpdateNotificationsIfPublished(manual, version);
         aiSyncJobService.enqueue(AiSyncSourceType.MANUAL, manual.getManualId(), AiSyncOperation.UPSERT);
         return ManualDetailResponse.from(manual, findFileUrls(manual.getManualId()));
     }
