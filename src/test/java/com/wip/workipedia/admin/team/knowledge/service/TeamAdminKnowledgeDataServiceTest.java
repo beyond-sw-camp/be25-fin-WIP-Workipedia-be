@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import com.wip.workipedia.admin.team.knowledge.dto.KnowledgeDataApprovalRequest;
 import com.wip.workipedia.admin.team.knowledge.dto.KnowledgeDataUpdateRequest;
+import com.wip.workipedia.aisync.service.AiSyncJobService;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.department.domain.Department;
@@ -53,6 +54,9 @@ class TeamAdminKnowledgeDataServiceTest {
 
 	@Mock
 	private PointService pointService;
+
+	@Mock
+	private AiSyncJobService aiSyncJobService;
 
 	@Test
 	void approve_createsKnowledgeDataFromCompletedTicketAnswer() {
@@ -189,7 +193,8 @@ class TeamAdminKnowledgeDataServiceTest {
 			ticketRepository,
 			ticketAnswerRepository,
 			userRepository,
-			pointService
+			pointService,
+			aiSyncJobService
 		);
 	}
 

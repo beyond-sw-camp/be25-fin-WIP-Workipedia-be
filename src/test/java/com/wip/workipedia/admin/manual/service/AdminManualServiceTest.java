@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.wip.workipedia.admin.manual.dto.AdminManualCreateRequest;
+import com.wip.workipedia.aisync.service.AiSyncJobService;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.department.domain.Department;
@@ -61,6 +62,9 @@ class AdminManualServiceTest {
 
 	@Mock
 	private StorageService storageService;
+
+	@Mock
+	private AiSyncJobService aiSyncJobService;
 
 	@Test
 	void create_convertsActiveTitleUniqueViolationToConflict() {
@@ -155,7 +159,8 @@ class AdminManualServiceTest {
 			manualPdfValidator,
 			pdfTextExtractor,
 			storageService,
-			Runnable::run
+			Runnable::run,
+			aiSyncJobService
 		);
 	}
 
