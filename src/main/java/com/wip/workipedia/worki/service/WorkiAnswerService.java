@@ -13,6 +13,9 @@ import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.repository.UserRepository;
 import com.wip.workipedia.worki.repository.WorkiAnswerRepository;
 import com.wip.workipedia.worki.repository.WorkiQuestionRepository;
+import com.wip.workipedia.aisync.domain.AiSyncOperation;
+import com.wip.workipedia.aisync.domain.AiSyncSourceType;
+import com.wip.workipedia.aisync.service.AiSyncJobService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +34,7 @@ public class WorkiAnswerService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final PointService pointService;
+    private final AiSyncJobService aiSyncJobService;
 
     public AnswerResponse createAnswer(Long actorUserId, Long questionId, AnswerCreateRequest request) {
         WorkiQuestion question = getQuestionOrThrow(questionId);
@@ -47,6 +51,7 @@ public class WorkiAnswerService {
                     question.getAuthorId(), question.getQuestionId(), question.getTitle());
         }
         User author = userRepository.findById(actorUserId).orElse(null);
+        aiSyncJobService.enqueue(AiSyncSourceType.WORKI, questionId, AiSyncOperation.UPSERT);
         return AnswerResponse.of(answer, author);
     }
 
@@ -72,6 +77,7 @@ public class WorkiAnswerService {
                     answer.getAuthorId(), answer.getAnswerId(), question.getQuestionId(), question.getTitle());
         }
         User author = userRepository.findById(answer.getAuthorId()).orElse(null);
+        aiSyncJobService.enqueue(AiSyncSourceType.WORKI, answer.getQuestionId(), AiSyncOperation.UPSERT);
         return AnswerResponse.of(answer, author);
     }
 

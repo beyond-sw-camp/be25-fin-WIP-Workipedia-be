@@ -13,7 +13,7 @@
 ```text
 SYSTEM_ADMIN 등록·수정
 → BE가 원문과 동기화 작업을 같은 트랜잭션으로 저장
-→ `@Scheduled` 워커가 PENDING 동기화 작업을 AI 서버에 전달
+→ 텍스트 계열 `@Scheduled` 워커가 PENDING 동기화 작업을 AI 서버에 전달
 → AI가 원문을 chunking/embedding하여 Qdrant upsert
 → SYNCED 또는 FAILED
 ```
@@ -25,7 +25,7 @@ SYSTEM_ADMIN 등록·수정
 - 수기 지식 CRUD와 SYSTEM_ADMIN 권한
 - 제목, 내용, 활성 상태, 수정자와 수정일 저장
 - `ai_sync_jobs`에 `PENDING`, `PROCESSING`, `SYNCED`, `FAILED` 상태와 실패 사유 저장
-- 동기화 재시도 API와 감사 로그
+- 실패 작업 자동 재시도와 감사 로그
 
 ## AI 책임
 
@@ -39,6 +39,13 @@ SYSTEM_ADMIN 등록·수정
 - 사용자에게 반환하는 최종 LLM 응답 마스킹은 AI 챗봇 서비스가 담당한다.
 - 원문과 비밀정보를 로그에 기록하지 않는다.
 
-## 구현 전 migration
+## 동기화 작업
 
-`manual_knowledge`와 공통 `ai_sync_jobs` 테이블이 필요하다. 현재 migration에는 아직 생성되지 않았다.
+수기 지식은 `MANUAL_KNOWLEDGE` sourceType을 사용한다.
+
+| 작업 | operation | AI 호출 |
+|---|---|---|
+| 등록·수정 | `UPSERT` | `POST /api/v1/documents/ingest-text` |
+| 삭제 | `DELETE` | `DELETE /api/v1/documents/{source_id}` |
+
+`ai_sync_jobs` 테이블은 V41 migration에서 생성된다. 워커는 실패 시 최대 5회 재시도하고, 같은 source의 더 최신 `SYNCED` 작업이 있으면 오래된 작업은 AI 호출 없이 완료 처리한다.
