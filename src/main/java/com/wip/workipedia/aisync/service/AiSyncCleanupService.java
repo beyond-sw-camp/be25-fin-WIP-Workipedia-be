@@ -23,7 +23,6 @@ public class AiSyncCleanupService {
     private final TextDocumentAiClient textDocumentAiClient;
     private final AiSyncProperties aiSyncProperties;
 
-    @Transactional
     public AiSyncCleanupResponse cleanupOldWorkiJobs() {
         LocalDateTime cutoff = LocalDateTime.now().minusDays(aiSyncProperties.retentionDays());
         List<AiSyncJob> targets = aiSyncJobRepository.findOldSyncedWorkiLatestJobs(
@@ -40,9 +39,7 @@ public class AiSyncCleanupService {
             }
             try {
                 textDocumentAiClient.delete(AiSyncSourceType.WORKI, job.getSourceId());
-                aiSyncJobRepository.softDeleteOldJobsBySourceId(
-                    AiSyncSourceType.WORKI, job.getSourceId(),
-                    job.getAiSyncJobId(), LocalDateTime.now());
+                softDeleteJobs(AiSyncSourceType.WORKI, job.getSourceId(), job.getAiSyncJobId());
                 deleted++;
             } catch (Exception e) {
                 log.warn("[AI-SYNC][CLEANUP] AI 삭제 실패, 스킵: sourceId={}, error={}",
@@ -52,5 +49,10 @@ public class AiSyncCleanupService {
         }
         log.info("[AI-SYNC][CLEANUP] 완료: deleted={}, skipped={}, failed={}", deleted, skipped, failed);
         return new AiSyncCleanupResponse(deleted, skipped, failed);
+    }
+
+    @Transactional
+    private void softDeleteJobs(AiSyncSourceType sourceType, Long sourceId, Long maxJobId) {
+        aiSyncJobRepository.softDeleteOldJobsBySourceId(sourceType, sourceId, maxJobId, LocalDateTime.now());
     }
 }
