@@ -46,11 +46,14 @@ public interface EsgMetricWeeklyRepository extends JpaRepository<EsgMetricWeekly
         BigDecimal dailyCapMinutes
     );
 
-    boolean existsByMetricWeekStartAndDeletedAtIsNull(LocalDate metricWeekStart);
+    boolean existsByMetricWeekStartAndDeletedAtIsNullAndIsDeleted(LocalDate metricWeekStart, String isDeleted);
 
-    Optional<EsgMetricWeekly> findByMetricWeekStartAndDeletedAtIsNull(LocalDate metricWeekStart);
+    Optional<EsgMetricWeekly> findByMetricWeekStartAndDeletedAtIsNullAndIsDeleted(
+        LocalDate metricWeekStart,
+        String isDeleted
+    );
 
-    Optional<EsgMetricWeekly> findTopByDeletedAtIsNullOrderByMetricWeekStartDesc();
+    Optional<EsgMetricWeekly> findTopByDeletedAtIsNullAndIsDeletedOrderByMetricWeekStartDesc(String isDeleted);
 
     @Query(
         value = """

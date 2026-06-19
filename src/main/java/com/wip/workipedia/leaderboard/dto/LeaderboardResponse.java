@@ -4,6 +4,7 @@ import com.wip.workipedia.leaderboard.domain.EsgMetricWeekly;
 import com.wip.workipedia.leaderboard.repository.LeaderboardMySummaryProjection;
 import com.wip.workipedia.leaderboard.repository.LeaderboardRankerProjection;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -47,19 +48,34 @@ public record LeaderboardResponse(
     public record EnvironmentImpactResponse(
         BigDecimal savedWorkHours,
         BigDecimal electricitySavedKwh,
-        BigDecimal co2SavedKg
+        BigDecimal co2SavedKg,
+        long smartphoneChargeEquivalentCount
     ) {
 
+        private static final BigDecimal SMARTPHONE_CHARGE_EMISSION_KG_CO2 = new BigDecimal("0.0124");
+
         private static EnvironmentImpactResponse empty() {
-            return new EnvironmentImpactResponse(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
+            return new EnvironmentImpactResponse(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, 0L);
         }
 
         private static EnvironmentImpactResponse from(EsgMetricWeekly metric) {
+            BigDecimal co2SavedKg = metric.getCo2SavedKg();
             return new EnvironmentImpactResponse(
                 metric.getSavedWorkHours(),
                 metric.getElectricitySavedKwh(),
-                metric.getCo2SavedKg()
+                co2SavedKg,
+                calculateSmartphoneChargeEquivalentCount(co2SavedKg)
             );
+        }
+
+        private static long calculateSmartphoneChargeEquivalentCount(BigDecimal co2SavedKg) {
+            if (co2SavedKg == null || co2SavedKg.compareTo(BigDecimal.ZERO) <= 0) {
+                return 0L;
+            }
+
+            return co2SavedKg
+                .divide(SMARTPHONE_CHARGE_EMISSION_KG_CO2, 0, RoundingMode.HALF_UP)
+                .longValue();
         }
     }
 
