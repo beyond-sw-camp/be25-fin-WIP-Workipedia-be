@@ -55,11 +55,12 @@ public class SecurityConfig {
 				.formLogin(AbstractHttpConfigurer::disable)
 				.httpBasic(AbstractHttpConfigurer::disable)
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.exceptionHandling(exception -> exception
-						.authenticationEntryPoint(authenticationEntryPoint)
-						.accessDeniedHandler(accessDeniedHandler))
-				.authorizeHttpRequests(auth -> auth
-						.requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
+					.exceptionHandling(exception -> exception
+							.authenticationEntryPoint(authenticationEntryPoint)
+							.accessDeniedHandler(accessDeniedHandler))
+					.authorizeHttpRequests(auth -> auth
+							.requestMatchers("/error").permitAll()
+							.requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/v1/departments").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/v1/auth/signup/code").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/v1/auth/signup/code/verify").permitAll()
@@ -73,7 +74,7 @@ public class SecurityConfig {
 						.requestMatchers("/ws/flash-chat/**").permitAll()
 						.requestMatchers("/ws/flash-chat-native/**").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/v1/search/**").permitAll()
-						.requestMatchers("/api/v1/admin/team/**").hasRole("TEAM_ADMIN")
+							.requestMatchers("/api/v1/admin/team/**").hasAnyRole("TEAM_ADMIN", "SYSTEM_ADMIN")
 						.requestMatchers("/api/v1/admin/**").hasRole("SYSTEM_ADMIN")
 						.requestMatchers("/api/v1/faq/**").permitAll()
 						.requestMatchers("/api/v1/internal/**").permitAll()
