@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class EsgMetricWeeklyService {
 
     private static final String SNAPSHOT_LOCK_PREFIX = "esg_metric_weekly:";
-    private static final String NOT_DELETED = "N";
     private static final BigDecimal MINUTES_PER_CITED_ANSWER = new BigDecimal("3");
     private static final BigDecimal DAILY_CAP_MINUTES_PER_USER = new BigDecimal("37.8");
     private static final BigDecimal DEVICE_POWER_KWH_PER_HOUR = new BigDecimal("0.08");
@@ -43,10 +42,7 @@ public class EsgMetricWeeklyService {
         }
 
         try {
-            if (esgMetricWeeklyRepository.existsByMetricWeekStartAndDeletedAtIsNullAndIsDeleted(
-                metricWeekStart,
-                NOT_DELETED
-            )) {
+            if (esgMetricWeeklyRepository.existsByMetricWeekStart(metricWeekStart)) {
                 return;
             }
 
@@ -58,10 +54,7 @@ public class EsgMetricWeeklyService {
 
     @Transactional
     public EsgMetricWeekly createWeeklyMetric(LocalDate metricWeekStart, LocalDateTime calculatedAt) {
-        if (esgMetricWeeklyRepository.existsByMetricWeekStartAndDeletedAtIsNullAndIsDeleted(
-            metricWeekStart,
-            NOT_DELETED
-        )) {
+        if (esgMetricWeeklyRepository.existsByMetricWeekStart(metricWeekStart)) {
             throw new IllegalStateException("ESG weekly metric already exists: " + metricWeekStart);
         }
 
@@ -126,7 +119,9 @@ public class EsgMetricWeeklyService {
                 "benchmarkReductionRate", 0.35,
                 "devicePowerKwhPerHour", DEVICE_POWER_KWH_PER_HOUR,
                 "electricityEmissionFactorKgCo2ePerKwh", ELECTRICITY_EMISSION_FACTOR_KG_CO2E_PER_KWH,
-                "emissionFactorUnit", "kgCO2e/kWh"
+                "emissionFactorUnit", "kgCO2e/kWh",
+                "smartphoneChargeEmissionKgCo2",
+                EsgEnvironmentImpactCalculator.smartphoneChargeEmissionKgCo2()
             ));
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Failed to serialize ESG metric calculation basis", e);
