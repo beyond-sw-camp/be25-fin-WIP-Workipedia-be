@@ -1,9 +1,11 @@
 package com.wip.workipedia.admin.aisync.controller;
 
+import com.wip.workipedia.admin.aisync.dto.AiSyncCleanupResponse;
 import com.wip.workipedia.admin.aisync.dto.AiSyncJobListRequest;
 import com.wip.workipedia.admin.aisync.dto.AiSyncJobResponse;
 import com.wip.workipedia.admin.aisync.dto.AiSyncJobStatsResponse;
 import com.wip.workipedia.admin.aisync.service.AdminAiSyncJobService;
+import com.wip.workipedia.aisync.service.AiSyncCleanupService;
 import com.wip.workipedia.common.response.PageResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ import java.util.Map;
 public class AdminAiSyncJobController {
 
     private final AdminAiSyncJobService adminAiSyncJobService;
+    private final AiSyncCleanupService aiSyncCleanupService;
 
     @GetMapping
     public ResponseEntity<PageResponse<AiSyncJobResponse>> getJobs(@Valid AiSyncJobListRequest req) {
@@ -41,5 +44,10 @@ public class AdminAiSyncJobController {
     public ResponseEntity<Map<String, Integer>> retryAllFailed() {
         int count = adminAiSyncJobService.retryAllFailed();
         return ResponseEntity.ok(Map.of("retried", count));
+    }
+
+    @PostMapping("/cleanup-worki")
+    public ResponseEntity<AiSyncCleanupResponse> cleanupOldWorki() {
+        return ResponseEntity.ok(aiSyncCleanupService.cleanupOldWorkiJobs());
     }
 }
