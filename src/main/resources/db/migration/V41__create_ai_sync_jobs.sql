@@ -14,7 +14,7 @@ CREATE TABLE ai_sync_jobs (
     updated_at        DATETIME     NOT NULL,
     deleted_at        DATETIME,
     modified_source   VARCHAR(30)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE INDEX idx_ai_sync_jobs_status_next_retry
     ON ai_sync_jobs (status, next_retry_at);

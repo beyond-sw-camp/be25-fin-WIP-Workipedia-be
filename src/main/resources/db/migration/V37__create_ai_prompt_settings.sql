@@ -5,7 +5,7 @@ CREATE TABLE ai_prompt_settings (
     created_at           DATETIME NOT NULL,
     updated_at           DATETIME NOT NULL,
     CONSTRAINT ck_ai_prompt_settings_is_active CHECK (is_active IN ('Y', 'N'))
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO ai_prompt_settings (custom_prompt, is_active, created_at, updated_at)
 VALUES (NULL, 'N', NOW(), NOW());

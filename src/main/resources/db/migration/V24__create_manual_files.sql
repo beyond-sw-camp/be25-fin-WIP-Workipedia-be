@@ -9,7 +9,7 @@ CREATE TABLE manual_files (
     deleted_at DATETIME NULL,
     PRIMARY KEY (manual_file_id),
     CONSTRAINT fk_manual_files_manual_id FOREIGN KEY (manual_id) REFERENCES manuals (manual_id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE INDEX idx_manual_files_manual_id_deleted_at_sort_order
     ON manual_files (manual_id, deleted_at, sort_order);
