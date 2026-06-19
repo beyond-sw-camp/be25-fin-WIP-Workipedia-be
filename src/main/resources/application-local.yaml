@@ -69,6 +69,8 @@ ai-sync:
     text-cron: ${AI_SYNC_WORKER_TEXT_CRON:0 0 * * * *}
     batch-size: ${AI_SYNC_WORKER_BATCH_SIZE:5}
     lease-minutes: ${AI_SYNC_WORKER_LEASE_MINUTES:10}
+    cleanup-cron: ${AI_SYNC_WORKER_CLEANUP_CRON:0 0 3 1 * *}
+    retention-days: ${AI_SYNC_WORKER_RETENTION_DAYS:365}
 
 app:
   jwt:

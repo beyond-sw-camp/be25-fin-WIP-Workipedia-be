@@ -15,6 +15,11 @@ spring:
     ansi:
       enabled: always
 
+ai-sync:
+  worker:
+    cleanup-cron: "0 0 3 1 * *"
+    retention-days: 365
+
 logging:
   level:
     '[org.springframework.web]': info
