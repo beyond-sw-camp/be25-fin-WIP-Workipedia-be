@@ -159,7 +159,8 @@ Authorization: Bearer <accessToken>
 | POST | `/api/v1/department/routing-prompt` | 부서 R&R 문장 생성 | `instruction`, 전체 부서 `targets` → 변경 대상 `results` |
 | POST | `/api/v1/knowledge/sync` | 부서 R&R·승인 사례 동기화 | `sourceId`, `sourceType`, 제목·내용·부서 메타데이터 → `syncedChunks` |
 | DELETE | `/api/v1/knowledge/{sourceId}?sourceType=...` | 라우팅 지식 삭제 | 없는 데이터도 성공하며 `deletedChunks: 0` 반환 |
-| POST | `/api/v1/documents/ingest` | 매뉴얼·워키·지식 파일 인덱싱 | multipart `source_id`, `source_type`, `title`, `file` → `indexed_chunks` |
+| POST | `/api/v1/documents/ingest` | 파일 매뉴얼 인덱싱 | multipart `source_id`, `source_type`, `title`, `files` → `source_id`, `indexed_chunks` |
+| POST | `/api/v1/documents/ingest-text` | 직접입력 매뉴얼·워키·승인 지식·수기 지식 텍스트 인덱싱 | JSON 본문 `sourceId`, `sourceType`, `title`, `content` → `source_id`, `indexed_chunks` |
 | DELETE | `/api/v1/documents/{sourceId}?source_type=...` | 문서 인덱스 삭제 | 문서의 Qdrant 청크 삭제 |
 
 `/api/v1/chat/stream` SSE 계약 (AI 서버 구현 완료):
