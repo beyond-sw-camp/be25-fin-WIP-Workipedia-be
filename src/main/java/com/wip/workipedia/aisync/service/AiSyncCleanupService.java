@@ -9,7 +9,6 @@ import com.wip.workipedia.config.AiSyncProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,7 +38,8 @@ public class AiSyncCleanupService {
             }
             try {
                 textDocumentAiClient.delete(AiSyncSourceType.WORKI, job.getSourceId());
-                softDeleteJobs(AiSyncSourceType.WORKI, job.getSourceId(), job.getAiSyncJobId());
+                aiSyncJobRepository.softDeleteOldJobsBySourceId(
+                    AiSyncSourceType.WORKI, job.getSourceId(), job.getAiSyncJobId(), LocalDateTime.now());
                 deleted++;
             } catch (Exception e) {
                 log.warn("[AI-SYNC][CLEANUP] AI 삭제 실패, 스킵: sourceId={}, error={}",
@@ -51,8 +51,4 @@ public class AiSyncCleanupService {
         return new AiSyncCleanupResponse(deleted, skipped, failed);
     }
 
-    @Transactional
-    private void softDeleteJobs(AiSyncSourceType sourceType, Long sourceId, Long maxJobId) {
-        aiSyncJobRepository.softDeleteOldJobsBySourceId(sourceType, sourceId, maxJobId, LocalDateTime.now());
-    }
 }
