@@ -3,6 +3,7 @@ package com.wip.workipedia.leaderboard.dto;
 import com.wip.workipedia.leaderboard.domain.EsgMetricWeekly;
 import com.wip.workipedia.leaderboard.repository.LeaderboardMySummaryProjection;
 import com.wip.workipedia.leaderboard.repository.LeaderboardRankerProjection;
+import com.wip.workipedia.leaderboard.service.EsgEnvironmentImpactCalculator;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -47,18 +48,21 @@ public record LeaderboardResponse(
     public record EnvironmentImpactResponse(
         BigDecimal savedWorkHours,
         BigDecimal electricitySavedKwh,
-        BigDecimal co2SavedKg
+        BigDecimal co2SavedKg,
+        long smartphoneChargeEquivalentCount
     ) {
 
         private static EnvironmentImpactResponse empty() {
-            return new EnvironmentImpactResponse(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
+            return new EnvironmentImpactResponse(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, 0L);
         }
 
         private static EnvironmentImpactResponse from(EsgMetricWeekly metric) {
+            BigDecimal co2SavedKg = metric.getCo2SavedKg();
             return new EnvironmentImpactResponse(
                 metric.getSavedWorkHours(),
                 metric.getElectricitySavedKwh(),
-                metric.getCo2SavedKg()
+                co2SavedKg,
+                EsgEnvironmentImpactCalculator.toSmartphoneChargeEquivalentCount(co2SavedKg)
             );
         }
     }

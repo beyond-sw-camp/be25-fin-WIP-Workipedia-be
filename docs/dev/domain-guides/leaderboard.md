@@ -4,7 +4,154 @@
 > 상태: Draft
 > 원본 위치: `docs/dev/domain-guides/leaderboard.md`
 > 관련 도메인: User Point, ESG Grade, User, Department, Worki Answer
-> 최종 수정: 2026-06-12
+> 최종 수정: 2026-06-19
+
+## ESG Environment Impact Metric
+
+리더보드 응답에는 사내 지식 공유 활동으로 인한 추정 환경 기여 지표를 함께 내려준다.
+
+이 지표는 실제 전력 계측값이 아니라, 챗봇 기반 지식 검색을 통해 절감된 것으로 추정되는 업무 시간을 전력 사용량 및 CO2 배출량으로 환산한 값이다. 따라서 화면 문구에서는 "실제 절감량"이 아니라 "추정 절감 효과" 또는 "환산 효과"로 표현한다.
+
+### Response Field
+
+`GET /api/v1/leaderboard` 응답의 `environmentImpact` 필드를 사용한다.
+
+```json
+{
+  "environmentImpact": {
+    "savedWorkHours": 104.20,
+    "electricitySavedKwh": 8.336,
+    "co2SavedKg": 3.985,
+    "smartphoneChargeEquivalentCount": 321
+  }
+}
+```
+
+필드 의미:
+
+- `savedWorkHours`: 추정 업무 절감 시간(h)
+- `electricitySavedKwh`: 추정 전기 절감량(kWh)
+- `co2SavedKg`: 추정 CO2 절감량(kgCO2e)
+- `smartphoneChargeEquivalentCount`: 추정 CO2 절감량을 스마트폰 충전 횟수로 환산한 값
+
+### Weekly Snapshot Policy
+
+`environmentImpact`는 실시간 계산값이 아니라 주간 스냅샷 값이다.
+
+- 스케줄러 실행 시점: 매주 월요일 00:00
+- 계산 대상 기간: 직전 주 월요일 00:00 이상, 이번 주 월요일 00:00 미만
+- 저장 테이블: `esg_metrics_weekly`
+- 화면 조회 방식: 최신 `esg_metrics_weekly` 스냅샷을 리더보드 응답에 포함
+
+### Saved Work Time Formula
+
+특정 주 W의 전체 추정 업무 절감 시간은 아래 수식으로 계산한다.
+
+```text
+특정 주 W의 전체 추정 업무 절감 시간(h)
+=
+Σ 날짜 d∈W Σ 사용자 u min(사용자 u의 d일 인용 포함 챗봇 답변 수 × 3분, 37.8분) ÷ 60
+```
+
+인용 포함 챗봇 답변 기준:
+
+```sql
+cm.sender_type = 'ASSISTANT'
+AND cm.answerable = TRUE
+AND cm.deleted_at IS NULL
+AND cm.is_deleted = 'N'
+AND cs.deleted_at IS NULL
+AND cs.is_deleted = 'N'
+AND JSON_LENGTH(cm.references_json) > 0
+```
+
+계산 기준:
+
+- 인용 포함 챗봇 답변 1건당 추정 절감 시간: 3분
+- 사용자별 일간 최대 인정 절감 시간: 37.8분
+- 37.8분은 McKinsey의 지식 검색 시간 절감 가능성 자료를 MVP 기준으로 보수 적용한 값이다.
+  - 직원의 일일 정보 탐색 시간: 약 1.8시간 = 108분
+  - 지식 공유 및 검색 환경 개선 시 최대 절감률: 35%
+  - 108분 × 35% = 37.8분
+
+### Electricity and CO2 Formula
+
+추정 업무 절감 시간을 기준으로 전기 절감량과 CO2 절감량을 계산한다.
+
+```text
+추정 전기 절감량(kWh)
+=
+추정 업무 절감 시간(h) × 0.08(kW)
+```
+
+```text
+추정 CO2 절감량(kgCO2e)
+=
+추정 전기 절감량(kWh) × 0.478(kgCO2e/kWh)
+```
+
+현재 구현 상수:
+
+- `DEVICE_POWER_KWH_PER_HOUR = 0.08`
+- `ELECTRICITY_EMISSION_FACTOR_KG_CO2E_PER_KWH = 0.478`
+
+### Smartphone Charge Equivalent Formula
+
+CO2 절감량은 사용자가 더 직관적으로 이해할 수 있도록 스마트폰 충전 횟수로 환산한다.
+
+미국 EPA Greenhouse Gas Equivalencies Calculator 기준:
+
+```text
+1 smartphone charged
+=
+1.24 × 10^-5 metric tons CO2
+=
+0.0124 kgCO2
+```
+
+따라서 스마트폰 충전 환산 횟수는 아래처럼 계산한다.
+
+```text
+스마트폰 충전 환산 횟수
+=
+추정 CO2 절감량(kgCO2e) ÷ 0.0124(kgCO2/charge)
+```
+
+예시:
+
+```text
+3.985 kgCO2e ÷ 0.0124 kgCO2/charge
+= 321.37
+≈ 321회
+```
+
+프론트엔드 표시 문구는 실제 스마트폰 충전을 줄였다고 단정하지 않고, CO2 환산 표현으로 작성한다.
+
+권장 문구:
+
+```text
+스마트폰 약 321회 충전 시 발생하는 CO2와 비슷한 양을 줄였어요.
+```
+
+또는:
+
+```text
+스마트폰 약 321회 충전 분량의 CO2 절감 효과
+```
+
+피해야 할 문구:
+
+```text
+스마트폰 321회 충전을 아꼈어요.
+```
+
+이 문구는 실제 스마트폰 충전 행위를 줄였다는 의미로 오해될 수 있다.
+
+### References
+
+- McKinsey Global Institute, "The social economy: Unlocking value and productivity through social technologies" (2012): employees spend about 1.8 hours per day searching and gathering information, and improved knowledge sharing/search can reduce search time by up to 35%.
+- U.S. EPA, "Greenhouse Gas Equivalencies Calculator - Calculations and References": Number of smartphones charged uses `1.24 × 10^-5 metric tons CO2 / smartphone charged`.
+  - https://www.epa.gov/energy/greenhouse-gas-equivalencies-calculator-calculations-and-references
 
 ## 개발 목표
 

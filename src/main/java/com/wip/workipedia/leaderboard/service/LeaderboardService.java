@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class LeaderboardService {
 
     private static final String SNAPSHOT_LOCK_PREFIX = "leaderboard_snapshot:";
+    private static final String NOT_DELETED = "N";
 
     private final LeaderboardSnapshotRepository leaderboardSnapshotRepository;
     private final EsgMetricWeeklyRepository esgMetricWeeklyRepository;
@@ -49,7 +50,7 @@ public class LeaderboardService {
             rankers,
             mySummary,
             totalEsgScore,
-            esgMetricWeeklyRepository.findTopByDeletedAtIsNullOrderByMetricWeekStartDesc()
+            esgMetricWeeklyRepository.findTopByDeletedAtIsNullAndIsDeletedOrderByMetricWeekStartDesc(NOT_DELETED)
         );
     }
 

@@ -42,7 +42,7 @@ public class EsgMetricWeeklyService {
         }
 
         try {
-            if (esgMetricWeeklyRepository.existsByMetricWeekStartAndDeletedAtIsNull(metricWeekStart)) {
+            if (esgMetricWeeklyRepository.existsByMetricWeekStart(metricWeekStart)) {
                 return;
             }
 
@@ -54,7 +54,7 @@ public class EsgMetricWeeklyService {
 
     @Transactional
     public EsgMetricWeekly createWeeklyMetric(LocalDate metricWeekStart, LocalDateTime calculatedAt) {
-        if (esgMetricWeeklyRepository.existsByMetricWeekStartAndDeletedAtIsNull(metricWeekStart)) {
+        if (esgMetricWeeklyRepository.existsByMetricWeekStart(metricWeekStart)) {
             throw new IllegalStateException("ESG weekly metric already exists: " + metricWeekStart);
         }
 
@@ -119,7 +119,9 @@ public class EsgMetricWeeklyService {
                 "benchmarkReductionRate", 0.35,
                 "devicePowerKwhPerHour", DEVICE_POWER_KWH_PER_HOUR,
                 "electricityEmissionFactorKgCo2ePerKwh", ELECTRICITY_EMISSION_FACTOR_KG_CO2E_PER_KWH,
-                "emissionFactorUnit", "kgCO2e/kWh"
+                "emissionFactorUnit", "kgCO2e/kWh",
+                "smartphoneChargeEmissionKgCo2",
+                EsgEnvironmentImpactCalculator.smartphoneChargeEmissionKgCo2()
             ));
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Failed to serialize ESG metric calculation basis", e);
