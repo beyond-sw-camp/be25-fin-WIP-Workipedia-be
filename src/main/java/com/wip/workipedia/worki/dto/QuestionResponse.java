@@ -7,17 +7,14 @@ public record QuestionResponse(
         Long questionId,
         Long authorId,
         String title,
-        QuestionStatus status,
-        // TODO: users.nickname(이슬이) 통합 후 매핑. 현재는 null.
-        String authorNickname
+        QuestionStatus status
 ) {
     public static QuestionResponse from(WorkiQuestion question) {
         return new QuestionResponse(
                 question.getQuestionId(),
                 question.getAuthorId(),
                 question.getTitle(),
-                question.getStatus(),
-                null
+                question.getStatus()
         );
     }
 }
