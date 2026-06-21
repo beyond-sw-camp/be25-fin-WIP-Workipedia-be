@@ -77,6 +77,16 @@ public class AiSyncJob extends BaseTimeEntity {
         this.lastError = null;
     }
 
+    public void resetFailedForManualRetry() {
+        this.status = AiSyncStatus.PENDING;
+        this.retryCount = 0;
+        this.leaseExpiresAt = null;
+        this.startedAt = null;
+        this.nextRetryAt = null;
+        this.lastError = null;
+        this.completedAt = null;
+    }
+
     public void markFailed(String error) {
         this.retryCount++;
         this.lastError = error;

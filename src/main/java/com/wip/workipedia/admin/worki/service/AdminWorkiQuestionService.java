@@ -1,6 +1,9 @@
 package com.wip.workipedia.admin.worki.service;
 
 import com.wip.workipedia.admin.worki.dto.AdminWorkiQuestionDeleteResponse;
+import com.wip.workipedia.aisync.domain.AiSyncOperation;
+import com.wip.workipedia.aisync.domain.AiSyncSourceType;
+import com.wip.workipedia.aisync.service.AiSyncJobService;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.point.dto.MyPointResponse;
@@ -23,6 +26,7 @@ public class AdminWorkiQuestionService {
 	private final WorkiQuestionRepository questionRepository;
 	private final PointService pointService;
 	private final ApplicationEventPublisher eventPublisher;
+	private final AiSyncJobService aiSyncJobService;
 
 	@Transactional
 	public AdminWorkiQuestionDeleteResponse delete(Long questionId) {
@@ -30,6 +34,7 @@ public class AdminWorkiQuestionService {
 			.orElseThrow(() -> new CustomException(ErrorType.WORKI_NOT_FOUND, "질문을 찾을 수 없습니다. id=" + questionId));
 
 		question.deleteByAdmin();
+		aiSyncJobService.enqueue(AiSyncSourceType.WORKI, questionId, AiSyncOperation.DELETE);
 		int deductedPoint = deductAuthorPoint(question);
 
 		eventPublisher.publishEvent(new WorkiQuestionChangedEvent(question.getQuestionId()));
