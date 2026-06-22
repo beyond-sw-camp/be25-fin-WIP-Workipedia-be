@@ -2,8 +2,11 @@ package com.wip.workipedia.admin.manual.service;
 
 import com.wip.workipedia.admin.manual.dto.AdminManualCreateRequest;
 import com.wip.workipedia.admin.manual.dto.AdminManualUpdateRequest;
+import com.wip.workipedia.aisync.domain.AiSyncJob;
 import com.wip.workipedia.aisync.domain.AiSyncOperation;
 import com.wip.workipedia.aisync.domain.AiSyncSourceType;
+import com.wip.workipedia.aisync.domain.AiSyncStatus;
+import com.wip.workipedia.aisync.repository.AiSyncJobRepository;
 import com.wip.workipedia.aisync.service.AiSyncJobService;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
@@ -26,15 +29,21 @@ import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.domain.UserRole;
 import com.wip.workipedia.user.domain.UserStatus;
 import com.wip.workipedia.user.repository.UserRepository;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -64,6 +73,7 @@ public class AdminManualService {
     private final StorageService storageService;
     private final Executor manualPdfUploadExecutor;
     private final AiSyncJobService aiSyncJobService;
+    private final AiSyncJobRepository aiSyncJobRepository;
 
     public AdminManualService(
             ManualRepository manualRepository,
@@ -76,7 +86,8 @@ public class AdminManualService {
             PdfTextExtractor pdfTextExtractor,
             StorageService storageService,
             @Qualifier("manualPdfUploadExecutor") Executor manualPdfUploadExecutor,
-            AiSyncJobService aiSyncJobService
+            AiSyncJobService aiSyncJobService,
+            AiSyncJobRepository aiSyncJobRepository
     ) {
         this.manualRepository = manualRepository;
         this.manualFileRepository = manualFileRepository;
@@ -89,20 +100,15 @@ public class AdminManualService {
         this.storageService = storageService;
         this.manualPdfUploadExecutor = manualPdfUploadExecutor;
         this.aiSyncJobService = aiSyncJobService;
+        this.aiSyncJobRepository = aiSyncJobRepository;
     }
 
     public PageResponse<ManualSummaryResponse> findAll(Long actorUserId, ManualStatus status, Pageable pageable) {
         assertSystemAdmin(actorUserId);
-        if (status == null) {
-            return PageResponse.from(
-                    manualRepository.findByDeletedAtIsNull(pageable)
-                            .map(this::toSummaryResponse)
-            );
-        }
-        return PageResponse.from(
-                manualRepository.findByDeletedAtIsNullAndStatus(status, pageable)
-                        .map(this::toSummaryResponse)
-        );
+        Page<Manual> manuals = status == null
+                ? manualRepository.findByDeletedAtIsNull(pageable)
+                : manualRepository.findByDeletedAtIsNullAndStatus(status, pageable);
+        return PageResponse.from(toSummaryResponsePage(manuals));
     }
 
     public ManualDetailResponse findById(Long actorUserId, Long manualId) {
@@ -584,8 +590,55 @@ public class AdminManualService {
                 .toList();
     }
 
-    private ManualSummaryResponse toSummaryResponse(Manual manual) {
-        return ManualSummaryResponse.from(manual, findFileUrls(manual.getManualId()));
+    private Page<ManualSummaryResponse> toSummaryResponsePage(Page<Manual> manuals) {
+        List<Manual> content = manuals.getContent();
+        Map<Long, AiSyncJob> syncJobs = findLatestManualSyncJobMap(content);
+        List<ManualSummaryResponse> responses = content.stream()
+                .map(manual -> toSummaryResponse(manual, syncJobs))
+                .toList();
+        return new PageImpl<>(responses, manuals.getPageable(), manuals.getTotalElements());
+    }
+
+    private ManualSummaryResponse toSummaryResponse(Manual manual, Map<Long, AiSyncJob> syncJobs) {
+        AiSyncJob syncJob = syncJobs.get(manual.getManualId());
+        return ManualSummaryResponse.from(
+                manual,
+                findFileUrls(manual.getManualId()),
+                resolveSyncStatus(syncJob),
+                resolveSyncedAt(syncJob),
+                resolveSyncError(syncJob)
+        );
+    }
+
+    private Map<Long, AiSyncJob> findLatestManualSyncJobMap(List<Manual> manuals) {
+        if (manuals.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> manualIds = manuals.stream()
+                .map(Manual::getManualId)
+                .toList();
+        return aiSyncJobRepository
+                .findLatestJobsBySourceTypeAndSourceIds(AiSyncSourceType.MANUAL.name(), manualIds)
+                .stream()
+                .collect(Collectors.toMap(AiSyncJob::getSourceId, Function.identity()));
+    }
+
+    private String resolveSyncStatus(AiSyncJob syncJob) {
+        return syncJob == null ? "EMPTY" : syncJob.getStatus().name();
+    }
+
+    private LocalDateTime resolveSyncedAt(AiSyncJob syncJob) {
+        if (syncJob == null || syncJob.getCompletedAt() == null || syncJob.getStatus() != AiSyncStatus.SYNCED) {
+            return null;
+        }
+        return syncJob.getCompletedAt();
+    }
+
+    private String resolveSyncError(AiSyncJob syncJob) {
+        if (syncJob == null || syncJob.getStatus() != AiSyncStatus.FAILED) {
+            return null;
+        }
+        return syncJob.getLastError();
     }
 
     private List<String> toFileUrls(List<StoredObject> storedObjects) {
