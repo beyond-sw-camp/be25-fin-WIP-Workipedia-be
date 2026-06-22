@@ -17,26 +17,26 @@ public record ManualSummaryResponse(
         String version,
         Long createdBy,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        String syncStatus,
+        LocalDateTime syncedAt,
+        String syncError
 ) {
     public static ManualSummaryResponse from(Manual manual) {
-        return new ManualSummaryResponse(
-                manual.getManualId(),
-                manual.getDepartmentId(),
-                manual.getTitle(),
-                manual.getDescription(),
-                manual.getStatus(),
-                manual.getSourceUrl(),
-                manual.getFileUrl(),
-                manual.getFileUrl() == null ? List.of() : List.of(manual.getFileUrl()),
-                manual.getVersion(),
-                manual.getCreatedBy(),
-                manual.getCreatedAt(),
-                manual.getUpdatedAt()
-        );
+        return from(manual, manual.getFileUrl() == null ? List.of() : List.of(manual.getFileUrl()));
     }
 
     public static ManualSummaryResponse from(Manual manual, List<String> fileUrls) {
+        return from(manual, fileUrls, "EMPTY", null, null);
+    }
+
+    public static ManualSummaryResponse from(
+            Manual manual,
+            List<String> fileUrls,
+            String syncStatus,
+            LocalDateTime syncedAt,
+            String syncError
+    ) {
         return new ManualSummaryResponse(
                 manual.getManualId(),
                 manual.getDepartmentId(),
@@ -49,7 +49,10 @@ public record ManualSummaryResponse(
                 manual.getVersion(),
                 manual.getCreatedBy(),
                 manual.getCreatedAt(),
-                manual.getUpdatedAt()
+                manual.getUpdatedAt(),
+                syncStatus,
+                syncedAt,
+                syncError
         );
     }
 }
