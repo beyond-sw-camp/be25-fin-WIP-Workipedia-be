@@ -36,7 +36,7 @@ spring:
 
   servlet:
     multipart:
-      max-file-size: ${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE:20MB}
+      max-file-size: ${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE:25MB}
       max-request-size: ${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE:25MB}
 
 storage:
@@ -67,10 +67,15 @@ ai:
 
 ai-sync:
   worker:
+    # MANUAL(PDF 포함) 동기화 잡 처리 주기 — 파일 다운로드가 있어 느려서 별도 주기. 기본 매시 정각
     document-cron: ${AI_SYNC_WORKER_DOCUMENT_CRON:0 0 * * * *}
+    # 텍스트 계열(WORKI, KNOWLEDGE_DATA, MANUAL_KNOWLEDGE, DEPT_RR) 동기화 잡 처리 주기. 기본 매시 정각
     text-cron: ${AI_SYNC_WORKER_TEXT_CRON:0 0 * * * *}
+    # 한 번에 claim해서 처리할 잡 개수(limit)
     batch-size: ${AI_SYNC_WORKER_BATCH_SIZE:5}
+    # PROCESSING 잡의 리스 만료 시간(분) — 이 시간 지나면 다른 워커가 회수해 재처리
     lease-minutes: ${AI_SYNC_WORKER_LEASE_MINUTES:10}
+    # 오래된 WORKI 청킹 데이터 정리 스케줄. 기본 매월 1일 03:00 (보존 기간은 DB ai_sync_settings에서 관리)
     cleanup-cron: ${AI_SYNC_WORKER_CLEANUP_CRON:0 0 3 1 * *}
 
 app:
