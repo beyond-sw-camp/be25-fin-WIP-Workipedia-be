@@ -95,7 +95,7 @@ public class DepartmentService {
 			.map(department -> new RoutingPromptEditTarget(
 				department.getDepartmentId(),
 				department.getDepartmentName(),
-				getPromptContent(routingPrompts, department.getDepartmentId())
+				normalizePromptContent(getPromptContent(routingPrompts, department.getDepartmentId()))
 			))
 			.toList();
 		List<RoutingPromptEditResult> editResults = departmentRoutingPromptEditor.edit(targets, request.instruction());
@@ -183,6 +183,10 @@ public class DepartmentService {
 	private String getPromptContent(Map<Long, DepartmentRoutingPrompt> routingPrompts, Long departmentId) {
 		DepartmentRoutingPrompt routingPrompt = routingPrompts.get(departmentId);
 		return routingPrompt == null ? null : routingPrompt.getPromptContent();
+	}
+
+	private String normalizePromptContent(String promptContent) {
+		return promptContent == null ? "" : promptContent;
 	}
 
 	private String findPromptContent(Long departmentId) {
