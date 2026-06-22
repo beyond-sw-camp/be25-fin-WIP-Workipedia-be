@@ -119,6 +119,23 @@ public interface AiSyncJobRepository extends JpaRepository<AiSyncJob, Long> {
         Pageable pageable
     );
 
+    @Query(value = """
+        SELECT j.* FROM ai_sync_jobs j
+        INNER JOIN (
+            SELECT source_id, MAX(ai_sync_job_id) AS max_id
+            FROM ai_sync_jobs
+            WHERE source_type = :sourceType
+              AND source_id IN (:sourceIds)
+              AND deleted_at IS NULL
+            GROUP BY source_id
+        ) latest ON j.ai_sync_job_id = latest.max_id
+        WHERE j.deleted_at IS NULL
+        """, nativeQuery = true)
+    List<AiSyncJob> findLatestJobsBySourceTypeAndSourceIds(
+        @Param("sourceType") String sourceType,
+        @Param("sourceIds") List<Long> sourceIds
+    );
+
     // 상태별 카운트 — 각 source의 최신 job 기준
     @Query(value = """
         SELECT j.status AS status, COUNT(*) AS count
