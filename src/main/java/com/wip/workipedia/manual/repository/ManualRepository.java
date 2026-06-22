@@ -50,7 +50,7 @@ public interface ManualRepository extends JpaRepository<Manual, Long> {
             FROM manuals m
             LEFT JOIN rag_citations rc
               ON rc.source_type = 'MANUAL'
-             AND rc.source_id = CAST(m.manual_id AS CHAR)
+             AND rc.source_id = CAST(m.manual_id AS CHAR) COLLATE utf8mb4_unicode_ci
              AND rc.cited_by_type = 'CHATBOT_MESSAGE'
              AND rc.deleted_at IS NULL
              AND rc.is_deleted = 'N'
