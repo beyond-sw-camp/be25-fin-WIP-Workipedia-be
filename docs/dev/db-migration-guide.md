@@ -5,7 +5,7 @@
 > 정본 위치: `docs/dev/db-migration-guide.md`
 > 관련 문서: `docs/reference/trd.md`, `docs/api/api-contract.md`
 > 버전: v0.4
-> 최종 수정: 2026-06-09
+> 최종 수정: 2026-06-17
 
 ## 1. 목적
 
@@ -142,7 +142,18 @@ is_deleted CHAR(1) NOT NULL DEFAULT 'N' CHECK (is_deleted IN ('Y', 'N'))
 
 - V15 기준 처리 완료 티켓에서 TEAM_ADMIN이 승인한 지식 데이터를 저장한다.
 - `ticket_id`는 UNIQUE이며 티켓당 하나의 승인 지식을 가진다.
-- Vector Store 동기화 상태(`PENDING`, `SYNCED`, `FAILED`) 컬럼은 후속 migration에서 추가할 계획이다.
+- Vector Store 동기화 상태는 개별 지식 컬럼이 아니라 V41의 공통 `ai_sync_jobs` 작업 테이블에서 관리한다.
+
+### ai_sync_jobs
+
+| 값 | 의미 |
+|---|---|
+| `PENDING` | 워커가 아직 처리하지 않은 작업 |
+| `PROCESSING` | 워커가 lease를 잡고 처리 중인 작업 |
+| `SYNCED` | AI 서버 반영이 완료된 작업 |
+| `FAILED` | 최대 재시도 초과로 운영 확인이 필요한 작업 |
+
+`source_type`은 `MANUAL`, `WORKI`, `KNOWLEDGE_DATA`, `MANUAL_KNOWLEDGE`, `DEPT_RR`을 사용하고, `operation`은 `UPSERT`, `DELETE`를 사용한다. 실패 재시도는 `retry_count`, `next_retry_at`, `lease_expires_at`으로 관리한다.
 
 ### ai_tools.approval_status
 

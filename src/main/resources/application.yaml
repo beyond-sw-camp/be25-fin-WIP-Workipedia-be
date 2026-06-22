@@ -11,10 +11,9 @@ spring:
   flyway:
     enabled: true
 
-  servlet:
-    multipart:
-      max-file-size: ${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE:20MB}
-      max-request-size: ${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE:25MB}
+  output:
+    ansi:
+      enabled: always
 
 logging:
   level:
@@ -42,9 +41,3 @@ management:
   metrics:
     tags:
       application: Workipedia
-
-ai:
-  base-url: ${AI_BASE_URL:http://localhost:8000}
-  timeout:
-    routing-ms: ${AI_TIMEOUT_ROUTING_MS:5000}
-    chatbot-ms: ${AI_TIMEOUT_CHATBOT_MS:30000}

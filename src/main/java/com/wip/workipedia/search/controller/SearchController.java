@@ -109,6 +109,7 @@ public class SearchController {
         return ResponseEntity.ok(workiSearchKeywordService.autocomplete(keyword));
     }
 
+    // 정기 재색인은 WorkiReindexScheduler가 매일 자정에 수행한다. 이 엔드포인트는 긴급 수동 복구용.
     // TODO: 관리자 전용으로 제한 필요(이슬이 시큐리티 통합 후). 초기 적재/색인 복구용 임시 엔드포인트.
     // DB의 전체내용을 ES에 적재하는 역할.
     @PostMapping("/worki/reindex")

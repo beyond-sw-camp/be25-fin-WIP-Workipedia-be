@@ -9,9 +9,12 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 
 @RestController
 @RequestMapping("/api/v1/chatbot/sessions")
@@ -58,5 +61,17 @@ public class ChatbotController {
             @Valid @RequestBody ChatbotMessageRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(chatbotService.sendMessage(userId, sessionId, request));
+    }
+
+    // POST /api/v1/chatbot/sessions/{sessionId}/messages/stream
+    // 질문을 AI에 전송하고 답변을 토큰 단위 SSE로 흘려보낸다 (타자 효과).
+    // 이벤트: token({"content":...}) 반복 → done(ChatbotMessageResponse) 1회.
+    // 프론트는 token으로 글자를 출력하고, done의 messageId·nextAction·answerable·references를 최종 확정값으로 사용한다.
+    @PostMapping(value = "/{sessionId}/messages/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<Object>> sendMessageStream(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long sessionId,
+            @Valid @RequestBody ChatbotMessageRequest request) {
+        return chatbotService.sendMessageStream(userId, sessionId, request);
     }
 }

@@ -2,12 +2,13 @@ package com.wip.workipedia.knowledge.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
-import com.wip.workipedia.knowledge.domain.KnowledgeData;
 import com.wip.workipedia.knowledge.repository.KnowledgeDataRepository;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -16,7 +17,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class KnowledgeBoardServiceTest {
@@ -28,8 +28,8 @@ class KnowledgeBoardServiceTest {
 	void findAll_returnsOnlyVisibleKnowledgeData() {
 		KnowledgeBoardService service = new KnowledgeBoardService(knowledgeDataRepository);
 		var pageable = PageRequest.of(0, 10);
-		when(knowledgeDataRepository.findByDeletedAtIsNullAndIsDeleted("N", pageable))
-			.thenReturn(new PageImpl<>(List.of(knowledgeData(1L)), pageable, 1));
+		when(knowledgeDataRepository.findBoard(pageable))
+			.thenReturn(new PageImpl<>(List.of(knowledgeBoard(1L)), pageable, 1));
 
 		var response = service.findAll(pageable);
 
@@ -41,8 +41,8 @@ class KnowledgeBoardServiceTest {
 	@Test
 	void findById_returnsVisibleKnowledgeData() {
 		KnowledgeBoardService service = new KnowledgeBoardService(knowledgeDataRepository);
-		when(knowledgeDataRepository.findByKnowledgeDataIdAndDeletedAtIsNullAndIsDeleted(1L, "N"))
-			.thenReturn(Optional.of(knowledgeData(1L)));
+		when(knowledgeDataRepository.findBoardById(1L))
+			.thenReturn(Optional.of(knowledgeBoard(1L)));
 
 		var response = service.findById(1L);
 
@@ -53,7 +53,7 @@ class KnowledgeBoardServiceTest {
 	@Test
 	void findById_rejectsMissingOrDeletedKnowledgeData() {
 		KnowledgeBoardService service = new KnowledgeBoardService(knowledgeDataRepository);
-		when(knowledgeDataRepository.findByKnowledgeDataIdAndDeletedAtIsNullAndIsDeleted(1L, "N"))
+		when(knowledgeDataRepository.findBoardById(1L))
 			.thenReturn(Optional.empty());
 
 		assertThatThrownBy(() -> service.findById(1L))
@@ -62,9 +62,47 @@ class KnowledgeBoardServiceTest {
 			.isEqualTo(ErrorType.KNOWLEDGE_DATA_NOT_FOUND);
 	}
 
-	private KnowledgeData knowledgeData(Long knowledgeDataId) {
-		KnowledgeData knowledgeData = KnowledgeData.approve(100L, "question", "answer", 10L, 1L);
-		ReflectionTestUtils.setField(knowledgeData, "knowledgeDataId", knowledgeDataId);
-		return knowledgeData;
+	private KnowledgeDataRepository.KnowledgeBoardProjection knowledgeBoard(Long knowledgeDataId) {
+		return new KnowledgeDataRepository.KnowledgeBoardProjection() {
+			@Override
+			public Long getKnowledgeDataId() {
+				return knowledgeDataId;
+			}
+
+			@Override
+			public Long getDepartmentId() {
+				return 10L;
+			}
+
+			@Override
+			public String getDepartmentName() {
+				return "department";
+			}
+
+			@Override
+			public String getQuestion() {
+				return "question";
+			}
+
+			@Override
+			public String getAnswer() {
+				return "answer";
+			}
+
+			@Override
+			public LocalDateTime getApprovedAt() {
+				return LocalDateTime.now();
+			}
+
+			@Override
+			public LocalDateTime getCreatedAt() {
+				return LocalDateTime.now();
+			}
+
+			@Override
+			public LocalDateTime getUpdatedAt() {
+				return LocalDateTime.now();
+			}
+		};
 	}
 }

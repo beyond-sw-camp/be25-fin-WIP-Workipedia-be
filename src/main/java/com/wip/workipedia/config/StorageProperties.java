@@ -26,6 +26,7 @@ public record StorageProperties(
     public record S3Properties(
         String accessKey,
         String secretKey,
-        String region
+        String region,
+        String bucket
     ) {}
 }

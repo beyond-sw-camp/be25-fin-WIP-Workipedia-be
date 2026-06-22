@@ -8,6 +8,8 @@ import com.wip.workipedia.worki.repository.WorkiQuestionRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.IndexOperations;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.event.TransactionPhase;
@@ -26,6 +28,7 @@ public class WorkiQuestionIndexer {
 
     private final WorkiQuestionSearchRepository searchRepository;
     private final WorkiQuestionRepository questionRepository;
+    private final ElasticsearchOperations elasticsearchOperations;
 
     /**
      * 워키 질문 변경 생성 이벤트를 구독해 ES 색인을 반영한다.
@@ -59,16 +62,23 @@ public class WorkiQuestionIndexer {
     }
 
     /**
-     * 삭제되지 않은 전체 질문을 다시 색인(초기 적재/복구용).
+     * 삭제되지 않은 전체 질문을 다시 색인(초기 적재/복구용 + 매핑 변경 반영용).
      * 색인이 어긋났을 때 DB를 기준으로 ES를 완전히 다시 맞추는 게 목적이므로,
-     * 기존 색인을 모두 비우고(deleteAll) 살아있는 질문만 다시 적재한다.
-     * (deleteAll 안 하면 DB에서 삭제된 글이 ES에 잔류하므로 진짜 복구가 안 됨)
+     * 인덱스 자체를 drop 후 재생성(create)하고 살아있는 질문만 다시 적재한다.
+     * 문서만 지우는(deleteAll) 방식과 달리 인덱스를 새로 만들기 때문에,
+     * WorkiQuestionDocument의 매핑 변경(예: analyzer = "nori")도 이 호출로 반영된다.
+     * (ES 매핑은 인덱스 생성 시점에 고정되어, 인덱스가 살아있으면 매핑이 바뀌지 않음)
      * 적재 사이 짧은 순간 검색 결과가 비어 보일 수 있으나, 관리자 전용 복구 작업이라 허용한다.
      */
     public long reindexAll() {
         // findAll() 후 메모리 필터링 대신 DB에서 삭제되지 않은 질문만 걸러 가져온다.
         List<WorkiQuestion> questions = questionRepository.findByDeletedAtIsNull();
-        searchRepository.deleteAll(); // 인덱스 싹다 삭제.
+
+        // 인덱스를 통째로 지우고 @Document/@Field 기준으로 다시 만들어 최신 매핑을 반영한다.
+        IndexOperations indexOps = elasticsearchOperations.indexOps(WorkiQuestionDocument.class);
+        indexOps.delete();
+        indexOps.createWithMapping();
+
         searchRepository.saveAll(questions.stream().map(WorkiQuestionDocument::from).toList());
         log.info("워키 질문 전체 재색인 완료 count={}", questions.size());
         return questions.size();

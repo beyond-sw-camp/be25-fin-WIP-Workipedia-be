@@ -19,6 +19,9 @@ import com.wip.workipedia.ticket.repository.TicketRepository;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.domain.UserRole;
 import com.wip.workipedia.user.repository.UserRepository;
+import com.wip.workipedia.aisync.domain.AiSyncOperation;
+import com.wip.workipedia.aisync.domain.AiSyncSourceType;
+import com.wip.workipedia.aisync.service.AiSyncJobService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -37,6 +40,7 @@ public class TeamAdminKnowledgeDataService {
 	private final TicketAnswerRepository ticketAnswerRepository;
 	private final UserRepository userRepository;
 	private final PointService pointService;
+	private final AiSyncJobService aiSyncJobService;
 
 	public PageResponse<KnowledgeTicketCandidateResponse> findApprovalCandidates(Long actorUserId, Pageable pageable) {
 		User actor = getTeamAdmin(actorUserId);
@@ -87,6 +91,7 @@ public class TeamAdminKnowledgeDataService {
 			TICKET_KNOWLEDGE_RELATED_TYPE,
 			savedKnowledgeData.getKnowledgeDataId()
 		);
+		aiSyncJobService.enqueue(AiSyncSourceType.KNOWLEDGE_DATA, savedKnowledgeData.getKnowledgeDataId(), AiSyncOperation.UPSERT);
 		return KnowledgeDataResponse.from(savedKnowledgeData);
 	}
 
@@ -110,6 +115,7 @@ public class TeamAdminKnowledgeDataService {
 		KnowledgeData knowledgeData = getActiveKnowledgeData(knowledgeDataId);
 		assertDepartmentKnowledgeData(actor, knowledgeData);
 		knowledgeData.update(request.question().trim(), request.answer().trim(), actor.getUserId());
+		aiSyncJobService.enqueue(AiSyncSourceType.KNOWLEDGE_DATA, knowledgeDataId, AiSyncOperation.UPSERT);
 		return KnowledgeDataResponse.from(knowledgeData);
 	}
 
@@ -119,6 +125,7 @@ public class TeamAdminKnowledgeDataService {
 		KnowledgeData knowledgeData = getActiveKnowledgeData(knowledgeDataId);
 		assertDepartmentKnowledgeData(actor, knowledgeData);
 		knowledgeData.delete(actor.getUserId());
+		aiSyncJobService.enqueue(AiSyncSourceType.KNOWLEDGE_DATA, knowledgeDataId, AiSyncOperation.DELETE);
 	}
 
 	private User getTeamAdmin(Long actorUserId) {

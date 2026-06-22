@@ -4,8 +4,13 @@ import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.security.SecurityUtil;
 import com.wip.workipedia.department.ai.DepartmentRoutingPromptEditor;
-import com.wip.workipedia.department.ai.KnowledgeSyncAiClient;
-import com.wip.workipedia.department.ai.KnowledgeSyncRequest;
+import com.wip.workipedia.admin.department.dto.AdminDepartmentSyncStatus;
+import com.wip.workipedia.aisync.domain.AiSyncJob;
+import com.wip.workipedia.aisync.domain.AiSyncOperation;
+import com.wip.workipedia.aisync.domain.AiSyncSourceType;
+import com.wip.workipedia.aisync.domain.AiSyncStatus;
+import com.wip.workipedia.aisync.repository.AiSyncJobRepository;
+import com.wip.workipedia.aisync.service.AiSyncJobService;
 import com.wip.workipedia.department.ai.RoutingPromptEditResult;
 import com.wip.workipedia.department.ai.RoutingPromptEditTarget;
 import com.wip.workipedia.department.domain.Department;
@@ -19,6 +24,8 @@ import com.wip.workipedia.department.repository.RoutingPromptRepository;
 import com.wip.workipedia.user.domain.UserStatus;
 import com.wip.workipedia.user.repository.UserRepository.DepartmentMemberCountProjection;
 import com.wip.workipedia.user.repository.UserRepository;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -34,11 +41,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class DepartmentService {
 
 	private static final String ACTIVE = "Y";
+	private static final DateTimeFormatter SYNC_INFO_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
 	private final DepartmentRepository departmentRepository;
 	private final RoutingPromptRepository routingPromptRepository;
 	private final DepartmentRoutingPromptEditor departmentRoutingPromptEditor;
-	private final KnowledgeSyncAiClient knowledgeSyncAiClient;
+	private final AiSyncJobService aiSyncJobService;
+	private final AiSyncJobRepository aiSyncJobRepository;
 	private final UserRepository userRepository;
 
 	@Transactional(readOnly = true)
@@ -53,13 +62,21 @@ public class DepartmentService {
 		List<Department> departments = departmentRepository.findActiveDepartments();
 		Map<Long, DepartmentRoutingPrompt> routingPrompts = findRoutingPromptMap(departments);
 		Map<Long, Long> memberCounts = findMemberCountMap(departments);
+		Map<Long, AiSyncJob> latestSyncJobs = findLatestDeptRrSyncJobMap(departments);
 
 		return departments.stream()
-			.map(department -> AdminDepartmentResponse.from(
-				department,
-				getPromptContent(routingPrompts, department.getDepartmentId()),
-				memberCounts.getOrDefault(department.getDepartmentId(), 0L)
-			))
+			.map(department -> {
+				Long departmentId = department.getDepartmentId();
+				String routingPrompt = getPromptContent(routingPrompts, departmentId);
+				AiSyncJob syncJob = latestSyncJobs.get(departmentId);
+				return AdminDepartmentResponse.from(
+					department,
+					routingPrompt,
+					memberCounts.getOrDefault(departmentId, 0L),
+					resolveSyncStatus(routingPrompt, syncJob),
+					resolveSyncInfo(routingPrompt, syncJob)
+				);
+			})
 			.toList();
 	}
 
@@ -94,7 +111,7 @@ public class DepartmentService {
 			.map(department -> new RoutingPromptEditTarget(
 				department.getDepartmentId(),
 				department.getDepartmentName(),
-				getPromptContent(routingPrompts, department.getDepartmentId())
+				normalizePromptContent(getPromptContent(routingPrompts, department.getDepartmentId()))
 			))
 			.toList();
 		List<RoutingPromptEditResult> editResults = departmentRoutingPromptEditor.edit(targets, request.instruction());
@@ -113,9 +130,7 @@ public class DepartmentService {
 				return;
 			}
 			upsertRoutingPrompt(dept, editResult.routingPrompt());
-			knowledgeSyncAiClient.sync(
-				KnowledgeSyncRequest.ofDeptRr(dept.getDepartmentId(), dept.getDepartmentName(), editResult.routingPrompt())
-			);
+			aiSyncJobService.enqueue(AiSyncSourceType.DEPT_RR, dept.getDepartmentId(), AiSyncOperation.UPSERT);
 		});
 
 		return findAllForAdmin();
@@ -125,12 +140,16 @@ public class DepartmentService {
 	public AdminDepartmentResponse updateRoutingPromptDirect(Long departmentId, String routingPrompt) {
 		Department department = getDepartment(departmentId);
 		upsertRoutingPrompt(department, routingPrompt);
-		knowledgeSyncAiClient.sync(
-			KnowledgeSyncRequest.ofDeptRr(departmentId, department.getDepartmentName(), routingPrompt)
-		);
+		aiSyncJobService.enqueue(AiSyncSourceType.DEPT_RR, departmentId, AiSyncOperation.UPSERT);
 		long memberCount = userRepository.countByDepartment_DepartmentIdAndDeletedAtIsNullAndStatus(
 			departmentId, UserStatus.ACTIVE);
-		return AdminDepartmentResponse.from(department, routingPrompt, memberCount);
+		return AdminDepartmentResponse.from(
+			department,
+			routingPrompt,
+			memberCount,
+			AdminDepartmentSyncStatus.PENDING,
+			"동기화 대기 중"
+		);
 	}
 
 	@Transactional
@@ -145,7 +164,7 @@ public class DepartmentService {
 		department.markDeleted();
 		routingPromptRepository.findByDepartment_DepartmentIdAndDeletedAtIsNull(departmentId)
 			.ifPresent(routingPrompt -> routingPrompt.markDeleted(actorUserId));
-		knowledgeSyncAiClient.delete(departmentId, "DEPT_RR");
+		aiSyncJobService.enqueue(AiSyncSourceType.DEPT_RR, departmentId, AiSyncOperation.DELETE);
 	}
 
 	private Map<Long, DepartmentRoutingPrompt> findRoutingPromptMap(List<Department> departments) {
@@ -183,9 +202,61 @@ public class DepartmentService {
 			));
 	}
 
+	private Map<Long, AiSyncJob> findLatestDeptRrSyncJobMap(List<Department> departments) {
+		if (departments.isEmpty()) {
+			return Map.of();
+		}
+
+		List<Long> departmentIds = departments.stream()
+			.map(Department::getDepartmentId)
+			.toList();
+
+		return aiSyncJobRepository
+			.findLatestJobsBySourceTypeAndSourceIds(AiSyncSourceType.DEPT_RR.name(), departmentIds)
+			.stream()
+			.collect(Collectors.toMap(AiSyncJob::getSourceId, Function.identity()));
+	}
+
 	private String getPromptContent(Map<Long, DepartmentRoutingPrompt> routingPrompts, Long departmentId) {
 		DepartmentRoutingPrompt routingPrompt = routingPrompts.get(departmentId);
 		return routingPrompt == null ? null : routingPrompt.getPromptContent();
+	}
+
+	private AdminDepartmentSyncStatus resolveSyncStatus(String routingPrompt, AiSyncJob syncJob) {
+		if (routingPrompt == null || syncJob == null) {
+			return AdminDepartmentSyncStatus.EMPTY;
+		}
+		if (syncJob.getStatus() == AiSyncStatus.SYNCED) {
+			return AdminDepartmentSyncStatus.SYNCED;
+		}
+		if (syncJob.getStatus() == AiSyncStatus.FAILED) {
+			return AdminDepartmentSyncStatus.FAILED;
+		}
+		return AdminDepartmentSyncStatus.PENDING;
+	}
+
+	private String resolveSyncInfo(String routingPrompt, AiSyncJob syncJob) {
+		if (routingPrompt == null || syncJob == null) {
+			return null;
+		}
+		if (syncJob.getStatus() == AiSyncStatus.SYNCED) {
+			return formatSyncTime("마지막 동기화", syncJob.getCompletedAt());
+		}
+		if (syncJob.getStatus() == AiSyncStatus.FAILED) {
+			return syncJob.getLastError();
+		}
+		return "동기화 대기 중";
+	}
+
+	private String formatSyncTime(String label, LocalDateTime syncedAt) {
+		if (syncedAt == null) {
+			return label + " 시각 없음";
+		}
+		return label + ": " + syncedAt.format(SYNC_INFO_FORMATTER);
+	}
+
+	private String normalizePromptContent(String promptContent) {
+		return promptContent == null ? "" : promptContent;
 	}
 
 	private String findPromptContent(Long departmentId) {

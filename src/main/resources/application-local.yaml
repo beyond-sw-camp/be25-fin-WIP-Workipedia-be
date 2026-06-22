@@ -34,10 +34,16 @@ spring:
           starttls:
             enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:true}
 
+  servlet:
+    multipart:
+      max-file-size: ${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE:25MB}
+      max-request-size: ${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE:25MB}
+
 storage:
   provider: ${STORAGE_PROVIDER}
-  bucket: ${STORAGE_BUCKET}
-  public-url: ${STORAGE_PUBLIC_BASE_URL}
+  # 공용 bucket/public-url은 R2·Minio용. S3는 자체 bucket을 쓰고 public-url을 자동 조합하므로 비워둘 수 있다.
+  bucket: ${STORAGE_BUCKET:}
+  public-url: ${STORAGE_PUBLIC_BASE_URL:}
   r2:
     access-key: ${R2_ACCESS_KEY}
     secret-key: ${R2_SECRET_KEY}
@@ -50,19 +56,47 @@ storage:
     access-key: ${AWS_ACCESS_KEY}
     secret-key: ${AWS_SECRET_KEY}
     region: ${AWS_REGION}
+    bucket: ${S3_UPLOAD_BUCKET}
 
 ai:
   base-url: ${AI_BASE_URL:http://localhost:8000}
   timeout:
-    routing-ms: 5000
-    chatbot-ms: 30000
+    routing-ms: ${AI_TIMEOUT_ROUTING_MS:5000}
+    chatbot-ms: ${AI_TIMEOUT_CHATBOT_MS:30000}
+    sync-ms: ${AI_TIMEOUT_SYNC_MS:30000}
+
+ai-sync:
+  worker:
+    # MANUAL(PDF 포함) 동기화 잡 처리 주기 — 파일 다운로드가 있어 느려서 별도 주기. 기본 매시 정각
+    document-cron: ${AI_SYNC_WORKER_DOCUMENT_CRON:0 0 * * * *}
+    # 텍스트 계열(WORKI, KNOWLEDGE_DATA, MANUAL_KNOWLEDGE, DEPT_RR) 동기화 잡 처리 주기. 기본 매시 정각
+    text-cron: ${AI_SYNC_WORKER_TEXT_CRON:0 0 * * * *}
+    # 한 번에 claim해서 처리할 잡 개수(limit)
+    batch-size: ${AI_SYNC_WORKER_BATCH_SIZE:5}
+    # PROCESSING 잡의 리스 만료 시간(분) — 이 시간 지나면 다른 워커가 회수해 재처리
+    lease-minutes: ${AI_SYNC_WORKER_LEASE_MINUTES:10}
+    # 오래된 WORKI 청킹 데이터 정리 스케줄. 기본 매월 1일 03:00 (보존 기간은 DB ai_sync_settings에서 관리)
+    cleanup-cron: ${AI_SYNC_WORKER_CLEANUP_CRON:0 0 3 1 * *}
 
 app:
   jwt:
     # JWT_SECRET은 토큰 서명에 사용하는 민감값이므로 로컬 .env에 설정하고 Git에 커밋하지 않습니다.
     # 만료 시간을 변경해야 한다면 .env에서 JWT_ACCESS_TOKEN_EXPIRATION, JWT_REFRESH_TOKEN_EXPIRATION 값을 수정합니다.
     secret: ${JWT_SECRET}
-    # access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:30m}
     # Access Token 만료 시간은 로컬 테스트 편의를 위해 임시로 12시간으로 설정합니다.
     access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:12h}
     refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:14d}
+
+internal:
+  api-key: ${INTERNAL_API_KEY:local-dev-internal-key}
+
+tool:
+  allowed-hosts: ${TOOL_ALLOWED_HOSTS:}
+  db:
+    allowed-datasources: ${TOOL_DB_ALLOWED_DATASOURCES:}
+    # 로컬은 별도 read-only DB를 따로 안 두고 기본 워키피디아 DB 접속정보(위 spring.datasource와 동일 계정)를 그대로 재사용한다.
+    datasources:
+      workipediaReadonly:
+        url: ${TOOL_DB_READONLY_URL:jdbc:mariadb://localhost:3306/workipedia}
+        username: ${TOOL_DB_READONLY_USERNAME:wip}
+        password: ${TOOL_DB_READONLY_PASSWORD:}

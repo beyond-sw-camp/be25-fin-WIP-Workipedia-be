@@ -2,6 +2,12 @@ package com.wip.workipedia.admin.manual.service;
 
 import com.wip.workipedia.admin.manual.dto.AdminManualCreateRequest;
 import com.wip.workipedia.admin.manual.dto.AdminManualUpdateRequest;
+import com.wip.workipedia.aisync.domain.AiSyncJob;
+import com.wip.workipedia.aisync.domain.AiSyncOperation;
+import com.wip.workipedia.aisync.domain.AiSyncSourceType;
+import com.wip.workipedia.aisync.domain.AiSyncStatus;
+import com.wip.workipedia.aisync.repository.AiSyncJobRepository;
+import com.wip.workipedia.aisync.service.AiSyncJobService;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.response.PageResponse;
@@ -12,6 +18,7 @@ import com.wip.workipedia.manual.domain.ManualVersion;
 import com.wip.workipedia.manual.domain.ManualStatus;
 import com.wip.workipedia.manual.dto.ManualDetailResponse;
 import com.wip.workipedia.manual.dto.ManualSummaryResponse;
+import com.wip.workipedia.manual.dto.ManualVersionResponse;
 import com.wip.workipedia.manual.repository.ManualFileRepository;
 import com.wip.workipedia.manual.repository.ManualRepository;
 import com.wip.workipedia.manual.repository.ManualVersionRepository;
@@ -22,14 +29,21 @@ import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.domain.UserRole;
 import com.wip.workipedia.user.domain.UserStatus;
 import com.wip.workipedia.user.repository.UserRepository;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -45,6 +59,8 @@ public class AdminManualService {
     private static final String MANUAL_PDF_KEY_PREFIX = "manuals";
     private static final String PDF_CONTENT_TYPE = "application/pdf";
     private static final String INITIAL_VERSION = "1.0";
+    private static final String ACTIVE_TITLE_UNIQUE_CONSTRAINT = "uk_manuals_active_title";
+    private static final int MAX_DIFF_LINES = 200;
 
     private final ManualRepository manualRepository;
     private final ManualFileRepository manualFileRepository;
@@ -56,6 +72,8 @@ public class AdminManualService {
     private final PdfTextExtractor pdfTextExtractor;
     private final StorageService storageService;
     private final Executor manualPdfUploadExecutor;
+    private final AiSyncJobService aiSyncJobService;
+    private final AiSyncJobRepository aiSyncJobRepository;
 
     public AdminManualService(
             ManualRepository manualRepository,
@@ -67,7 +85,9 @@ public class AdminManualService {
             ManualPdfValidator manualPdfValidator,
             PdfTextExtractor pdfTextExtractor,
             StorageService storageService,
-            @Qualifier("manualPdfUploadExecutor") Executor manualPdfUploadExecutor
+            @Qualifier("manualPdfUploadExecutor") Executor manualPdfUploadExecutor,
+            AiSyncJobService aiSyncJobService,
+            AiSyncJobRepository aiSyncJobRepository
     ) {
         this.manualRepository = manualRepository;
         this.manualFileRepository = manualFileRepository;
@@ -79,26 +99,31 @@ public class AdminManualService {
         this.pdfTextExtractor = pdfTextExtractor;
         this.storageService = storageService;
         this.manualPdfUploadExecutor = manualPdfUploadExecutor;
+        this.aiSyncJobService = aiSyncJobService;
+        this.aiSyncJobRepository = aiSyncJobRepository;
     }
 
     public PageResponse<ManualSummaryResponse> findAll(Long actorUserId, ManualStatus status, Pageable pageable) {
         assertSystemAdmin(actorUserId);
-        if (status == null) {
-            return PageResponse.from(
-                    manualRepository.findByDeletedAtIsNull(pageable)
-                            .map(ManualSummaryResponse::from)
-            );
-        }
-        return PageResponse.from(
-                manualRepository.findByDeletedAtIsNullAndStatus(status, pageable)
-                        .map(ManualSummaryResponse::from)
-        );
+        Page<Manual> manuals = status == null
+                ? manualRepository.findByDeletedAtIsNull(pageable)
+                : manualRepository.findByDeletedAtIsNullAndStatus(status, pageable);
+        return PageResponse.from(toSummaryResponsePage(manuals));
     }
 
     public ManualDetailResponse findById(Long actorUserId, Long manualId) {
         assertSystemAdmin(actorUserId);
         Manual manual = getManual(manualId);
         return ManualDetailResponse.from(manual, findFileUrls(manual.getManualId()));
+    }
+
+    public List<ManualVersionResponse> findVersions(Long actorUserId, Long manualId) {
+        assertSystemAdmin(actorUserId);
+        Manual manual = getManual(manualId);
+        return manualVersionRepository.findByManualManualIdAndDeletedAtIsNullOrderByManualVersionIdDesc(manual.getManualId())
+                .stream()
+                .map(ManualVersionResponse::from)
+                .toList();
     }
 
     @Transactional
@@ -108,10 +133,12 @@ public class AdminManualService {
 
         String manualNum = INITIAL_VERSION;
         Long departmentId = validateDepartmentId(request.departmentId());
+        String content = requireManualContent(request.content());
         Manual manual = Manual.create(
                 departmentId,
                 request.title(),
-                request.content(),
+                request.description(),
+                content,
                 request.status(),
                 request.sourceUrl(),
                 manualNum,
@@ -119,11 +146,12 @@ public class AdminManualService {
         );
         Manual savedManual = saveManual(manual);
         saveVersion(savedManual, actorUserId, manualNum, "INITIAL_CREATE");
+        aiSyncJobService.enqueue(AiSyncSourceType.MANUAL, savedManual.getManualId(), AiSyncOperation.UPSERT);
         return ManualDetailResponse.from(savedManual);
     }
 
     @Transactional
-    public ManualDetailResponse createFromPdf(Long actorUserId, Long departmentId, String title,
+    public ManualDetailResponse createFromPdf(Long actorUserId, Long departmentId, String title, String description,
             ManualStatus status, String sourceUrl, List<MultipartFile> files) {
         assertSystemAdmin(actorUserId);
         validateDuplicateTitle(title);
@@ -131,11 +159,21 @@ public class AdminManualService {
         List<PdfUpload> uploads = readPdfUploads(files);
         String content = extractContent(uploads);
         String manualNum = INITIAL_VERSION;
-        Manual manual = Manual.create(validateDepartmentId(departmentId), title, content, status, sourceUrl, manualNum, actorUserId);
+        Manual manual = Manual.create(
+                validateDepartmentId(departmentId),
+                title,
+                description,
+                content,
+                status,
+                sourceUrl,
+                manualNum,
+                actorUserId
+        );
         Manual savedManual = saveManual(manual);
         List<StoredObject> storedObjects = uploadPdfFiles(uploads);
         attachFiles(savedManual, storedObjects);
         saveVersion(savedManual, actorUserId, manualNum, "INITIAL_PDF_UPLOAD");
+        aiSyncJobService.enqueue(AiSyncSourceType.MANUAL, savedManual.getManualId(), AiSyncOperation.UPSERT);
         return ManualDetailResponse.from(savedManual, toFileUrls(storedObjects));
     }
 
@@ -145,41 +183,52 @@ public class AdminManualService {
 
         Manual manual = getManual(manualId);
         validateDuplicateTitleForUpdate(request.title(), manual.getManualId());
-        String manualNum = resolveNextVersion(manual, fileCount(manual));
         manual.update(
                 validateDepartmentId(request.departmentId()),
                 request.title(),
+                request.description(),
                 request.content(),
                 request.status(),
                 request.sourceUrl(),
-                manualNum
+                null
         );
         flushManualChanges();
-        ManualVersion version = saveVersion(manual, actorUserId, manualNum, request.updateReason());
         // 기존 매뉴얼 수정 알림은 사용자에게 공개되는 PUBLISHED 상태에서만 생성한다.
-        createManualUpdateNotificationsIfPublished(manual, version);
+        aiSyncJobService.enqueue(AiSyncSourceType.MANUAL, manual.getManualId(), AiSyncOperation.UPSERT);
         return ManualDetailResponse.from(manual, findFileUrls(manual.getManualId()));
     }
 
     @Transactional
     public ManualDetailResponse updateFromPdf(Long actorUserId, Long manualId, Long departmentId,
-            String title, ManualStatus status, String sourceUrl, List<MultipartFile> files) {
+            String title, String description, ManualStatus status, String sourceUrl, List<MultipartFile> files) {
         assertSystemAdmin(actorUserId);
 
         Manual manual = getManual(manualId);
         validateDuplicateTitleForUpdate(title, manual.getManualId());
+        Long validatedDepartmentId = validateDepartmentId(departmentId);
         List<PdfUpload> uploads = readPdfUploads(files);
+        int previousFileCount = fileCount(manual);
         String content = extractContent(uploads);
+        boolean fileCountChanged = previousFileCount != uploads.size();
+        boolean contentChanged = isChanged(manual.getContent(), content);
+        if (!fileCountChanged && !contentChanged
+                && !metadataChanged(manual, validatedDepartmentId, title, description, status, sourceUrl)) {
+            return ManualDetailResponse.from(manual, findFileUrls(manual.getManualId()));
+        }
+
+        String contentDiff = fileCountChanged ? null : buildContentDiff(manual.getContent(), content);
+        String updateReason = resolvePdfUpdateReason(previousFileCount, uploads.size());
         String manualNum = resolveNextVersion(manual, uploads.size());
-        manual.update(validateDepartmentId(departmentId), title, content, status, sourceUrl, manualNum);
+        manual.update(validatedDepartmentId, title, description, content, status, sourceUrl, manualNum);
         flushManualChanges();
         List<ManualFile> previousFiles = findActiveFiles(manual.getManualId());
         List<StoredObject> storedObjects = uploadPdfFiles(uploads);
         replaceFiles(manual, previousFiles, storedObjects);
-        ManualVersion version = saveVersion(manual, actorUserId, manualNum, "PDF_UPLOAD");
+        ManualVersion version = saveVersion(manual, actorUserId, manualNum, updateReason, contentDiff);
         // PDF 교체도 기존 매뉴얼 수정으로 보고, 공개 상태인 경우에만 업데이트 알림을 보낸다.
         createManualUpdateNotificationsIfPublished(manual, version);
         previousFiles.forEach(previousFile -> deleteStoredFileAfterCommit(previousFile.getFileKey()));
+        aiSyncJobService.enqueue(AiSyncSourceType.MANUAL, manual.getManualId(), AiSyncOperation.UPSERT);
         return ManualDetailResponse.from(manual, toFileUrls(storedObjects));
     }
 
@@ -191,6 +240,7 @@ public class AdminManualService {
         manual.delete();
         files.forEach(ManualFile::delete);
         files.forEach(file -> deleteStoredFileAfterCommit(file.getFileKey()));
+        aiSyncJobService.enqueue(AiSyncSourceType.MANUAL, manualId, AiSyncOperation.DELETE);
     }
 
     private Manual getManual(Long manualId) {
@@ -217,7 +267,7 @@ public class AdminManualService {
         try {
             return manualRepository.saveAndFlush(manual);
         } catch (DataIntegrityViolationException exception) {
-            throw new CustomException(ErrorType.CONFLICT, "Manual title already exists.");
+            throw convertManualConstraintException(exception);
         }
     }
 
@@ -225,8 +275,27 @@ public class AdminManualService {
         try {
             manualRepository.flush();
         } catch (DataIntegrityViolationException exception) {
-            throw new CustomException(ErrorType.CONFLICT, "Manual title already exists.");
+            throw convertManualConstraintException(exception);
         }
+    }
+
+    private RuntimeException convertManualConstraintException(DataIntegrityViolationException exception) {
+        if (isActiveTitleUniqueConstraintViolation(exception)) {
+            return new CustomException(ErrorType.CONFLICT, "Manual title already exists.");
+        }
+        return exception;
+    }
+
+    private boolean isActiveTitleUniqueConstraintViolation(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (current instanceof ConstraintViolationException constraintViolationException
+                    && ACTIVE_TITLE_UNIQUE_CONSTRAINT.equals(constraintViolationException.getConstraintName())) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private void assertSystemAdmin(Long actorUserId) {
@@ -365,11 +434,16 @@ public class AdminManualService {
 
     // 저장된 버전 이력을 반환해 매뉴얼 업데이트 알림의 버전 및 수정 요약으로 사용한다.
     private ManualVersion saveVersion(Manual manual, Long actorUserId, String manualNum, String updateReason) {
+        return saveVersion(manual, actorUserId, manualNum, updateReason, null);
+    }
+
+    private ManualVersion saveVersion(Manual manual, Long actorUserId, String manualNum, String updateReason,
+            String contentDiff) {
         if (manualVersionRepository.existsByManualManualIdAndManualNumAndDeletedAtIsNull(manual.getManualId(), manualNum)) {
             throw new CustomException(ErrorType.CONFLICT, "Manual version already exists. manualNum=" + manualNum);
         }
         return manualVersionRepository.save(
-                ManualVersion.create(manual, actorUserId, manualNum, normalizeUpdateReason(updateReason)));
+                ManualVersion.create(manual, actorUserId, manualNum, normalizeUpdateReason(updateReason), contentDiff));
     }
 
     private String resolveNextVersion(Manual manual, int nextFileCount) {
@@ -410,6 +484,102 @@ public class AdminManualService {
         return updateReason;
     }
 
+    private boolean metadataChanged(Manual manual, Long departmentId, String title, String description,
+            ManualStatus status, String sourceUrl) {
+        if (departmentId != null && !departmentId.equals(manual.getDepartmentId())) {
+            return true;
+        }
+        if (title != null && !title.equals(manual.getTitle())) {
+            return true;
+        }
+        if (description != null && !description.equals(manual.getDescription())) {
+            return true;
+        }
+        if (status != null && status != manual.getStatus()) {
+            return true;
+        }
+        return sourceUrl != null && !sourceUrl.equals(manual.getSourceUrl());
+    }
+
+    private String resolvePdfUpdateReason(int previousFileCount, int nextFileCount) {
+        if (nextFileCount > previousFileCount) {
+            return "FILE_ADDED";
+        }
+        if (nextFileCount < previousFileCount) {
+            return "FILE_REMOVED";
+        }
+        return "PDF_UPLOAD";
+    }
+
+    private String requireManualContent(String content) {
+        if (content == null || content.isBlank()) {
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "Manual content is required.");
+        }
+        return content;
+    }
+
+    private boolean isChanged(String previous, String next) {
+        return !normalizeContent(previous).equals(normalizeContent(next));
+    }
+
+    private String normalizeContent(String content) {
+        return content == null ? "" : content.replace("\r\n", "\n").replace('\r', '\n');
+    }
+
+    private String buildContentDiff(String previous, String next) {
+        String oldContent = normalizeContent(previous);
+        String newContent = normalizeContent(next);
+        if (oldContent.equals(newContent)) {
+            return null;
+        }
+
+        String[] oldLines = oldContent.split("\n", -1);
+        String[] newLines = newContent.split("\n", -1);
+        int maxLines = Math.max(oldLines.length, newLines.length);
+        StringBuilder diff = new StringBuilder();
+        int emittedLines = 0;
+
+        for (int index = 0; index < maxLines; index++) {
+            String oldLine = index < oldLines.length ? oldLines[index] : null;
+            String newLine = index < newLines.length ? newLines[index] : null;
+            if (oldLine != null && oldLine.equals(newLine)) {
+                continue;
+            }
+
+            if (emittedLines >= MAX_DIFF_LINES) {
+                diff.append("... diff truncated ...\n");
+                break;
+            }
+
+            diff.append("@@ line ").append(index + 1).append(" @@\n");
+            if (oldLine != null) {
+                diff.append("- ").append(oldLine).append('\n');
+                emittedLines++;
+            }
+            if (newLine != null) {
+                diff.append("+ ").append(newLine).append('\n');
+                emittedLines++;
+            }
+            if (oldLine != null && newLine != null) {
+                diff.append("? ").append(buildChangeMarker(oldLine, newLine)).append('\n');
+                emittedLines++;
+            }
+        }
+
+        return diff.toString().trim();
+    }
+
+    private String buildChangeMarker(String oldLine, String newLine) {
+        int maxLength = Math.max(oldLine.length(), newLine.length());
+        StringBuilder marker = new StringBuilder(maxLength);
+        for (int index = 0; index < maxLength; index++) {
+            char oldChar = index < oldLine.length() ? oldLine.charAt(index) : 0;
+            char newChar = index < newLine.length() ? newLine.charAt(index) : 0;
+            marker.append(oldChar == newChar ? ' ' : '^');
+        }
+        return marker.toString().stripTrailing();
+    }
+
     private List<ManualFile> findActiveFiles(Long manualId) {
         return manualFileRepository.findByManualManualIdAndDeletedAtIsNullOrderBySortOrderAsc(manualId);
     }
@@ -418,6 +588,57 @@ public class AdminManualService {
         return findActiveFiles(manualId).stream()
                 .map(ManualFile::getFileUrl)
                 .toList();
+    }
+
+    private Page<ManualSummaryResponse> toSummaryResponsePage(Page<Manual> manuals) {
+        List<Manual> content = manuals.getContent();
+        Map<Long, AiSyncJob> syncJobs = findLatestManualSyncJobMap(content);
+        List<ManualSummaryResponse> responses = content.stream()
+                .map(manual -> toSummaryResponse(manual, syncJobs))
+                .toList();
+        return new PageImpl<>(responses, manuals.getPageable(), manuals.getTotalElements());
+    }
+
+    private ManualSummaryResponse toSummaryResponse(Manual manual, Map<Long, AiSyncJob> syncJobs) {
+        AiSyncJob syncJob = syncJobs.get(manual.getManualId());
+        return ManualSummaryResponse.from(
+                manual,
+                findFileUrls(manual.getManualId()),
+                resolveSyncStatus(syncJob),
+                resolveSyncedAt(syncJob),
+                resolveSyncError(syncJob)
+        );
+    }
+
+    private Map<Long, AiSyncJob> findLatestManualSyncJobMap(List<Manual> manuals) {
+        if (manuals.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> manualIds = manuals.stream()
+                .map(Manual::getManualId)
+                .toList();
+        return aiSyncJobRepository
+                .findLatestJobsBySourceTypeAndSourceIds(AiSyncSourceType.MANUAL.name(), manualIds)
+                .stream()
+                .collect(Collectors.toMap(AiSyncJob::getSourceId, Function.identity()));
+    }
+
+    private String resolveSyncStatus(AiSyncJob syncJob) {
+        return syncJob == null ? "EMPTY" : syncJob.getStatus().name();
+    }
+
+    private LocalDateTime resolveSyncedAt(AiSyncJob syncJob) {
+        if (syncJob == null || syncJob.getCompletedAt() == null || syncJob.getStatus() != AiSyncStatus.SYNCED) {
+            return null;
+        }
+        return syncJob.getCompletedAt();
+    }
+
+    private String resolveSyncError(AiSyncJob syncJob) {
+        if (syncJob == null || syncJob.getStatus() != AiSyncStatus.FAILED) {
+            return null;
+        }
+        return syncJob.getLastError();
     }
 
     private List<String> toFileUrls(List<StoredObject> storedObjects) {

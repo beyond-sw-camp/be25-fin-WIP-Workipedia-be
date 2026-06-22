@@ -23,7 +23,7 @@ SET accepted_answer_id = NULL
 WHERE question_id IN (9001, 9002);
 
 DELETE FROM knowledge_data WHERE knowledge_data_id IN (9001, 9002) OR ticket_id IN (9001, 9002);
-DELETE FROM manual_citations WHERE source_id IN (9001, 9002) OR manual_id IN (9001, 9002);
+DELETE FROM rag_citations WHERE cited_by_id IN (9001, 9002) OR source_id IN ('9001', '9002');
 DELETE FROM worki_chunks WHERE question_id IN (9001, 9002) OR answer_id IN (9001, 9002);
 DELETE FROM manual_chunks WHERE manual_id IN (9001, 9002);
 DELETE FROM manual_versions WHERE manual_id IN (9001, 9002) OR user_id IN (9001, 9002, 9003, 9004);

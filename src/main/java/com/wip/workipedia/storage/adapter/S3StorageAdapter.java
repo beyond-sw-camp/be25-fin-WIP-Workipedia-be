@@ -49,8 +49,11 @@ public class S3StorageAdapter implements StoragePort {
             .region(region)
             .build();
 
-        this.bucket = props.bucket();
-        this.publicBaseUrl = props.publicUrl();
+        this.bucket = s3.bucket();
+        // public URL을 명시하지 않으면 버킷+리전으로 표준 S3 가상 호스팅 URL을 조합한다.
+        this.publicBaseUrl = (props.publicUrl() != null && !props.publicUrl().isBlank())
+            ? props.publicUrl()
+            : "https://" + s3.bucket() + ".s3." + s3.region() + ".amazonaws.com";
     }
 
     @Override

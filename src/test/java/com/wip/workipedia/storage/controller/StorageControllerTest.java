@@ -1,6 +1,7 @@
 package com.wip.workipedia.storage.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wip.workipedia.common.security.InternalApiKeyFilter;
 import com.wip.workipedia.common.security.JwtFilter;
 import com.wip.workipedia.common.security.JwtProvider;
 import com.wip.workipedia.storage.dto.PresignedDownloadResponse;
@@ -33,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     excludeAutoConfiguration = {SecurityAutoConfiguration.class, SecurityFilterAutoConfiguration.class},
     excludeFilters = @ComponentScan.Filter(
         type = FilterType.ASSIGNABLE_TYPE,
-        classes = {JwtFilter.class, JwtProvider.class}
+        classes = {JwtFilter.class, JwtProvider.class, InternalApiKeyFilter.class}
     )
 )
 class StorageControllerTest {

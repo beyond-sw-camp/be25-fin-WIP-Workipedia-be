@@ -24,6 +24,57 @@ public interface KnowledgeDataRepository extends JpaRepository<KnowledgeData, Lo
 
 	@Query(
 		value = """
+			SELECT
+				kd.knowledge_data_id AS knowledgeDataId,
+				kd.department_id AS departmentId,
+				COALESCE(d.department_name, '기타') AS departmentName,
+				kd.title AS question,
+				kd.content AS answer,
+				kd.approved_at AS approvedAt,
+				kd.created_at AS createdAt,
+				kd.updated_at AS updatedAt
+			FROM knowledge_data kd
+			LEFT JOIN departments d
+				ON d.department_id = kd.department_id
+				AND d.deleted_at IS NULL
+			WHERE kd.deleted_at IS NULL
+				AND kd.is_deleted = 'N'
+			""",
+		countQuery = """
+			SELECT COUNT(*)
+			FROM knowledge_data kd
+			WHERE kd.deleted_at IS NULL
+				AND kd.is_deleted = 'N'
+			""",
+		nativeQuery = true
+	)
+	Page<KnowledgeBoardProjection> findBoard(Pageable pageable);
+
+	@Query(
+		value = """
+			SELECT
+				kd.knowledge_data_id AS knowledgeDataId,
+				kd.department_id AS departmentId,
+				COALESCE(d.department_name, '기타') AS departmentName,
+				kd.title AS question,
+				kd.content AS answer,
+				kd.approved_at AS approvedAt,
+				kd.created_at AS createdAt,
+				kd.updated_at AS updatedAt
+			FROM knowledge_data kd
+			LEFT JOIN departments d
+				ON d.department_id = kd.department_id
+				AND d.deleted_at IS NULL
+			WHERE kd.knowledge_data_id = :knowledgeDataId
+				AND kd.deleted_at IS NULL
+				AND kd.is_deleted = 'N'
+			""",
+		nativeQuery = true
+	)
+	Optional<KnowledgeBoardProjection> findBoardById(@Param("knowledgeDataId") Long knowledgeDataId);
+
+	@Query(
+		value = """
 			SELECT DATE_FORMAT(kd.approved_at, '%Y-%m') AS month, COUNT(*) AS count
 			FROM knowledge_data kd
 			WHERE kd.department_id = :departmentId
@@ -124,6 +175,24 @@ public interface KnowledgeDataRepository extends JpaRepository<KnowledgeData, Lo
 		LocalDateTime getCompletedAt();
 
 		LocalDateTime getAnsweredAt();
+	}
+
+	interface KnowledgeBoardProjection {
+		Long getKnowledgeDataId();
+
+		Long getDepartmentId();
+
+		String getDepartmentName();
+
+		String getQuestion();
+
+		String getAnswer();
+
+		LocalDateTime getApprovedAt();
+
+		LocalDateTime getCreatedAt();
+
+		LocalDateTime getUpdatedAt();
 	}
 
 	interface MonthlyCountProjection {

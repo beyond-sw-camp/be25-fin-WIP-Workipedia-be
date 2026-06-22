@@ -3,6 +3,7 @@ package com.wip.workipedia.leaderboard.service;
 import com.wip.workipedia.leaderboard.dto.LeaderboardResponse;
 import com.wip.workipedia.leaderboard.domain.LeaderboardSnapshot;
 import com.wip.workipedia.leaderboard.repository.LeaderboardCandidateProjection;
+import com.wip.workipedia.leaderboard.repository.EsgMetricWeeklyRepository;
 import com.wip.workipedia.leaderboard.repository.LeaderboardMySummaryProjection;
 import com.wip.workipedia.leaderboard.repository.LeaderboardRankerProjection;
 import com.wip.workipedia.leaderboard.repository.LeaderboardSnapshotRepository;
@@ -22,8 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class LeaderboardService {
 
     private static final String SNAPSHOT_LOCK_PREFIX = "leaderboard_snapshot:";
+    private static final String NOT_DELETED = "N";
 
     private final LeaderboardSnapshotRepository leaderboardSnapshotRepository;
+    private final EsgMetricWeeklyRepository esgMetricWeeklyRepository;
 
     // 최신 주간 스냅샷을 기준으로 TOP 3, 내 요약, 전체 ESG 점수 합계를 한 번에 조회한다.
     public LeaderboardResponse getLeaderboard(Long userId) {
@@ -41,7 +44,14 @@ public class LeaderboardService {
         LocalDateTime calculatedAt = leaderboardSnapshotRepository
             .findCalculatedAtByRankingPeriodStart(rankingPeriodStart)
             .orElse(null);
-        return LeaderboardResponse.from(rankingPeriodStart, calculatedAt, rankers, mySummary, totalEsgScore);
+        return LeaderboardResponse.from(
+            rankingPeriodStart,
+            calculatedAt,
+            rankers,
+            mySummary,
+            totalEsgScore,
+            esgMetricWeeklyRepository.findTopByDeletedAtIsNullAndIsDeletedOrderByMetricWeekStartDesc(NOT_DELETED)
+        );
     }
 
     // 매주 월요일 00:00 기준 전체 활성 사용자 순위를 스냅샷으로 재생성한다.

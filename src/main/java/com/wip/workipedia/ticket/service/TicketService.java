@@ -43,7 +43,10 @@ public class TicketService {
 	private final ObjectMapper objectMapper;
 
 	public TicketResponse create(Long requesterId, CreateTicketRequest request) {
+		log.info("[티켓생성] 요청 수신 requesterId={}, title={}", requesterId, request.title());
 		RoutingResult routingResult = ticketRoutingService.route(request);
+		log.info("[티켓생성] 라우팅 결과 decision={}, 부서명={}, confidence={}",
+			routingResult.decision(), routingResult.assignedDepartmentName(), routingResult.confidenceScore());
 		return saveTicket(requesterId, request, routingResult);
 	}
 
