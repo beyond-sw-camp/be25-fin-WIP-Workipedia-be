@@ -5,6 +5,7 @@ import com.wip.workipedia.aisync.client.KnowledgeAiClient;
 import com.wip.workipedia.aisync.client.TextDocumentAiClient;
 import com.wip.workipedia.aisync.domain.AiSyncJob;
 import com.wip.workipedia.aisync.domain.AiSyncOperation;
+import com.wip.workipedia.aisync.domain.CleanupTrigger;
 import com.wip.workipedia.aisync.service.AiSyncCleanupService;
 import com.wip.workipedia.aisync.service.AiSyncJobService;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +51,7 @@ public class AiSyncWorker {
     @Scheduled(cron = "${ai-sync.worker.cleanup-cron}")
     public void cleanupOldWorki() {
         log.info("[AI-SYNC][CLEANUP] 오래된 WORKI 청킹 데이터 정리 시작");
-        aiSyncCleanupService.cleanupOldWorkiJobs();
+        aiSyncCleanupService.cleanupOldWorkiJobs(CleanupTrigger.SCHEDULE);
         log.info("[AI-SYNC][CLEANUP] 정리 완료");
     }
 

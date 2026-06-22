@@ -8,6 +8,5 @@ public record AiSyncProperties(
     String textCron,
     int batchSize,
     int leaseMinutes,
-    String cleanupCron,
-    int retentionDays
+    String cleanupCron
 ) {}
