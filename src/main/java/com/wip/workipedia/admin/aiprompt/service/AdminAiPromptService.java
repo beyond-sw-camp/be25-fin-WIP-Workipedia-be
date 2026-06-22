@@ -8,10 +8,13 @@ import com.wip.workipedia.admin.domain.AdminLog;
 import com.wip.workipedia.admin.repository.AdminLogRepository;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
+import com.wip.workipedia.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdminAiPromptService {
@@ -20,6 +23,7 @@ public class AdminAiPromptService {
 
     private final AiPromptSettingRepository aiPromptSettingRepository;
     private final AdminLogRepository adminLogRepository;
+    private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
     public AiPromptSettingResponse getSetting() {
@@ -30,6 +34,11 @@ public class AdminAiPromptService {
     public AiPromptSettingResponse updateSetting(Long adminUserId, AiPromptSettingUpdateRequest request) {
         AiPromptSetting setting = load();
         setting.update(request.customPrompt(), request.active());
+
+        if (adminUserId == null || !userRepository.existsById(adminUserId)) {
+            log.warn("Skip AI prompt setting admin log because actor does not exist. actorId={}", adminUserId);
+            return AiPromptSettingResponse.from(setting);
+        }
 
         adminLogRepository.save(AdminLog.of(
                 adminUserId,
