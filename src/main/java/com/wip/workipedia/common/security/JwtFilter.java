@@ -19,6 +19,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtFilter extends OncePerRequestFilter {
 
 	private static final String BEARER_PREFIX = "Bearer ";
+	private static final String NOTIFICATION_STREAM_PATH = "/api/v1/notifications/stream";
+	private static final String TOKEN_QUERY_PARAM = "token";
 
 	private final JwtProvider jwtProvider;
 
@@ -28,14 +30,12 @@ public class JwtFilter extends OncePerRequestFilter {
 		HttpServletResponse response,
 		FilterChain filterChain
 	) throws ServletException, IOException {
-		String authorizationHeader = request.getHeader("Authorization");
+		String accessToken = resolveAccessToken(request);
 
-		if (authorizationHeader == null || !authorizationHeader.startsWith(BEARER_PREFIX)) {
+		if (accessToken == null) {
 			filterChain.doFilter(request, response);
 			return;
 		}
-
-		String accessToken = authorizationHeader.substring(BEARER_PREFIX.length());
 
 		if (jwtProvider.isValidAccessToken(accessToken)) {
 			Long userId = jwtProvider.getUserId(accessToken);
@@ -53,5 +53,25 @@ public class JwtFilter extends OncePerRequestFilter {
 
 		filterChain.doFilter(request, response);
 	}
-}
 
+	private String resolveAccessToken(HttpServletRequest request) {
+		String authorizationHeader = request.getHeader("Authorization");
+		if (authorizationHeader != null && authorizationHeader.startsWith(BEARER_PREFIX)) {
+			return authorizationHeader.substring(BEARER_PREFIX.length());
+		}
+
+		if (isNotificationStreamRequest(request)) {
+			String token = request.getParameter(TOKEN_QUERY_PARAM);
+			if (token != null && !token.isBlank()) {
+				return token;
+			}
+		}
+
+		return null;
+	}
+
+	private boolean isNotificationStreamRequest(HttpServletRequest request) {
+		return "GET".equalsIgnoreCase(request.getMethod())
+			&& NOTIFICATION_STREAM_PATH.equals(request.getRequestURI());
+	}
+}
