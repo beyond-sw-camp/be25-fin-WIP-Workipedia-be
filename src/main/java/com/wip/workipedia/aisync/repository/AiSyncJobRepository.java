@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -150,6 +151,50 @@ public interface AiSyncJobRepository extends JpaRepository<AiSyncJob, Long> {
     int resetAllFailed();
 
     Optional<AiSyncJob> findByAiSyncJobIdAndDeletedAtIsNull(Long aiSyncJobId);
+
+    /**
+     * sourceId별 최신 WORKI 잡이 SYNCED이고 completed_at이 cutoff보다 오래된 것 조회.
+     */
+    @Query(value = """
+        SELECT j.* FROM ai_sync_jobs j
+        INNER JOIN (
+            SELECT source_id, MAX(ai_sync_job_id) AS max_id
+            FROM ai_sync_jobs
+            WHERE source_type = 'WORKI'
+              AND deleted_at IS NULL
+            GROUP BY source_id
+        ) latest ON j.ai_sync_job_id = latest.max_id
+        WHERE j.status = 'SYNCED'
+          AND j.completed_at < :cutoff
+          AND j.deleted_at IS NULL
+        ORDER BY j.ai_sync_job_id ASC
+        LIMIT :limit
+        """, nativeQuery = true)
+    List<AiSyncJob> findOldSyncedWorkiLatestJobs(
+        @Param("cutoff") LocalDateTime cutoff,
+        @Param("limit") int limit
+    );
+
+    /**
+     * aiSyncJobId <= maxJobId 범위만 soft delete — 조회 이후 생긴 신규 잡은 건드리지 않는다.
+     */
+    @Transactional
+    @Modifying
+    @Query("""
+        UPDATE AiSyncJob j
+        SET j.deletedAt = :now
+        WHERE j.sourceType = :sourceType
+          AND j.sourceId = :sourceId
+          AND j.aiSyncJobId <= :maxJobId
+          AND j.deletedAt IS NULL
+        """)
+    int softDeleteOldJobsBySourceId(
+        @Param("sourceType") AiSyncSourceType sourceType,
+        @Param("sourceId") Long sourceId,
+        @Param("maxJobId") Long maxJobId,
+        @Param("now") LocalDateTime now
+    );
+
 
     interface AiSyncStatusCount {
         AiSyncStatus getStatus();

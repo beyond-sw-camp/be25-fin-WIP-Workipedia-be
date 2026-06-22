@@ -5,6 +5,8 @@ import com.wip.workipedia.aisync.client.KnowledgeAiClient;
 import com.wip.workipedia.aisync.client.TextDocumentAiClient;
 import com.wip.workipedia.aisync.domain.AiSyncJob;
 import com.wip.workipedia.aisync.domain.AiSyncOperation;
+import com.wip.workipedia.aisync.domain.CleanupTrigger;
+import com.wip.workipedia.aisync.service.AiSyncCleanupService;
 import com.wip.workipedia.aisync.service.AiSyncJobService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +24,7 @@ public class AiSyncWorker {
     private final DocumentAiClient documentAiClient;
     private final TextDocumentAiClient textDocumentAiClient;
     private final KnowledgeAiClient knowledgeAiClient;
+    private final AiSyncCleanupService aiSyncCleanupService;
 
     // MANUAL (PDF 포함) — 파일 다운로드가 있어 느린 작업이므로 별도 주기로 처리
     @Scheduled(cron = "${ai-sync.worker.document-cron}")
@@ -43,6 +46,13 @@ public class AiSyncWorker {
         log.info("[AI-SYNC] text jobs claimed: {}", jobs.size());
         processJobs(jobs);
         log.info("[AI-SYNC] text worker finished");
+    }
+
+    @Scheduled(cron = "${ai-sync.worker.cleanup-cron}")
+    public void cleanupOldWorki() {
+        log.info("[AI-SYNC][CLEANUP] 오래된 WORKI 청킹 데이터 정리 시작");
+        aiSyncCleanupService.cleanupOldWorkiJobs(CleanupTrigger.SCHEDULE);
+        log.info("[AI-SYNC][CLEANUP] 정리 완료");
     }
 
     private void processJobs(List<AiSyncJob> jobs) {
