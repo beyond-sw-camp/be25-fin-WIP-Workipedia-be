@@ -41,8 +41,9 @@ spring:
 
 storage:
   provider: ${STORAGE_PROVIDER}
-  bucket: ${STORAGE_BUCKET}
-  public-url: ${STORAGE_PUBLIC_BASE_URL}
+  # 공용 bucket/public-url은 R2·Minio용. S3는 자체 bucket을 쓰고 public-url을 자동 조합하므로 비워둘 수 있다.
+  bucket: ${STORAGE_BUCKET:}
+  public-url: ${STORAGE_PUBLIC_BASE_URL:}
   r2:
     access-key: ${R2_ACCESS_KEY}
     secret-key: ${R2_SECRET_KEY}
@@ -55,6 +56,7 @@ storage:
     access-key: ${AWS_ACCESS_KEY}
     secret-key: ${AWS_SECRET_KEY}
     region: ${AWS_REGION}
+    bucket: ${S3_UPLOAD_BUCKET}
 
 ai:
   base-url: ${AI_BASE_URL:http://localhost:8000}
