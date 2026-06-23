@@ -121,9 +121,9 @@ public class TeamAdminKnowledgeDataService {
 
 	@Transactional
 	public void delete(Long actorUserId, Long knowledgeDataId) {
-		User actor = getTeamAdmin(actorUserId);
+		User actor = getKnowledgeDataDeleteActor(actorUserId);
 		KnowledgeData knowledgeData = getActiveKnowledgeData(knowledgeDataId);
-		assertDepartmentKnowledgeData(actor, knowledgeData);
+		assertCanDeleteKnowledgeData(actor, knowledgeData);
 		knowledgeData.delete(actor.getUserId());
 		aiSyncJobService.enqueue(AiSyncSourceType.KNOWLEDGE_DATA, knowledgeDataId, AiSyncOperation.DELETE);
 	}
@@ -135,6 +135,11 @@ public class TeamAdminKnowledgeDataService {
 			throw new CustomException(ErrorType.KNOWLEDGE_DATA_FORBIDDEN);
 		}
 		return user;
+	}
+
+	private User getKnowledgeDataDeleteActor(Long actorUserId) {
+		return userRepository.findById(actorUserId)
+			.orElseThrow(() -> new CustomException(ErrorType.KNOWLEDGE_DATA_FORBIDDEN));
 	}
 
 	private KnowledgeData getActiveKnowledgeData(Long knowledgeDataId) {
@@ -154,6 +159,18 @@ public class TeamAdminKnowledgeDataService {
 		if (!actorDepartmentId.equals(knowledgeData.getDepartmentId())) {
 			throw new CustomException(ErrorType.KNOWLEDGE_DATA_FORBIDDEN);
 		}
+	}
+
+	private void assertCanDeleteKnowledgeData(User actor, KnowledgeData knowledgeData) {
+		if (actor.getRole() == UserRole.SYSTEM_ADMIN) {
+			return;
+		}
+		if (actor.getRole() == UserRole.TEAM_ADMIN
+			&& actor.getDepartment() != null
+			&& actor.getDepartment().getDepartmentId().equals(knowledgeData.getDepartmentId())) {
+			return;
+		}
+		throw new CustomException(ErrorType.KNOWLEDGE_DATA_FORBIDDEN);
 	}
 
 	private void assertCompleted(Ticket ticket) {
