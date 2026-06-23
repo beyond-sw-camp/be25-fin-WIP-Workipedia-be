@@ -368,10 +368,14 @@ public class AdminManualService {
     }
 
     private String extractContent(List<PdfUpload> uploads) {
-        return uploads.stream()
+        String content = uploads.stream()
                 .map(upload -> pdfTextExtractor.extract(upload.file(), upload.bytes()))
                 .reduce((left, right) -> left + "\n\n" + right)
                 .orElse("");
+        if (content == null || content.isBlank()) {
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF 파일에서 추출 가능한 텍스트가 없습니다.");
+        }
+        return content;
     }
 
     private void deleteStoredFile(String fileKey) {
