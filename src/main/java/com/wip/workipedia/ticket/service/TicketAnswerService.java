@@ -7,6 +7,7 @@ import com.wip.workipedia.point.domain.PointReasonType;
 import com.wip.workipedia.point.service.PointService;
 import com.wip.workipedia.storage.dto.StoredObjectMetadata;
 import com.wip.workipedia.storage.service.StorageService;
+import com.wip.workipedia.ticket.domain.KnowledgeReviewStatus;
 import com.wip.workipedia.ticket.domain.Ticket;
 import com.wip.workipedia.ticket.domain.TicketAnswer;
 import com.wip.workipedia.ticket.domain.TicketStatus;
@@ -73,7 +74,7 @@ public class TicketAnswerService {
 		User actor = getUser(actorUserId);
 		Ticket ticket = ticketRepository.findByTicketIdAndDeletedAtIsNull(ticketId)
 			.orElseThrow(() -> new CustomException(ErrorType.TICKET_NOT_FOUND));
-		assertAssignedDepartmentMember(actor, ticket);
+		assertCanReadAnswer(actor, ticket);
 		TicketAnswer answer = ticketAnswerRepository.findTopByTicketIdAndDeletedAtIsNullOrderByCreatedAtDesc(ticketId)
 			.orElseThrow(() -> new CustomException(ErrorType.TICKET_NOT_FOUND, "Ticket answer not found."));
 		User author = userRepository.findById(answer.getAuthorId()).orElse(null);
@@ -108,6 +109,14 @@ public class TicketAnswerService {
 		if (!actorDepartmentId.equals(ticket.getAssignedDepartmentId())) {
 			throw new CustomException(ErrorType.TICKET_FORBIDDEN);
 		}
+	}
+
+	private void assertCanReadAnswer(User actor, Ticket ticket) {
+		if (ticket.getRequesterId().equals(actor.getUserId())
+				|| ticket.getKnowledgeReviewStatus() == KnowledgeReviewStatus.APPROVED) {
+			return;
+		}
+		assertAssignedDepartmentMember(actor, ticket);
 	}
 
 	private void validateAnswerable(Ticket ticket) {
