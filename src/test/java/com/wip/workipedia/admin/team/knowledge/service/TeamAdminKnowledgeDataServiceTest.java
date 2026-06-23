@@ -187,6 +187,34 @@ class TeamAdminKnowledgeDataServiceTest {
 		assertThat(knowledgeData.getIsDeleted()).isEqualTo("Y");
 	}
 
+	@Test
+	void delete_allowsSystemAdminForAnyDepartmentKnowledgeData() {
+		TeamAdminKnowledgeDataService service = service();
+		User actor = user(1L, UserRole.SYSTEM_ADMIN, null);
+		KnowledgeData knowledgeData = knowledgeData(300L, 100L, 20L);
+		when(userRepository.findById(1L)).thenReturn(Optional.of(actor));
+		when(knowledgeDataRepository.findByKnowledgeDataIdAndDeletedAtIsNull(300L)).thenReturn(Optional.of(knowledgeData));
+
+		service.delete(1L, 300L);
+
+		assertThat(knowledgeData.getDeletedAt()).isNotNull();
+		assertThat(knowledgeData.getIsDeleted()).isEqualTo("Y");
+	}
+
+	@Test
+	void delete_rejectsTeamAdminForOtherDepartmentKnowledgeData() {
+		TeamAdminKnowledgeDataService service = service();
+		User actor = user(1L, UserRole.TEAM_ADMIN, 10L);
+		KnowledgeData knowledgeData = knowledgeData(300L, 100L, 20L);
+		when(userRepository.findById(1L)).thenReturn(Optional.of(actor));
+		when(knowledgeDataRepository.findByKnowledgeDataIdAndDeletedAtIsNull(300L)).thenReturn(Optional.of(knowledgeData));
+
+		assertThatThrownBy(() -> service.delete(1L, 300L))
+			.isInstanceOf(CustomException.class)
+			.extracting("errorType")
+			.isEqualTo(ErrorType.KNOWLEDGE_DATA_FORBIDDEN);
+	}
+
 	private TeamAdminKnowledgeDataService service() {
 		return new TeamAdminKnowledgeDataService(
 			knowledgeDataRepository,

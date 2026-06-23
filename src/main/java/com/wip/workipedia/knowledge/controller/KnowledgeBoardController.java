@@ -8,6 +8,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,5 +35,14 @@ public class KnowledgeBoardController {
 		@PathVariable Long knowledgeDataId
 	) {
 		return ResponseEntity.ok(knowledgeBoardService.findById(knowledgeDataId));
+	}
+
+	@DeleteMapping("/{knowledgeDataId}")
+	public ResponseEntity<Void> delete(
+		@AuthenticationPrincipal Long actorUserId,
+		@PathVariable Long knowledgeDataId
+	) {
+		knowledgeBoardService.delete(actorUserId, knowledgeDataId);
+		return ResponseEntity.noContent().build();
 	}
 }
