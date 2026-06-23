@@ -6,6 +6,7 @@ import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.response.PageResponse;
 import com.wip.workipedia.common.security.SecurityUtil;
 import com.wip.workipedia.user.domain.User;
+import com.wip.workipedia.user.domain.UserRole;
 import com.wip.workipedia.user.domain.UserStatus;
 import com.wip.workipedia.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -44,9 +45,39 @@ public class AdminUserService {
 		return AdminUserResponse.from(user);
 	}
 
+	@Transactional
+	public AdminUserResponse changeRole(Long userId, UserRole role) {
+		if (role != UserRole.TEAM_ADMIN) {
+			throw new CustomException(ErrorType.BAD_REQUEST, "TEAM_ADMIN 권한으로만 변경할 수 있습니다.");
+		}
+
+		User user = userRepository.findById(userId)
+			.orElseThrow(() -> new CustomException(ErrorType.NOT_FOUND, "사용자를 찾을 수 없습니다."));
+
+		validatePromotableToTeamAdmin(user);
+		user.changeRole(UserRole.TEAM_ADMIN);
+
+		return AdminUserResponse.from(user);
+	}
+
 	private void validateSelfInactivation(Long userId, UserStatus status) {
 		if (status == UserStatus.INACTIVE && userId.equals(SecurityUtil.getCurrentUserId())) {
 			throw new CustomException(ErrorType.FORBIDDEN, "자기 자신은 비활성화할 수 없습니다.");
+		}
+	}
+
+	private void validatePromotableToTeamAdmin(User user) {
+		if (user.getDeletedAt() != null) {
+			throw new CustomException(ErrorType.FORBIDDEN, "Deleted user cannot be promoted.");
+		}
+		if (user.getStatus() != UserStatus.ACTIVE) {
+			throw new CustomException(ErrorType.FORBIDDEN, "Inactive user cannot be promoted.");
+		}
+		if (user.getRole() == UserRole.TEAM_ADMIN) {
+			throw new CustomException(ErrorType.CONFLICT, "User is already TEAM_ADMIN.");
+		}
+		if (user.getRole() != UserRole.USER) {
+			throw new CustomException(ErrorType.BAD_REQUEST, "Only USER can be promoted to TEAM_ADMIN.");
 		}
 	}
 }

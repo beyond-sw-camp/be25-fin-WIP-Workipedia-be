@@ -128,6 +128,10 @@ public class User {
 		return lastLoginAt;
 	}
 
+	public LocalDateTime getDeletedAt() {
+		return deletedAt;
+	}
+
 	public void updateLastLoginAt() {
 		this.lastLoginAt = LocalDateTime.now();
 	}
@@ -138,5 +142,9 @@ public class User {
 
 	public void changeStatus(UserStatus status) {
 		this.status = status;
+	}
+
+	public void changeRole(UserRole role) {
+		this.role = role;
 	}
 }

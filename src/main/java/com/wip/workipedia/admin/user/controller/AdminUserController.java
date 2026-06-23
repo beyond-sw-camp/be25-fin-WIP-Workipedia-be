@@ -1,6 +1,7 @@
 package com.wip.workipedia.admin.user.controller;
 
 import com.wip.workipedia.admin.user.dto.AdminUserResponse;
+import com.wip.workipedia.admin.user.dto.AdminUserRoleRequest;
 import com.wip.workipedia.admin.user.dto.AdminUserStatusRequest;
 import com.wip.workipedia.admin.user.service.AdminUserService;
 import com.wip.workipedia.common.request.BasePageRequest;
@@ -47,5 +48,13 @@ public class AdminUserController {
 			@Valid @RequestBody AdminUserStatusRequest request
 	) {
 		return ResponseEntity.ok(adminUserService.changeStatus(userId, request.status()));
+	}
+
+	@PatchMapping("/{userId}/role")
+	public ResponseEntity<AdminUserResponse> changeRole(
+			@PathVariable Long userId,
+			@Valid @RequestBody AdminUserRoleRequest request
+	) {
+		return ResponseEntity.ok(adminUserService.changeRole(userId, request.role()));
 	}
 }
