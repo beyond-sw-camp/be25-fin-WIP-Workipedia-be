@@ -1,6 +1,8 @@
 package com.wip.workipedia.admin.user.service;
 
 import com.wip.workipedia.admin.user.dto.AdminUserResponse;
+import com.wip.workipedia.admin.domain.AdminLog;
+import com.wip.workipedia.admin.repository.AdminLogRepository;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.response.PageResponse;
@@ -19,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdminUserService {
 
 	private final UserRepository userRepository;
+	private final AdminLogRepository adminLogRepository;
 
 	@Transactional(readOnly = true)
 	public PageResponse<AdminUserResponse> findAll(Pageable pageable) {
@@ -46,7 +49,7 @@ public class AdminUserService {
 	}
 
 	@Transactional
-	public AdminUserResponse changeRole(Long userId, UserRole role) {
+	public AdminUserResponse promoteToTeamAdmin(Long actorUserId, Long userId, UserRole role) {
 		if (role != UserRole.TEAM_ADMIN) {
 			throw new CustomException(ErrorType.BAD_REQUEST, "TEAM_ADMIN 권한으로만 변경할 수 있습니다.");
 		}
@@ -56,6 +59,13 @@ public class AdminUserService {
 
 		validatePromotableToTeamAdmin(user);
 		user.changeRole(UserRole.TEAM_ADMIN);
+		adminLogRepository.save(AdminLog.of(
+			actorUserId,
+			"PROMOTE_TO_TEAM_ADMIN",
+			"USER",
+			"사용자를 팀관리자로 승격했습니다.",
+			"{\"targetUserId\":" + user.getUserId() + ",\"role\":\"TEAM_ADMIN\"}"
+		));
 
 		return AdminUserResponse.from(user);
 	}
@@ -68,16 +78,16 @@ public class AdminUserService {
 
 	private void validatePromotableToTeamAdmin(User user) {
 		if (user.getDeletedAt() != null) {
-			throw new CustomException(ErrorType.FORBIDDEN, "Deleted user cannot be promoted.");
+			throw new CustomException(ErrorType.FORBIDDEN, "삭제된 계정은 팀관리자로 승격할 수 없습니다.");
 		}
 		if (user.getStatus() != UserStatus.ACTIVE) {
-			throw new CustomException(ErrorType.FORBIDDEN, "Inactive user cannot be promoted.");
+			throw new CustomException(ErrorType.FORBIDDEN, "비활성화된 계정은 팀관리자로 승격할 수 없습니다.");
 		}
 		if (user.getRole() == UserRole.TEAM_ADMIN) {
-			throw new CustomException(ErrorType.CONFLICT, "User is already TEAM_ADMIN.");
+			throw new CustomException(ErrorType.CONFLICT, "이미 팀관리자인 사용자입니다.");
 		}
 		if (user.getRole() != UserRole.USER) {
-			throw new CustomException(ErrorType.BAD_REQUEST, "Only USER can be promoted to TEAM_ADMIN.");
+			throw new CustomException(ErrorType.BAD_REQUEST, "일반 사용자만 팀관리자로 승격할 수 있습니다.");
 		}
 	}
 }

@@ -2,10 +2,14 @@ package com.wip.workipedia.admin.user.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.wip.workipedia.admin.domain.AdminLog;
+import com.wip.workipedia.admin.repository.AdminLogRepository;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.department.domain.Department;
@@ -27,78 +31,82 @@ class AdminUserServiceTest {
 	@Mock
 	private UserRepository userRepository;
 
+	@Mock
+	private AdminLogRepository adminLogRepository;
+
 	@Test
-	void changeRole_promotesActiveUserToTeamAdmin() {
+	void promoteToTeamAdmin_promotesActiveUserToTeamAdmin() {
 		AdminUserService service = service();
 		User user = user(10L, UserRole.USER, UserStatus.ACTIVE, null);
 		when(userRepository.findById(10L)).thenReturn(Optional.of(user));
 
-		var response = service.changeRole(10L, UserRole.TEAM_ADMIN);
+		var response = service.promoteToTeamAdmin(1L, 10L, UserRole.TEAM_ADMIN);
 
 		assertThat(user.getRole()).isEqualTo(UserRole.TEAM_ADMIN);
 		assertThat(response.userId()).isEqualTo(10L);
 		assertThat(response.role()).isEqualTo(UserRole.TEAM_ADMIN.name());
+		verify(adminLogRepository).save(any(AdminLog.class));
 	}
 
 	@Test
-	void changeRole_rejectsUnsupportedRole() {
+	void promoteToTeamAdmin_rejectsUnsupportedRole() {
 		AdminUserService service = service();
 
-		assertThatThrownBy(() -> service.changeRole(10L, UserRole.SYSTEM_ADMIN))
+		assertThatThrownBy(() -> service.promoteToTeamAdmin(1L, 10L, UserRole.SYSTEM_ADMIN))
 			.isInstanceOf(CustomException.class)
 			.extracting("errorType")
 			.isEqualTo(ErrorType.BAD_REQUEST);
 	}
 
 	@Test
-	void changeRole_rejectsMissingUser() {
+	void promoteToTeamAdmin_rejectsMissingUser() {
 		AdminUserService service = service();
 		when(userRepository.findById(10L)).thenReturn(Optional.empty());
 
-		assertThatThrownBy(() -> service.changeRole(10L, UserRole.TEAM_ADMIN))
+		assertThatThrownBy(() -> service.promoteToTeamAdmin(1L, 10L, UserRole.TEAM_ADMIN))
 			.isInstanceOf(CustomException.class)
 			.extracting("errorType")
 			.isEqualTo(ErrorType.NOT_FOUND);
 	}
 
 	@Test
-	void changeRole_rejectsAlreadyTeamAdmin() {
+	void promoteToTeamAdmin_rejectsAlreadyTeamAdmin() {
 		AdminUserService service = service();
 		User user = user(10L, UserRole.TEAM_ADMIN, UserStatus.ACTIVE, null);
 		when(userRepository.findById(10L)).thenReturn(Optional.of(user));
 
-		assertThatThrownBy(() -> service.changeRole(10L, UserRole.TEAM_ADMIN))
+		assertThatThrownBy(() -> service.promoteToTeamAdmin(1L, 10L, UserRole.TEAM_ADMIN))
 			.isInstanceOf(CustomException.class)
 			.extracting("errorType")
 			.isEqualTo(ErrorType.CONFLICT);
 	}
 
 	@Test
-	void changeRole_rejectsInactiveUser() {
+	void promoteToTeamAdmin_rejectsInactiveUser() {
 		AdminUserService service = service();
 		User user = user(10L, UserRole.USER, UserStatus.INACTIVE, null);
 		when(userRepository.findById(10L)).thenReturn(Optional.of(user));
 
-		assertThatThrownBy(() -> service.changeRole(10L, UserRole.TEAM_ADMIN))
+		assertThatThrownBy(() -> service.promoteToTeamAdmin(1L, 10L, UserRole.TEAM_ADMIN))
 			.isInstanceOf(CustomException.class)
 			.extracting("errorType")
 			.isEqualTo(ErrorType.FORBIDDEN);
 	}
 
 	@Test
-	void changeRole_rejectsDeletedUser() {
+	void promoteToTeamAdmin_rejectsDeletedUser() {
 		AdminUserService service = service();
 		User user = user(10L, UserRole.USER, UserStatus.ACTIVE, LocalDateTime.now());
 		when(userRepository.findById(10L)).thenReturn(Optional.of(user));
 
-		assertThatThrownBy(() -> service.changeRole(10L, UserRole.TEAM_ADMIN))
+		assertThatThrownBy(() -> service.promoteToTeamAdmin(1L, 10L, UserRole.TEAM_ADMIN))
 			.isInstanceOf(CustomException.class)
 			.extracting("errorType")
 			.isEqualTo(ErrorType.FORBIDDEN);
 	}
 
 	private AdminUserService service() {
-		return new AdminUserService(userRepository);
+		return new AdminUserService(userRepository, adminLogRepository);
 	}
 
 	private User user(Long userId, UserRole role, UserStatus status, LocalDateTime deletedAt) {

@@ -3,6 +3,7 @@ package com.wip.workipedia.common.exception;
 import com.wip.workipedia.common.response.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -24,6 +25,11 @@ public class GlobalExceptionHandler {
 	}
 
 	// 추가 오류 처리 여기다 넣기.
+	@ExceptionHandler(AuthorizationDeniedException.class)
+	public Object handleAuthorizationDeniedException(AuthorizationDeniedException exception) {
+		return ApiResponse.error(ErrorType.FORBIDDEN);
+	}
+
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public Object handleMethodArgumentNotValidException(MethodArgumentNotValidException exception) {
 		logValidationFailure(exception);
