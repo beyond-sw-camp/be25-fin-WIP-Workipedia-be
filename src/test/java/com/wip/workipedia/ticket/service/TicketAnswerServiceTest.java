@@ -173,6 +173,71 @@ class TicketAnswerServiceTest {
 			.isEqualTo(ErrorType.TICKET_INVALID_ATTACHMENT);
 	}
 
+	@Test
+	void findLatestAnswer_allowsTicketRequesterFromAnotherDepartment() {
+		TicketAnswerService service = service();
+		Ticket ticket = assignedTicket(100L, 10L);
+		User requester = user(99L, 20L);
+		stubLatestAnswer(requester, ticket);
+
+		var response = service.findLatestAnswer(99L, 100L);
+
+		assertThat(response.ticketId()).isEqualTo(100L);
+	}
+
+	@Test
+	void findLatestAnswer_allowsAssignedDepartmentMember() {
+		TicketAnswerService service = service();
+		Ticket ticket = assignedTicket(100L, 10L);
+		User departmentMember = user(1L, 10L);
+		stubLatestAnswer(departmentMember, ticket);
+
+		var response = service.findLatestAnswer(1L, 100L);
+
+		assertThat(response.ticketId()).isEqualTo(100L);
+	}
+
+	@Test
+	void findLatestAnswer_allowsAuthenticatedUserForApprovedKnowledgeTicket() {
+		TicketAnswerService service = service();
+		Ticket ticket = assignedTicket(100L, 10L);
+		ticket.approveKnowledgeReview(10L);
+		User authenticatedUser = user(2L, 20L);
+		stubLatestAnswer(authenticatedUser, ticket);
+
+		var response = service.findLatestAnswer(2L, 100L);
+
+		assertThat(response.ticketId()).isEqualTo(100L);
+	}
+
+	@Test
+	void findLatestAnswer_rejectsUnrelatedUserForPrivateTicket() {
+		TicketAnswerService service = service();
+		Ticket ticket = assignedTicket(100L, 10L);
+		User unrelatedUser = user(2L, 20L);
+		when(userRepository.findById(2L)).thenReturn(Optional.of(unrelatedUser));
+		when(ticketRepository.findByTicketIdAndDeletedAtIsNull(100L)).thenReturn(Optional.of(ticket));
+
+		assertThatThrownBy(() -> service.findLatestAnswer(2L, 100L))
+			.isInstanceOf(CustomException.class)
+			.extracting("errorType")
+			.isEqualTo(ErrorType.TICKET_FORBIDDEN);
+	}
+
+	private TicketAnswerService service() {
+		return new TicketAnswerService(
+			ticketRepository, ticketAnswerRepository, userRepository, notificationService, storageService, pointService);
+	}
+
+	private void stubLatestAnswer(User actor, Ticket ticket) {
+		TicketAnswer answer = TicketAnswer.create(100L, 1L, "answer", null, null, null, null, null);
+		ReflectionTestUtils.setField(answer, "ticketAnswerId", 500L);
+		when(userRepository.findById(actor.getUserId())).thenReturn(Optional.of(actor));
+		when(ticketRepository.findByTicketIdAndDeletedAtIsNull(100L)).thenReturn(Optional.of(ticket));
+		when(ticketAnswerRepository.findTopByTicketIdAndDeletedAtIsNullOrderByCreatedAtDesc(100L))
+			.thenReturn(Optional.of(answer));
+	}
+
 	private Ticket assignedTicket(Long ticketId, Long departmentId) {
 		Ticket ticket = Ticket.create(99L, null, TicketPriority.MEDIUM, "title", "content");
 		ticket.applyRouting(departmentId, null, BigDecimal.valueOf(95, 2), RoutingDecision.AUTO_ASSIGNED);
@@ -184,9 +249,9 @@ class TicketAnswerServiceTest {
 		User user = mock(User.class);
 		Department department = mock(Department.class);
 		lenient().when(user.getUserId()).thenReturn(userId);
-		when(user.getDepartment()).thenReturn(department);
+		lenient().when(user.getDepartment()).thenReturn(department);
 		lenient().when(user.getNickname()).thenReturn("author");
-		when(department.getDepartmentId()).thenReturn(departmentId);
+		lenient().when(department.getDepartmentId()).thenReturn(departmentId);
 		lenient().when(department.getDepartmentName()).thenReturn("department-" + departmentId);
 		return user;
 	}
