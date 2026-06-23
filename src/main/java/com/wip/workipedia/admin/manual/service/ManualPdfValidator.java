@@ -44,21 +44,21 @@ public class ManualPdfValidator {
 
     private void validateRequired(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF file is required.");
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF 파일은 필수입니다.");
         }
     }
 
     private void validateExtension(MultipartFile file) {
         String filename = file.getOriginalFilename();
         if (filename == null || !filename.toLowerCase(Locale.ROOT).endsWith(PDF_EXTENSION)) {
-            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "Only PDF files can be uploaded.");
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF 파일만 업로드할 수 있습니다.");
         }
     }
 
     private void validateContentType(MultipartFile file) {
         String contentType = normalizeContentType(file.getContentType());
         if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
-            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "Only PDF content type can be uploaded.");
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF 콘텐츠 타입만 업로드할 수 있습니다.");
         }
     }
 
@@ -71,10 +71,10 @@ public class ManualPdfValidator {
 
     private void validateSize(long size) {
         if (size <= 0) {
-            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF file is required.");
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF 파일은 필수입니다.");
         }
         if (size > maxFileSizeBytes) {
-            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF file size exceeds the limit.");
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF 파일 크기가 제한을 초과했습니다.");
         }
     }
 
@@ -83,28 +83,28 @@ public class ManualPdfValidator {
             return file.getBytes();
         } catch (IOException e) {
             log.warn("Failed to read PDF file filename={}", file.getOriginalFilename(), e);
-            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "Failed to read PDF file.");
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF 파일을 읽을 수 없습니다.");
         }
     }
 
     private void validateNotEmpty(byte[] bytes) {
         if (bytes.length == 0) {
-            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF file is required.");
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF 파일은 필수입니다.");
         }
     }
 
     private void validateReadablePdf(MultipartFile file, byte[] bytes) {
         try (PDDocument document = Loader.loadPDF(bytes)) {
             if (document.isEncrypted()) {
-                throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "Encrypted PDF files are not allowed.");
+                throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "암호화된 PDF 파일은 업로드할 수 없습니다.");
             }
         } catch (CustomException e) {
             throw e;
         } catch (InvalidPasswordException e) {
-            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "Encrypted PDF files are not allowed.");
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "암호화된 PDF 파일은 업로드할 수 없습니다.");
         } catch (IOException e) {
             log.warn("Invalid PDF file filename={}", file.getOriginalFilename(), e);
-            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF file is invalid.");
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "유효하지 않은 PDF 파일입니다.");
         }
     }
 }

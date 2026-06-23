@@ -280,6 +280,32 @@ class AdminManualServiceTest {
 	}
 
 	@Test
+	void createFromPdf_rejectsNullExtractedPdfText() {
+		AdminManualService service = service();
+		MultipartFile file = mock(MultipartFile.class);
+		byte[] pdfBytes = "pdf".getBytes();
+		when(userRepository.findById(1L)).thenReturn(Optional.of(systemAdmin()));
+		when(manualRepository.existsByTitleAndDeletedAtIsNull("manual")).thenReturn(false);
+		when(manualPdfValidator.validateAndRead(file)).thenReturn(pdfBytes);
+		when(pdfTextExtractor.extract(file, pdfBytes)).thenReturn(null);
+
+		assertThatThrownBy(() -> service.createFromPdf(
+			1L,
+			null,
+			"manual",
+			null,
+			ManualStatus.PUBLISHED,
+			null,
+			List.of(file)
+		))
+			.isInstanceOf(CustomException.class)
+			.extracting("errorType")
+			.isEqualTo(ErrorType.MANUAL_INVALID_FILE);
+		verify(manualRepository, never()).saveAndFlush(any());
+		verify(storageService, never()).upload(any(), any(), any(), any());
+	}
+
+	@Test
 	void delete_clearsRepresentativeFileAndExcludesManualFromActiveDuplicates() {
 		AdminManualService service = service();
 		Manual manual = Manual.create(null, "manual", "content", ManualStatus.PUBLISHED, null, "1.0", 1L);
