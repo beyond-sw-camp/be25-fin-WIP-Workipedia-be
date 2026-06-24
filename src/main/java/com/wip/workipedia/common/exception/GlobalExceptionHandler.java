@@ -1,6 +1,7 @@
 package com.wip.workipedia.common.exception;
 
 import com.wip.workipedia.common.response.ApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authorization.AuthorizationDeniedException;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
@@ -22,6 +24,21 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(CustomException.class)
 	public Object handleCustomException(CustomException exception) {
 		return ApiResponse.error(exception.getErrorType(), exception.getMessage());
+	}
+
+	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+	public Object handleMethodNotSupportedException(
+		HttpRequestMethodNotSupportedException exception,
+		HttpServletRequest request
+	) {
+		log.warn(
+			"[405] method={} uri={} query={} supported={}",
+			request.getMethod(),
+			request.getRequestURI(),
+			request.getQueryString(),
+			exception.getSupportedHttpMethods()
+		);
+		return ApiResponse.error(ErrorType.METHOD_NOT_ALLOWED);
 	}
 
 	// 추가 오류 처리 여기다 넣기.
