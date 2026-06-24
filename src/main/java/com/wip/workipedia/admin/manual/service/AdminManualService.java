@@ -120,9 +120,19 @@ public class AdminManualService {
     public List<ManualVersionResponse> findVersions(Long actorUserId, Long manualId) {
         assertSystemAdmin(actorUserId);
         Manual manual = getManual(manualId);
-        return manualVersionRepository.findByManualManualIdAndDeletedAtIsNullOrderByManualVersionIdDesc(manual.getManualId())
-                .stream()
-                .map(ManualVersionResponse::from)
+        List<ManualVersion> versions = manualVersionRepository
+                .findByManualManualIdAndDeletedAtIsNullOrderByManualVersionIdDesc(manual.getManualId());
+
+        List<Long> versionIds = versions.stream().map(ManualVersion::getManualVersionId).toList();
+        Map<Long, AiSyncJob> summaryJobs = versionIds.isEmpty()
+                ? Map.of()
+                : aiSyncJobRepository
+                    .findLatestJobsBySourceTypeAndSourceIds(AiSyncSourceType.MANUAL_CHANGE_SUMMARY.name(), versionIds)
+                    .stream()
+                    .collect(Collectors.toMap(AiSyncJob::getSourceId, Function.identity()));
+
+        return versions.stream()
+                .map(version -> ManualVersionResponse.from(version, summaryJobs.get(version.getManualVersionId())))
                 .toList();
     }
 
