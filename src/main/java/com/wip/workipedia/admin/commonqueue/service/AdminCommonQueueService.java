@@ -11,7 +11,9 @@ import com.wip.workipedia.ticket.domain.Ticket;
 import com.wip.workipedia.ticket.domain.TicketTransferRequestStatus;
 import com.wip.workipedia.ticket.domain.TicketStatus;
 import com.wip.workipedia.ticket.dto.RoutingResult;
+import com.wip.workipedia.ticket.dto.TicketFileResponse;
 import com.wip.workipedia.ticket.dto.TicketResponse;
+import com.wip.workipedia.ticket.repository.TicketFileRepository;
 import com.wip.workipedia.ticket.repository.TicketRepository;
 import com.wip.workipedia.ticket.repository.TicketTransferRequestRepository;
 import java.util.List;
@@ -29,6 +31,7 @@ public class AdminCommonQueueService {
 	private final DepartmentRepository departmentRepository;
 	private final NotificationService notificationService;
 	private final TicketTransferRequestRepository ticketTransferRequestRepository;
+	private final TicketFileRepository ticketFileRepository;
 
 //  공통 큐 목록 조회
 	public PageResponse<TicketResponse> findCommonQueueTickets(Pageable pageable) {
@@ -77,10 +80,11 @@ public class AdminCommonQueueService {
 			ticket.getRoutingDecision(),
 			List.of("Admin assigned the common queue ticket to the department."),
 			List.of()
-		));
+		), findTicketFiles(ticket.getTicketId()));
 	}
 
 	private TicketResponse toCommonQueueTicketResponse(TicketRepository.CommonQueueTicketProjection ticket) {
+		List<TicketFileResponse> files = findTicketFiles(ticket.getTicketId());
 		return new TicketResponse(
 			ticket.getTicketId(),
 			ticket.getStatus(),
@@ -99,7 +103,20 @@ public class AdminCommonQueueService {
 			ticket.getCommonQueueEnteredAt(),
 			ticket.getTransferReason(),
 			ticket.getCreatedAt(),
-			ticket.getUpdatedAt()
+			ticket.getUpdatedAt(),
+			firstFileUrl(files),
+			files
 		);
+	}
+
+	private List<TicketFileResponse> findTicketFiles(Long ticketId) {
+		return ticketFileRepository.findByTicketIdAndDeletedAtIsNullOrderBySortOrderAsc(ticketId)
+			.stream()
+			.map(TicketFileResponse::from)
+			.toList();
+	}
+
+	private String firstFileUrl(List<TicketFileResponse> files) {
+		return files.isEmpty() ? null : files.get(0).fileUrl();
 	}
 }

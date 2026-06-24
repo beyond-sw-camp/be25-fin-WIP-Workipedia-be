@@ -254,6 +254,58 @@ class AdminManualServiceTest {
 	}
 
 	@Test
+	void createFromPdf_rejectsBlankExtractedPdfText() {
+		AdminManualService service = service();
+		MultipartFile file = mock(MultipartFile.class);
+		byte[] pdfBytes = "pdf".getBytes();
+		when(userRepository.findById(1L)).thenReturn(Optional.of(systemAdmin()));
+		when(manualRepository.existsByTitleAndDeletedAtIsNull("manual")).thenReturn(false);
+		when(manualPdfValidator.validateAndRead(file)).thenReturn(pdfBytes);
+		when(pdfTextExtractor.extract(file, pdfBytes)).thenReturn("   ");
+
+		assertThatThrownBy(() -> service.createFromPdf(
+			1L,
+			null,
+			"manual",
+			null,
+			ManualStatus.PUBLISHED,
+			null,
+			List.of(file)
+		))
+			.isInstanceOf(CustomException.class)
+			.extracting("errorType")
+			.isEqualTo(ErrorType.MANUAL_INVALID_FILE);
+		verify(manualRepository, never()).saveAndFlush(any());
+		verify(storageService, never()).upload(any(), any(), any(), any());
+	}
+
+	@Test
+	void createFromPdf_rejectsNullExtractedPdfText() {
+		AdminManualService service = service();
+		MultipartFile file = mock(MultipartFile.class);
+		byte[] pdfBytes = "pdf".getBytes();
+		when(userRepository.findById(1L)).thenReturn(Optional.of(systemAdmin()));
+		when(manualRepository.existsByTitleAndDeletedAtIsNull("manual")).thenReturn(false);
+		when(manualPdfValidator.validateAndRead(file)).thenReturn(pdfBytes);
+		when(pdfTextExtractor.extract(file, pdfBytes)).thenReturn(null);
+
+		assertThatThrownBy(() -> service.createFromPdf(
+			1L,
+			null,
+			"manual",
+			null,
+			ManualStatus.PUBLISHED,
+			null,
+			List.of(file)
+		))
+			.isInstanceOf(CustomException.class)
+			.extracting("errorType")
+			.isEqualTo(ErrorType.MANUAL_INVALID_FILE);
+		verify(manualRepository, never()).saveAndFlush(any());
+		verify(storageService, never()).upload(any(), any(), any(), any());
+	}
+
+	@Test
 	void delete_clearsRepresentativeFileAndExcludesManualFromActiveDuplicates() {
 		AdminManualService service = service();
 		Manual manual = Manual.create(null, "manual", "content", ManualStatus.PUBLISHED, null, "1.0", 1L);
@@ -337,6 +389,36 @@ class AdminManualServiceTest {
 		verify(manualVersionRepository, never()).save(any());
 		verify(storageService, never()).upload(any(), any(), any(), any());
 		verify(manualRepository, never()).flush();
+	}
+
+	@Test
+	void updateFromPdf_rejectsBlankExtractedPdfText() {
+		AdminManualService service = service();
+		Manual manual = Manual.create(null, "old title", "old content", ManualStatus.PUBLISHED, null, "1.4", 1L);
+		ReflectionTestUtils.setField(manual, "manualId", 100L);
+		MultipartFile file = mock(MultipartFile.class);
+		byte[] pdfBytes = "blank".getBytes();
+		when(userRepository.findById(1L)).thenReturn(Optional.of(systemAdmin()));
+		when(manualRepository.findByManualIdAndDeletedAtIsNull(100L)).thenReturn(Optional.of(manual));
+		when(manualPdfValidator.validateAndRead(file)).thenReturn(pdfBytes);
+		when(manualFileRepository.countByManualManualIdAndDeletedAtIsNull(100L)).thenReturn(1L);
+		when(pdfTextExtractor.extract(file, pdfBytes)).thenReturn("   ");
+
+		assertThatThrownBy(() -> service.updateFromPdf(
+			1L,
+			100L,
+			null,
+			null,
+			null,
+			null,
+			null,
+			List.of(file)
+		))
+			.isInstanceOf(CustomException.class)
+			.extracting("errorType")
+			.isEqualTo(ErrorType.MANUAL_INVALID_FILE);
+		verify(manualRepository, never()).flush();
+		verify(storageService, never()).upload(any(), any(), any(), any());
 	}
 
 	@Test

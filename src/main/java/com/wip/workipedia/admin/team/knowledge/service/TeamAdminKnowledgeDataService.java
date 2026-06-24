@@ -14,7 +14,9 @@ import com.wip.workipedia.point.service.PointService;
 import com.wip.workipedia.ticket.domain.KnowledgeReviewStatus;
 import com.wip.workipedia.ticket.domain.Ticket;
 import com.wip.workipedia.ticket.domain.TicketStatus;
+import com.wip.workipedia.ticket.dto.TicketFileResponse;
 import com.wip.workipedia.ticket.repository.TicketAnswerRepository;
+import com.wip.workipedia.ticket.repository.TicketFileRepository;
 import com.wip.workipedia.ticket.repository.TicketRepository;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.domain.UserRole;
@@ -22,6 +24,7 @@ import com.wip.workipedia.user.repository.UserRepository;
 import com.wip.workipedia.aisync.domain.AiSyncOperation;
 import com.wip.workipedia.aisync.domain.AiSyncSourceType;
 import com.wip.workipedia.aisync.service.AiSyncJobService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -38,6 +41,7 @@ public class TeamAdminKnowledgeDataService {
 	private final KnowledgeDataRepository knowledgeDataRepository;
 	private final TicketRepository ticketRepository;
 	private final TicketAnswerRepository ticketAnswerRepository;
+	private final TicketFileRepository ticketFileRepository;
 	private final UserRepository userRepository;
 	private final PointService pointService;
 	private final AiSyncJobService aiSyncJobService;
@@ -56,7 +60,10 @@ public class TeamAdminKnowledgeDataService {
 		Long departmentId = actor.getDepartment().getDepartmentId();
 		return PageResponse.from(
 			knowledgeDataRepository.findByDepartmentIdAndDeletedAtIsNull(departmentId, pageable)
-				.map(KnowledgeDataResponse::from)
+				.map(knowledgeData -> KnowledgeDataResponse.from(
+					knowledgeData,
+					findTicketFiles(knowledgeData.getTicketId())
+				))
 		);
 	}
 
@@ -92,7 +99,7 @@ public class TeamAdminKnowledgeDataService {
 			savedKnowledgeData.getKnowledgeDataId()
 		);
 		aiSyncJobService.enqueue(AiSyncSourceType.KNOWLEDGE_DATA, savedKnowledgeData.getKnowledgeDataId(), AiSyncOperation.UPSERT);
-		return KnowledgeDataResponse.from(savedKnowledgeData);
+		return KnowledgeDataResponse.from(savedKnowledgeData, findTicketFiles(ticket.getTicketId()));
 	}
 
 	@Transactional
@@ -188,6 +195,7 @@ public class TeamAdminKnowledgeDataService {
 	private KnowledgeTicketCandidateResponse toCandidateResponse(
 		KnowledgeDataRepository.KnowledgeTicketCandidateProjection projection
 	) {
+		List<TicketFileResponse> files = findTicketFiles(projection.getTicketId());
 		return new KnowledgeTicketCandidateResponse(
 			projection.getTicketId(),
 			projection.getDepartmentId(),
@@ -196,7 +204,20 @@ public class TeamAdminKnowledgeDataService {
 			projection.getAnswerId(),
 			projection.getAnswerAuthorId(),
 			projection.getCompletedAt(),
-			projection.getAnsweredAt()
+			projection.getAnsweredAt(),
+			firstFileUrl(files),
+			files
 		);
+	}
+
+	private List<TicketFileResponse> findTicketFiles(Long ticketId) {
+		return ticketFileRepository.findByTicketIdAndDeletedAtIsNullOrderBySortOrderAsc(ticketId)
+			.stream()
+			.map(TicketFileResponse::from)
+			.toList();
+	}
+
+	private String firstFileUrl(List<TicketFileResponse> files) {
+		return files.isEmpty() ? null : files.get(0).fileUrl();
 	}
 }

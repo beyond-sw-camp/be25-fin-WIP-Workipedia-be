@@ -26,6 +26,7 @@ public interface KnowledgeDataRepository extends JpaRepository<KnowledgeData, Lo
 		value = """
 			SELECT
 				kd.knowledge_data_id AS knowledgeDataId,
+				kd.ticket_id AS ticketId,
 				kd.department_id AS departmentId,
 				COALESCE(d.department_name, '기타') AS departmentName,
 				kd.title AS question,
@@ -54,6 +55,7 @@ public interface KnowledgeDataRepository extends JpaRepository<KnowledgeData, Lo
 		value = """
 			SELECT
 				kd.knowledge_data_id AS knowledgeDataId,
+				kd.ticket_id AS ticketId,
 				kd.department_id AS departmentId,
 				COALESCE(d.department_name, '기타') AS departmentName,
 				kd.title AS question,
@@ -179,6 +181,8 @@ public interface KnowledgeDataRepository extends JpaRepository<KnowledgeData, Lo
 
 	interface KnowledgeBoardProjection {
 		Long getKnowledgeDataId();
+
+		Long getTicketId();
 
 		Long getDepartmentId();
 

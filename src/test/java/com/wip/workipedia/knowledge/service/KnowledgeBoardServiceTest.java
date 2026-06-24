@@ -16,6 +16,7 @@ import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.department.domain.Department;
 import com.wip.workipedia.knowledge.domain.KnowledgeData;
 import com.wip.workipedia.knowledge.repository.KnowledgeDataRepository;
+import com.wip.workipedia.ticket.repository.TicketFileRepository;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.domain.UserRole;
 import com.wip.workipedia.user.repository.UserRepository;
@@ -40,6 +41,9 @@ class KnowledgeBoardServiceTest {
 
 	@Mock
 	private AiSyncJobService aiSyncJobService;
+
+	@Mock
+	private TicketFileRepository ticketFileRepository;
 
 	@Test
 	void findAll_returnsOnlyVisibleKnowledgeData() {
@@ -145,7 +149,7 @@ class KnowledgeBoardServiceTest {
 	}
 
 	private KnowledgeBoardService service() {
-		return new KnowledgeBoardService(knowledgeDataRepository, userRepository, aiSyncJobService);
+		return new KnowledgeBoardService(knowledgeDataRepository, userRepository, aiSyncJobService, ticketFileRepository);
 	}
 
 	private KnowledgeData knowledgeData(Long knowledgeDataId, Long departmentId) {
@@ -171,6 +175,11 @@ class KnowledgeBoardServiceTest {
 			@Override
 			public Long getKnowledgeDataId() {
 				return knowledgeDataId;
+			}
+
+			@Override
+			public Long getTicketId() {
+				return 1L;
 			}
 
 			@Override

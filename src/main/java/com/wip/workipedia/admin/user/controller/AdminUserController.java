@@ -1,6 +1,7 @@
 package com.wip.workipedia.admin.user.controller;
 
 import com.wip.workipedia.admin.user.dto.AdminUserResponse;
+import com.wip.workipedia.admin.user.dto.AdminUserRoleRequest;
 import com.wip.workipedia.admin.user.dto.AdminUserStatusRequest;
 import com.wip.workipedia.admin.user.service.AdminUserService;
 import com.wip.workipedia.common.request.BasePageRequest;
@@ -10,6 +11,8 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RestController
 @RequestMapping("/api/v1/admin/users")
+@PreAuthorize("hasRole('SYSTEM_ADMIN')")
 @RequiredArgsConstructor
 public class AdminUserController {
 
@@ -47,5 +51,14 @@ public class AdminUserController {
 			@Valid @RequestBody AdminUserStatusRequest request
 	) {
 		return ResponseEntity.ok(adminUserService.changeStatus(userId, request.status()));
+	}
+
+	@PatchMapping("/{userId}/role")
+	public ResponseEntity<AdminUserResponse> promoteToTeamAdmin(
+			@AuthenticationPrincipal Long actorUserId,
+			@PathVariable Long userId,
+			@Valid @RequestBody AdminUserRoleRequest request
+	) {
+		return ResponseEntity.ok(adminUserService.promoteToTeamAdmin(actorUserId, userId, request.role()));
 	}
 }

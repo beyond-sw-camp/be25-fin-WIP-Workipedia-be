@@ -357,7 +357,7 @@ public class AdminManualService {
 
     private List<PdfUpload> readPdfUploads(List<MultipartFile> files) {
         if (files == null || files.isEmpty()) {
-            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF file is required.");
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF 파일은 필수입니다.");
         }
 
         List<PdfUpload> uploads = new ArrayList<>();
@@ -370,8 +370,15 @@ public class AdminManualService {
     private String extractContent(List<PdfUpload> uploads) {
         return uploads.stream()
                 .map(upload -> pdfTextExtractor.extract(upload.file(), upload.bytes()))
-                .reduce((left, right) -> left + "\n\n" + right)
-                .orElse("");
+                .map(this::requireExtractedPdfText)
+                .collect(Collectors.joining("\n\n"));
+    }
+
+    private String requireExtractedPdfText(String text) {
+        if (text == null || text.isBlank()) {
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF 파일에서 추출 가능한 텍스트가 없습니다.");
+        }
+        return text;
     }
 
     private void deleteStoredFile(String fileKey) {

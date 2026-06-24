@@ -21,7 +21,7 @@ public class PdfTextExtractor {
             return extract(file, file.getBytes());
         } catch (IOException e) {
             log.warn("Failed to read PDF file filename={}", file.getOriginalFilename(), e);
-            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "Failed to read PDF file.");
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF 파일을 읽을 수 없습니다.");
         }
     }
 
@@ -31,20 +31,20 @@ public class PdfTextExtractor {
         try (PDDocument document = Loader.loadPDF(bytes)) {
             String text = new PDFTextStripper().getText(document).trim();
             if (text.isBlank()) {
-                throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF text is empty.");
+                throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF 파일에서 추출 가능한 텍스트가 없습니다.");
             }
             return text;
         } catch (CustomException e) {
             throw e;
         } catch (IOException e) {
             log.warn("Failed to extract PDF text filename={}", file.getOriginalFilename(), e);
-            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "Failed to extract PDF text.");
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF 텍스트를 추출할 수 없습니다.");
         }
     }
 
     private void validateReadable(MultipartFile file, byte[] bytes) {
         if (file == null || file.isEmpty() || bytes != null && bytes.length == 0) {
-            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF file is required.");
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF 파일은 필수입니다.");
         }
     }
 }
