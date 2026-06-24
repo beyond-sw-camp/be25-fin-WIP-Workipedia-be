@@ -192,7 +192,7 @@ AI 답변 해결 건수
 
 [🧩 ERD](https://www.erdcloud.com/d/N5pR99x6kArMGp4Xe)
 
-<img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/main/images/ERD.png?raw=true"/>
+<img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/main/images/ERDF.png?raw=true"/>
 </details>
 
 <br>
