@@ -100,3 +100,7 @@ tool:
         url: ${TOOL_DB_READONLY_URL:jdbc:mariadb://localhost:3306/workipedia}
         username: ${TOOL_DB_READONLY_USERNAME:wip}
         password: ${TOOL_DB_READONLY_PASSWORD:}
+
+infra:
+  esg:
+    region: ap-northeast-2
