@@ -1,4 +1,4 @@
-package com.wip.workipedia.infra.esg.service;
+package com.wip.workipedia.admin.esg.service;
 
 public record CpuMetrics(
     double averageCpu,

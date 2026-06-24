@@ -1,4 +1,4 @@
-package com.wip.workipedia.infra.esg.config;
+package com.wip.workipedia.config;
 
 import java.util.List;
 import java.util.Map;

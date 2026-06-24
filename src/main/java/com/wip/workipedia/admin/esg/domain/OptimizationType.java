@@ -1,4 +1,4 @@
-package com.wip.workipedia.infra.esg.domain;
+package com.wip.workipedia.admin.esg.domain;
 
 public enum OptimizationType {
     INSTANCE_DOWNSIZE,

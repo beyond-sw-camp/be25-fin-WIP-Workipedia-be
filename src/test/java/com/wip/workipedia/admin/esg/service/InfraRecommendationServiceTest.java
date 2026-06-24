@@ -1,11 +1,11 @@
-package com.wip.workipedia.infra.esg.service;
+package com.wip.workipedia.admin.esg.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.wip.workipedia.infra.esg.config.InfraEsgProperties;
-import com.wip.workipedia.infra.esg.domain.OptimizationType;
-import com.wip.workipedia.infra.esg.domain.RecommendationStatus;
-import com.wip.workipedia.infra.esg.dto.ResourceRecommendationDto;
+import com.wip.workipedia.config.InfraEsgProperties;
+import com.wip.workipedia.admin.esg.domain.OptimizationType;
+import com.wip.workipedia.admin.esg.domain.RecommendationStatus;
+import com.wip.workipedia.admin.esg.dto.ResourceRecommendationDto;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;

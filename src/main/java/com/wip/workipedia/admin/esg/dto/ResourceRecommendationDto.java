@@ -1,7 +1,7 @@
-package com.wip.workipedia.infra.esg.dto;
+package com.wip.workipedia.admin.esg.dto;
 
-import com.wip.workipedia.infra.esg.domain.OptimizationType;
-import com.wip.workipedia.infra.esg.domain.RecommendationStatus;
+import com.wip.workipedia.admin.esg.domain.OptimizationType;
+import com.wip.workipedia.admin.esg.domain.RecommendationStatus;
 import java.math.BigDecimal;
 
 public record ResourceRecommendationDto(

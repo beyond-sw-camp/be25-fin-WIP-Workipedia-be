@@ -1,10 +1,10 @@
-package com.wip.workipedia.infra.esg.service;
+package com.wip.workipedia.admin.esg.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.wip.workipedia.common.exception.CustomException;
-import com.wip.workipedia.infra.esg.config.InfraEsgProperties;
+import com.wip.workipedia.config.InfraEsgProperties;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
