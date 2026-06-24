@@ -43,6 +43,8 @@
 5. [시스템 아키텍처](#5-시스템-아키텍처)
 6. [화면설계서](#6-화면설계서)
 7. [API 명세서](#7-API-명세서)
+8. [백엔드 테스트 보고서](#8-백엔드-테스트-보고서)
+9. [프론트엔드 테스트 보고서](#9-프론트엔드-테스트-보고서)
 
 <br>
 
@@ -188,7 +190,7 @@ AI 답변 해결 건수
 <details>
 <summary>세부사항</summary>
 
-[📅 ERD](https://www.erdcloud.com/d/RrGgjDNdgqAvsg8sZ)
+[🧩 ERD](https://www.erdcloud.com/d/xf2cCrAAKgquhRtfe)
 
 <img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/main/images/ERD.png?raw=true"/>
 </details>
@@ -212,7 +214,7 @@ AI 답변 해결 건수
 <details>
 <summary>세부사항</summary>
 
-[📅 화면설계서](https://www.figma.com/design/jleHnh9qzkjeduukiUuJws/%ED%99%94%EB%A9%B4%EA%B8%B0%EB%8A%A5%EC%84%A4%EA%B3%84%EC%84%9C?node-id=0-1&t=Y0yJvaReqcKLiOyK-1)
+[📱 화면설계서](https://www.figma.com/design/jleHnh9qzkjeduukiUuJws/%ED%99%94%EB%A9%B4%EA%B8%B0%EB%8A%A5%EC%84%A4%EA%B3%84%EC%84%9C?node-id=0-1&t=Y0yJvaReqcKLiOyK-1)
 
 <img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/main/images/%ED%99%94%EB%A9%B4%EC%84%A4%EA%B3%84%EC%84%9C.png?raw=true"/>
 </details>
@@ -225,7 +227,31 @@ AI 답변 해결 건수
 <details>
 <summary>세부사항</summary>
 
-[📚 API명세서](https://www.notion.so/playdatacademy/367d943bcac28064b9b6c422491d86bd?v=367d943bcac280189fc1000ce027a418&source=copy_link)
+[🌐 API명세서](https://www.notion.so/playdatacademy/367d943bcac28064b9b6c422491d86bd?v=367d943bcac280189fc1000ce027a418&source=copy_link)
+
+</details>
+
+<br>
+
+
+## <a id="8-백엔드-테스트-보고서"></a> 8. 백엔드 테스트 보고서
+
+<details>
+<summary>세부사항</summary>
+
+[✅ 백엔드테스트보고서](https://docs.google.com/spreadsheets/d/1UwKgzHGSBpIbeOFRVJ_3B759vdDhf5sKBs9VNqmtCpI/edit?gid=112171383#gid=112171383)
+
+</details>
+
+<br>
+
+
+## <a id="9-프론트엔드-테스트-보고서"></a> 9. 프론트엔드 테스트 보고서
+
+<details>
+<summary>세부사항</summary>
+
+[✅ 프론트엔드테스트보고서](https://docs.google.com/spreadsheets/d/1UwKgzHGSBpIbeOFRVJ_3B759vdDhf5sKBs9VNqmtCpI/edit?gid=454562383#gid=454562383)
 
 </details>
 
