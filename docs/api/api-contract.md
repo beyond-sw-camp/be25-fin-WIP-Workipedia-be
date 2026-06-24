@@ -412,7 +412,21 @@ Authorization: Bearer <accessToken>
 | GET    | `/admin/manuals/{manualId}/versions`            | 매뉴얼 버전 이력 및 본문 diff 조회       | SYSTEM_ADMIN |
 | PATCH  | `/admin/manuals/{manualId}`                     | 매뉴얼 수정 및 신규 버전 등록             | SYSTEM_ADMIN |
 | PATCH  | `/admin/manuals/{manualId}/pdf`                 | 매뉴얼 본문 PDF 교체                 | SYSTEM_ADMIN |
+| POST   | `/admin/manuals/{manualId}/versions/{versionId}/resummarize` | 버전 변경사항 AI 요약 재요청        | SYSTEM_ADMIN |
 | DELETE | `/admin/manuals/{manualId}`                     | 매뉴얼 삭제                        | SYSTEM_ADMIN |
+
+#### 매뉴얼 버전 응답 (ManualVersionResponse) — AI 요약 관련 필드
+
+- `updateReasonLabel` (string): `updateReason` 코드를 사용자 문장으로 변환한 값
+- `changeSummary` (string|null): AI가 생성한 본문 변경 한 줄 요약 (비동기 생성, 미생성 시 null)
+- `summaryStatus` (string): 해당 버전 요약 잡 상태 — `NONE | PENDING | PROCESSING | SYNCED | FAILED`
+
+FE 표시 우선순위: `changeSummary || updateReasonLabel || (contentDiff 가공)`
+
+`POST .../versions/{versionId}/resummarize`
+- 해당 버전의 AI 요약을 다시 큐잉한다. `contentDiff`가 없는 버전은 400.
+- 응답: 200 OK (body 없음)
+- FE 재요약 버튼 노출 조건: `contentDiff 있음 && changeSummary 없음 && summaryStatus in (NONE, FAILED)`
 | GET    | `/admin/flash-chat/policy`                      | TTL, 쿨다운, 금지어 정책 조회           | SYSTEM_ADMIN |
 | PATCH  | `/admin/flash-chat/policy`                      | TTL, 쿨다운, 금지어 정책 일괄 변경        | SYSTEM_ADMIN |
 | DELETE | `/admin/flash-chat/messages/{messageId}`        | Flash Chat 메시지 강제 삭제          | SYSTEM_ADMIN |
