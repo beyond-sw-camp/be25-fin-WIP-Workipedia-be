@@ -17,6 +17,8 @@ import com.wip.workipedia.notification.repository.NotificationSettingRepository;
 import com.wip.workipedia.point.domain.UserPoint;
 import com.wip.workipedia.point.repository.UserPointRepository;
 import com.wip.workipedia.ticket.domain.TicketStatus;
+import com.wip.workipedia.ticket.dto.TicketFileResponse;
+import com.wip.workipedia.ticket.repository.TicketFileRepository;
 import com.wip.workipedia.ticket.repository.TicketRepository;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.repository.UserRepository;
@@ -39,6 +41,7 @@ public class MyPageService {
 
 	private final UserRepository userRepository;
 	private final TicketRepository ticketRepository;
+	private final TicketFileRepository ticketFileRepository;
 	private final MyPageTicketRepository myPageTicketRepository;
 	private final UserPointRepository userPointRepository;
 	private final EsgGradeRepository esgGradeRepository;
@@ -92,8 +95,16 @@ public class MyPageService {
 			ticketTimeStatus.remainingHours(),
 			ticketTimeStatus.expired(),
 			MY_TICKET_EDITABLE,
-			MY_TICKET_DELETABLE
+			MY_TICKET_DELETABLE,
+			findTicketFiles(ticketId)
 		);
+	}
+
+	private List<TicketFileResponse> findTicketFiles(Long ticketId) {
+		return ticketFileRepository.findByTicketIdAndDeletedAtIsNullOrderBySortOrderAsc(ticketId)
+			.stream()
+			.map(TicketFileResponse::from)
+			.toList();
 	}
 
 	private MyTicketResponse toMyTicketResponse(MyPageTicketProjection projection) {

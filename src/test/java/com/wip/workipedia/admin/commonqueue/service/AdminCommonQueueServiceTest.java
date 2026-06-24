@@ -21,6 +21,7 @@ import com.wip.workipedia.ticket.domain.TicketPriority;
 import com.wip.workipedia.ticket.domain.TicketStatus;
 import com.wip.workipedia.ticket.domain.TicketTransferRequest;
 import com.wip.workipedia.ticket.domain.TicketTransferRequestStatus;
+import com.wip.workipedia.ticket.repository.TicketFileRepository;
 import com.wip.workipedia.ticket.repository.TicketRepository;
 import com.wip.workipedia.ticket.repository.TicketTransferRequestRepository;
 import java.math.BigDecimal;
@@ -49,6 +50,9 @@ class AdminCommonQueueServiceTest {
 
 	@Mock
 	private TicketTransferRequestRepository ticketTransferRequestRepository;
+
+	@Mock
+	private TicketFileRepository ticketFileRepository;
 
 	@Test
 	void findCommonQueueTickets_usesProjectionWithoutAdditionalLookups() {
@@ -180,7 +184,8 @@ class AdminCommonQueueServiceTest {
 			ticketRepository,
 			departmentRepository,
 			notificationService,
-			ticketTransferRequestRepository
+			ticketTransferRequestRepository,
+			ticketFileRepository
 		);
 	}
 

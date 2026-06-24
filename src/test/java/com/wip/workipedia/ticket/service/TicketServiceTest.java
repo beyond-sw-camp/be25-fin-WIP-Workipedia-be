@@ -159,10 +159,12 @@ class TicketServiceTest {
 	) {
 		return new TicketService(
 			ticketRepository,
+			mock(com.wip.workipedia.ticket.repository.TicketFileRepository.class),
 			mock(TicketRoutingService.class),
 			logRepository,
 			mock(UserRepository.class),
 			notificationService,
+			mock(com.wip.workipedia.storage.service.StorageService.class),
 			new ObjectMapper()
 		);
 	}

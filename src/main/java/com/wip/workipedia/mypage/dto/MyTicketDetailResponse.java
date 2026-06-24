@@ -1,7 +1,9 @@
 package com.wip.workipedia.mypage.dto;
 
 import com.wip.workipedia.mypage.repository.MyTicketDetailProjection;
+import com.wip.workipedia.ticket.dto.TicketFileResponse;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record MyTicketDetailResponse(
 	Long ticketId,
@@ -17,6 +19,8 @@ public record MyTicketDetailResponse(
 	LocalDateTime assignedAt,
 	LocalDateTime createdAt,
 	LocalDateTime completedAt,
+	String fileUrl,
+	List<TicketFileResponse> files,
 	Answer answer
 ) {
 
@@ -36,7 +40,8 @@ public record MyTicketDetailResponse(
 		Long remainingHours,
 		boolean expired,
 		boolean editable,
-		boolean deletable
+		boolean deletable,
+		List<TicketFileResponse> files
 	) {
 		return new MyTicketDetailResponse(
 			projection.getTicketId(),
@@ -52,8 +57,14 @@ public record MyTicketDetailResponse(
 			projection.getAssignedAt(),
 			projection.getCreatedAt(),
 			projection.getCompletedAt(),
+			firstFileUrl(files),
+			files,
 			toAnswer(projection)
 		);
+	}
+
+	private static String firstFileUrl(List<TicketFileResponse> files) {
+		return files == null || files.isEmpty() ? null : files.get(0).fileUrl();
 	}
 
 	private static Answer toAnswer(MyTicketDetailProjection projection) {
