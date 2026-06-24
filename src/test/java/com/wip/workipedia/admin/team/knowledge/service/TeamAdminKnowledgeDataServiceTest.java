@@ -25,6 +25,7 @@ import com.wip.workipedia.ticket.domain.Ticket;
 import com.wip.workipedia.ticket.domain.TicketAnswer;
 import com.wip.workipedia.ticket.domain.TicketPriority;
 import com.wip.workipedia.ticket.repository.TicketAnswerRepository;
+import com.wip.workipedia.ticket.repository.TicketFileRepository;
 import com.wip.workipedia.ticket.repository.TicketRepository;
 import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.domain.UserRole;
@@ -48,6 +49,9 @@ class TeamAdminKnowledgeDataServiceTest {
 
 	@Mock
 	private TicketAnswerRepository ticketAnswerRepository;
+
+	@Mock
+	private TicketFileRepository ticketFileRepository;
 
 	@Mock
 	private UserRepository userRepository;
@@ -220,6 +224,7 @@ class TeamAdminKnowledgeDataServiceTest {
 			knowledgeDataRepository,
 			ticketRepository,
 			ticketAnswerRepository,
+			ticketFileRepository,
 			userRepository,
 			pointService,
 			aiSyncJobService
