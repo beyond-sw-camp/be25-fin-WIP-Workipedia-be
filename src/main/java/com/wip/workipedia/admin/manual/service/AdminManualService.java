@@ -225,11 +225,32 @@ public class AdminManualService {
         List<StoredObject> storedObjects = uploadPdfFiles(uploads);
         replaceFiles(manual, previousFiles, storedObjects);
         ManualVersion version = saveVersion(manual, actorUserId, manualNum, updateReason, contentDiff);
+        // 본문 변경(contentDiff 존재)일 때만 AI 한 줄 요약 잡을 비동기로 큐잉한다.
+        // source_id 는 manualId 가 아니라 manualVersionId 임에 주의.
+        if (contentDiff != null && !contentDiff.isBlank()) {
+            aiSyncJobService.enqueue(AiSyncSourceType.MANUAL_CHANGE_SUMMARY,
+                version.getManualVersionId(), AiSyncOperation.UPSERT);
+        }
         // PDF 교체도 기존 매뉴얼 수정으로 보고, 공개 상태인 경우에만 업데이트 알림을 보낸다.
         createManualUpdateNotificationsIfPublished(manual, version);
         previousFiles.forEach(previousFile -> deleteStoredFileAfterCommit(previousFile.getFileKey()));
         aiSyncJobService.enqueue(AiSyncSourceType.MANUAL, manual.getManualId(), AiSyncOperation.UPSERT);
         return ManualDetailResponse.from(manual, toFileUrls(storedObjects));
+    }
+
+    @Transactional
+    public void resummarize(Long actorUserId, Long manualId, Long manualVersionId) {
+        assertSystemAdmin(actorUserId);
+        ManualVersion version = manualVersionRepository.findById(manualVersionId)
+                .orElseThrow(() -> new CustomException(ErrorType.MANUAL_NOT_FOUND));
+        if (version.getManual() == null || !manualId.equals(version.getManual().getManualId())) {
+            throw new CustomException(ErrorType.MANUAL_NOT_FOUND);
+        }
+        if (version.getContentDiff() == null || version.getContentDiff().isBlank()) {
+            throw new CustomException(ErrorType.BAD_REQUEST, "요약할 변경 내용(diff)이 없는 버전입니다.");
+        }
+        aiSyncJobService.enqueue(AiSyncSourceType.MANUAL_CHANGE_SUMMARY,
+                version.getManualVersionId(), AiSyncOperation.UPSERT);
     }
 
     @Transactional
