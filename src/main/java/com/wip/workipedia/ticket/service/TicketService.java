@@ -227,6 +227,10 @@ public class TicketService {
 			);
 		} catch (IOException e) {
 			throw new CustomException(ErrorType.TICKET_INVALID_ATTACHMENT, "티켓 첨부파일을 읽을 수 없습니다.");
+		} catch (RuntimeException e) {
+			log.warn("티켓 첨부파일 업로드 실패. filename={}, contentType={}",
+				file.getOriginalFilename(), file.getContentType(), e);
+			throw new CustomException(ErrorType.TICKET_INVALID_ATTACHMENT, "티켓 첨부파일 업로드에 실패했습니다.");
 		}
 	}
 
