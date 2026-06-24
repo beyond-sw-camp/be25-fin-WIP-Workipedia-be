@@ -54,6 +54,9 @@ public class ManualVersion {
     @Column(name = "content_diff", columnDefinition = "LONGTEXT")
     private String contentDiff;
 
+    @Column(name = "change_summary", length = 500)
+    private String changeSummary;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 30)
     private ManualStatus status;
@@ -105,5 +108,10 @@ public class ManualVersion {
     @PreUpdate
     void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    // 비동기 워커가 AI 요약 결과를 채울 때 호출한다.
+    public void applyChangeSummary(String summary) {
+        this.changeSummary = (summary == null || summary.isBlank()) ? null : summary.trim();
     }
 }
