@@ -11,7 +11,9 @@ import com.wip.workipedia.ticket.domain.TicketTransferRequestStatus;
 import com.wip.workipedia.ticket.domain.TicketStatus;
 import com.wip.workipedia.ticket.dto.TicketTransferRequestCreateRequest;
 import com.wip.workipedia.ticket.dto.RoutingResult;
+import com.wip.workipedia.ticket.dto.TicketFileResponse;
 import com.wip.workipedia.ticket.dto.TicketResponse;
+import com.wip.workipedia.ticket.repository.TicketFileRepository;
 import com.wip.workipedia.ticket.repository.TicketRepository;
 import com.wip.workipedia.ticket.repository.TicketTransferRequestRepository;
 import com.wip.workipedia.user.domain.User;
@@ -40,6 +42,7 @@ public class TeamTicketService {
 	private static final int COMPLETED_TICKET_VISIBLE_HOURS = 48;
 
 	private final TicketRepository ticketRepository;
+	private final TicketFileRepository ticketFileRepository;
 	private final UserRepository userRepository;
 	private final TicketTransferRequestRepository ticketTransferRequestRepository;
 
@@ -69,7 +72,9 @@ public class TeamTicketService {
 			completedVisibleAfter(),
 			pageable
 		);
-		return PageResponse.from(tickets.map(ticket -> TicketResponse.from(ticket, emptyRoutingResult())));
+		Map<Long, List<TicketFileResponse>> filesByTicketId = findFilesByTicketId(tickets.getContent());
+		return PageResponse.from(tickets.map(ticket ->
+			TicketResponse.from(ticket, emptyRoutingResult(), filesByTicketId.getOrDefault(ticket.getTicketId(), List.of()))));
 	}
 
 	public TicketResponse findTicket(Long actorUserId, Long ticketId) {
@@ -77,7 +82,7 @@ public class TeamTicketService {
 		Ticket ticket = ticketRepository.findByTicketIdAndDeletedAtIsNull(ticketId)
 			.orElseThrow(() -> new CustomException(ErrorType.TICKET_NOT_FOUND));
 		assertDepartmentTicket(actor, ticket);
-		return TicketResponse.from(ticket, emptyRoutingResult());
+		return TicketResponse.from(ticket, emptyRoutingResult(), findFileResponses(ticket.getTicketId()));
 	}
 
 	@Transactional
@@ -116,6 +121,28 @@ public class TeamTicketService {
 
 		return TicketResponse.from(ticket, emptyRoutingResult())
 			.withTransferInfo(request.reason());
+	}
+
+	private List<TicketFileResponse> findFileResponses(Long ticketId) {
+		return ticketFileRepository.findByTicketIdAndDeletedAtIsNullOrderBySortOrderAsc(ticketId)
+			.stream()
+			.map(TicketFileResponse::from)
+			.toList();
+	}
+
+	private Map<Long, List<TicketFileResponse>> findFilesByTicketId(List<Ticket> tickets) {
+		if (tickets.isEmpty()) {
+			return Map.of();
+		}
+		List<Long> ticketIds = tickets.stream()
+			.map(Ticket::getTicketId)
+			.toList();
+		return ticketFileRepository.findByTicketIdInAndDeletedAtIsNullOrderByTicketIdAscSortOrderAsc(ticketIds)
+			.stream()
+			.collect(java.util.stream.Collectors.groupingBy(
+				com.wip.workipedia.ticket.domain.TicketFile::getTicketId,
+				java.util.stream.Collectors.mapping(TicketFileResponse::from, java.util.stream.Collectors.toList())
+			));
 	}
 
 	private User getTeamMember(Long actorUserId) {

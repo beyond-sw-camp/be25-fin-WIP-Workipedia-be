@@ -16,6 +16,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +27,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import java.util.List;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/api/v1/tickets")
@@ -40,6 +44,23 @@ public class TicketController {
 			@AuthenticationPrincipal Long userId,
 			@Valid @RequestBody CreateTicketRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(ticketService.create(userId, request));
+	}
+
+	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<TicketResponse> createWithFiles(
+			@AuthenticationPrincipal Long userId,
+			@RequestParam(required = false) Long sourceChatbotMessageId,
+			@RequestParam(required = false) com.wip.workipedia.ticket.domain.TicketPriority priority,
+			@RequestParam String title,
+			@RequestParam String content,
+			@RequestParam(name = "file", required = false) List<MultipartFile> file,
+			@RequestParam(name = "files", required = false) List<MultipartFile> files,
+			@RequestParam(name = "image", required = false) List<MultipartFile> image,
+			@RequestParam(name = "images", required = false) List<MultipartFile> images,
+			@RequestParam(name = "file[]", required = false) List<MultipartFile> fileArray) {
+		CreateTicketRequest request = new CreateTicketRequest(sourceChatbotMessageId, priority, title, content);
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(ticketService.create(userId, request, resolveFiles(file, files, image, images, fileArray)));
 	}
 
 	// 내 팀 티켓 목록 조회(상태별 필터링)
@@ -88,5 +109,13 @@ public class TicketController {
 			@AuthenticationPrincipal Long userId,
 			@PathVariable Long ticketId) {
 		return ResponseEntity.ok(ticketAnswerService.findLatestAnswer(userId, ticketId));
+	}
+
+	@SafeVarargs
+	private final List<MultipartFile> resolveFiles(List<MultipartFile>... fileGroups) {
+		return Stream.of(fileGroups)
+				.filter(group -> group != null && !group.isEmpty())
+				.flatMap(List::stream)
+				.toList();
 	}
 }

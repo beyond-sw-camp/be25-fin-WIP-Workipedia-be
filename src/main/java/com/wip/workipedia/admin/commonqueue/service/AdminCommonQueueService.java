@@ -99,7 +99,9 @@ public class AdminCommonQueueService {
 			ticket.getCommonQueueEnteredAt(),
 			ticket.getTransferReason(),
 			ticket.getCreatedAt(),
-			ticket.getUpdatedAt()
+			ticket.getUpdatedAt(),
+			null,
+			java.util.List.of()
 		);
 	}
 }

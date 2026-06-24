@@ -27,9 +27,15 @@ public record TicketResponse(
 	LocalDateTime commonQueueEnteredAt,
 	String transferReason,
 	LocalDateTime createdAt,
-	LocalDateTime updatedAt
+	LocalDateTime updatedAt,
+	String fileUrl,
+	List<TicketFileResponse> files
 ) {
 	public static TicketResponse from(Ticket ticket, RoutingResult routingResult) {
+		return from(ticket, routingResult, List.of());
+	}
+
+	public static TicketResponse from(Ticket ticket, RoutingResult routingResult, List<TicketFileResponse> files) {
 		return new TicketResponse(
 			ticket.getTicketId(),
 			ticket.getStatus(),
@@ -48,7 +54,9 @@ public record TicketResponse(
 			ticket.getCommonQueueEnteredAt(),
 			null,
 			ticket.getCreatedAt(),
-			ticket.getUpdatedAt()
+			ticket.getUpdatedAt(),
+			firstFileUrl(files),
+			files
 		);
 	}
 
@@ -71,7 +79,13 @@ public record TicketResponse(
 			commonQueueEnteredAt,
 			transferReason,
 			createdAt,
-			updatedAt
+			updatedAt,
+			fileUrl,
+			files
 		);
+	}
+
+	private static String firstFileUrl(List<TicketFileResponse> files) {
+		return files == null || files.isEmpty() ? null : files.get(0).fileUrl();
 	}
 }
