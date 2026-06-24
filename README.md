@@ -190,7 +190,7 @@ AI 답변 해결 건수
 <details>
 <summary>세부사항</summary>
 
-[🧩 ERD](https://www.erdcloud.com/d/xf2cCrAAKgquhRtfe)
+[🧩 ERD](https://www.erdcloud.com/d/N5pR99x6kArMGp4Xe)
 
 <img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/main/images/ERD.png?raw=true"/>
 </details>
@@ -239,7 +239,7 @@ AI 답변 해결 건수
 <details>
 <summary>세부사항</summary>
 
-[✅ 백엔드테스트보고서](https://docs.google.com/spreadsheets/d/1UwKgzHGSBpIbeOFRVJ_3B759vdDhf5sKBs9VNqmtCpI/edit?gid=112171383#gid=112171383)
+[✔️ 백엔드테스트보고서](https://docs.google.com/spreadsheets/d/1UwKgzHGSBpIbeOFRVJ_3B759vdDhf5sKBs9VNqmtCpI/edit?gid=112171383#gid=112171383)
 
 </details>
 
