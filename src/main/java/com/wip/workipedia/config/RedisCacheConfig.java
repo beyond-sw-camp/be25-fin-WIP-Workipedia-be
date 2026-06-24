@@ -54,6 +54,24 @@ public class RedisCacheConfig {
                 .withCacheConfiguration("faq:recentManuals", listCacheConfig(ManualSummaryResponse.class));
     }
 
+    @Bean
+    public RedisCacheManagerBuilderCustomizer infraEsgCacheCustomizer() {
+        Jackson2JsonRedisSerializer<Object> serializer =
+                new Jackson2JsonRedisSerializer<>(
+                        objectMapper,
+                        objectMapper.getTypeFactory().constructType(
+                                com.wip.workipedia.admin.esg.dto.InfraEsgSummaryResponse.class));
+
+        RedisCacheConfiguration config =
+                RedisCacheConfiguration.defaultCacheConfig()
+                        .entryTtl(Duration.ofMinutes(60))
+                        .disableCachingNullValues()
+                        .serializeValuesWith(
+                                RedisSerializationContext.SerializationPair.fromSerializer(serializer));
+
+        return builder -> builder.withCacheConfiguration("infra:esgSummary", config);
+    }
+
     /** {@code List<elementType>} 형태의 값을 저장하는 캐시 설정을 만든다. */
     private RedisCacheConfiguration listCacheConfig(Class<?> elementType) {
         JavaType listType = objectMapper.getTypeFactory()
