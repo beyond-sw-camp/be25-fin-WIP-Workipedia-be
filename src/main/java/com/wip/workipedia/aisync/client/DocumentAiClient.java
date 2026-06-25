@@ -1,57 +1,53 @@
 package com.wip.workipedia.aisync.client;
 
+import com.wip.workipedia.aisync.client.dto.PageIngestRequest;
 import com.wip.workipedia.aisync.client.dto.TextIngestRequest;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.manual.domain.Manual;
-import com.wip.workipedia.manual.domain.ManualFile;
-import com.wip.workipedia.manual.repository.ManualFileRepository;
+import com.wip.workipedia.manual.domain.ManualPage;
+import com.wip.workipedia.manual.repository.ManualPageRepository;
 import com.wip.workipedia.manual.repository.ManualRepository;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.List;
 
 @Slf4j
 @Component
 public class DocumentAiClient {
 
+    private static final String SOURCE_TYPE_MANUAL = "MANUAL";
+
     private final RestClient restClient;
     private final ManualRepository manualRepository;
-    private final ManualFileRepository manualFileRepository;
+    private final ManualPageRepository manualPageRepository;
 
     public DocumentAiClient(
         @Qualifier("syncAiRestClient") RestClient restClient,
         ManualRepository manualRepository,
-        ManualFileRepository manualFileRepository
+        ManualPageRepository manualPageRepository
     ) {
         this.restClient = restClient;
         this.manualRepository = manualRepository;
-        this.manualFileRepository = manualFileRepository;
+        this.manualPageRepository = manualPageRepository;
     }
 
     public void ingest(Long manualId) {
         Manual manual = manualRepository.findByManualIdAndDeletedAtIsNull(manualId)
             .orElseThrow(() -> new CustomException(ErrorType.MANUAL_NOT_FOUND));
 
-        List<ManualFile> files = manualFileRepository
-            .findByManualManualIdAndDeletedAtIsNullOrderBySortOrderAsc(manualId);
+        // manual_pages 가 있으면 파일명/페이지 메타데이터까지 AI 에 전달해 citation 에 활용한다.
+        // 페이지 정보가 없는 기존 매뉴얼은 저장된 manual.content 로 ingest-text fallback 한다.
+        List<ManualPage> pages = manualPageRepository
+            .findByManualManualIdAndDeletedAtIsNullOrderByFileSortOrderAscPageNumberAsc(manualId);
 
-        if (files.isEmpty()) {
+        if (pages.isEmpty()) {
             ingestAsText(manualId, manual.getTitle(), manual.getContent());
         } else {
-            ingestFiles(manualId, manual.getTitle(), files);
+            ingestAsPages(manualId, manual.getTitle(), pages);
         }
     }
 
@@ -67,29 +63,26 @@ public class DocumentAiClient {
         }
     }
 
-    private void ingestFiles(Long manualId, String title, List<ManualFile> files) {
+    private void ingestAsPages(Long manualId, String title, List<ManualPage> pages) {
         try {
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("source_id", manualId.toString());
-            body.add("source_type", "MANUAL");
-            body.add("title", title);
-            for (ManualFile mf : files) {
-                byte[] bytes = downloadBytes(mf.getFileUrl());
-                String fileName = mf.getFileKey().substring(mf.getFileKey().lastIndexOf('/') + 1);
-                body.add("files", new ByteArrayResource(bytes) {
-                    @Override public String getFilename() { return fileName; }
-                });
-            }
+            List<PageIngestRequest.Page> pagePayloads = pages.stream()
+                .map(page -> new PageIngestRequest.Page(
+                    page.getFileName(),
+                    page.getFileKey(),
+                    page.getFileSortOrder(),
+                    page.getPageNumber(),
+                    page.getGlobalPageNumber(),
+                    page.getContent()
+                ))
+                .toList();
             restClient.post()
-                .uri("/api/v1/documents/ingest")
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .body(body)
+                .uri("/api/v1/documents/ingest-pages")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new PageIngestRequest(manualId, SOURCE_TYPE_MANUAL, title, pagePayloads))
                 .retrieve()
                 .toBodilessEntity();
-        } catch (CustomException e) {
-            throw e;
         } catch (Exception e) {
-            log.error("MANUAL AI 파일 인덱싱 실패: manualId={}, error={}", manualId, e.getMessage());
+            log.error("MANUAL 페이지 AI 인덱싱 실패: manualId={}, error={}", manualId, e.getMessage());
             throw new CustomException(ErrorType.AI_SYNC_FAILED);
         }
     }
@@ -99,22 +92,11 @@ public class DocumentAiClient {
             restClient.post()
                 .uri("/api/v1/documents/ingest-text")
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(new TextIngestRequest(manualId, "MANUAL", title, content))
+                .body(new TextIngestRequest(manualId, SOURCE_TYPE_MANUAL, title, content))
                 .retrieve()
                 .toBodilessEntity();
         } catch (Exception e) {
             log.error("MANUAL 텍스트 AI 인덱싱 실패: manualId={}, error={}", manualId, e.getMessage());
-            throw new CustomException(ErrorType.AI_SYNC_FAILED);
-        }
-    }
-
-    private byte[] downloadBytes(String url) {
-        try {
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest req = HttpRequest.newBuilder().uri(URI.create(url)).GET().build();
-            return client.send(req, HttpResponse.BodyHandlers.ofByteArray()).body();
-        } catch (IOException | InterruptedException e) {
-            Thread.currentThread().interrupt();
             throw new CustomException(ErrorType.AI_SYNC_FAILED);
         }
     }

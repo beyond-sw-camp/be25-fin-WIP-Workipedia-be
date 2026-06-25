@@ -22,7 +22,9 @@ import com.wip.workipedia.manual.domain.ManualFile;
 import com.wip.workipedia.manual.domain.ManualStatus;
 import com.wip.workipedia.manual.domain.ManualVersion;
 import com.wip.workipedia.manual.dto.ManualDetailResponse;
+import com.wip.workipedia.manual.domain.ManualPage;
 import com.wip.workipedia.manual.repository.ManualFileRepository;
+import com.wip.workipedia.manual.repository.ManualPageRepository;
 import com.wip.workipedia.manual.repository.ManualRepository;
 import com.wip.workipedia.manual.repository.ManualVersionRepository;
 import com.wip.workipedia.notification.service.NotificationService;
@@ -52,6 +54,9 @@ class AdminManualServiceTest {
 
 	@Mock
 	private ManualFileRepository manualFileRepository;
+
+	@Mock
+	private ManualPageRepository manualPageRepository;
 
 	@Mock
 	private ManualVersionRepository manualVersionRepository;
@@ -251,6 +256,52 @@ class AdminManualServiceTest {
 		assertThat(response.content()).contains("first content", "second content");
 		assertThat(response.fileUrls()).containsExactly("first-url", "second-url");
 		verify(manualFileRepository, times(2)).save(any(ManualFile.class));
+	}
+
+	@Test
+	void createFromPdf_savesManualPagesPerFileWithPageMetadata() {
+		AdminManualService service = service();
+		MultipartFile firstFile = mock(MultipartFile.class);
+		MultipartFile secondFile = mock(MultipartFile.class);
+		when(firstFile.getOriginalFilename()).thenReturn("first.pdf");
+		when(secondFile.getOriginalFilename()).thenReturn("second.pdf");
+		when(userRepository.findById(1L)).thenReturn(Optional.of(systemAdmin()));
+		when(manualRepository.existsByTitleAndDeletedAtIsNull("manual")).thenReturn(false);
+		when(manualPdfValidator.validateAndRead(firstFile)).thenReturn("first".getBytes());
+		when(manualPdfValidator.validateAndRead(secondFile)).thenReturn("second".getBytes());
+		when(pdfTextExtractor.extract(firstFile, "first".getBytes())).thenReturn("f1p1\nf1p2");
+		when(pdfTextExtractor.extract(secondFile, "second".getBytes())).thenReturn("f2p1");
+		when(pdfTextExtractor.extractPages(firstFile, "first".getBytes())).thenReturn(List.of("f1p1", "f1p2"));
+		when(pdfTextExtractor.extractPages(secondFile, "second".getBytes())).thenReturn(List.of("f2p1"));
+		when(manualRepository.saveAndFlush(any(Manual.class)))
+			.thenAnswer(invocation -> {
+				Manual manual = invocation.getArgument(0);
+				ReflectionTestUtils.setField(manual, "manualId", 100L);
+				return manual;
+			});
+		when(storageService.upload(any(), any(), any(), any()))
+			.thenReturn(new StoredObject("first-key", "first-url"), new StoredObject("second-key", "second-url"));
+		when(manualVersionRepository.existsByManualManualIdAndManualNumAndDeletedAtIsNull(100L, "1.0"))
+			.thenReturn(false);
+		when(manualVersionRepository.save(any(ManualVersion.class)))
+			.thenAnswer(invocation -> invocation.getArgument(0));
+
+		service.createFromPdf(1L, null, "manual", null, ManualStatus.PUBLISHED, null,
+			List.of(firstFile, secondFile));
+
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<ManualPage>> captor = ArgumentCaptor.forClass(List.class);
+		verify(manualPageRepository).saveAll(captor.capture());
+		List<ManualPage> pages = captor.getValue();
+		assertThat(pages).hasSize(3);
+		assertThat(pages).extracting(ManualPage::getFileName, ManualPage::getFileSortOrder,
+				ManualPage::getPageNumber, ManualPage::getGlobalPageNumber, ManualPage::getContent)
+			.containsExactly(
+				org.assertj.core.groups.Tuple.tuple("first.pdf", 0, 1, 1, "f1p1"),
+				org.assertj.core.groups.Tuple.tuple("first.pdf", 0, 2, 2, "f1p2"),
+				org.assertj.core.groups.Tuple.tuple("second.pdf", 1, 1, 3, "f2p1"));
+		assertThat(pages).extracting(ManualPage::getFileKey)
+			.containsExactly("first-key", "first-key", "second-key");
 	}
 
 	@Test
@@ -484,6 +535,7 @@ class AdminManualServiceTest {
 		return new AdminManualService(
 			manualRepository,
 			manualFileRepository,
+			manualPageRepository,
 			manualVersionRepository,
 			departmentRepository,
 			userRepository,

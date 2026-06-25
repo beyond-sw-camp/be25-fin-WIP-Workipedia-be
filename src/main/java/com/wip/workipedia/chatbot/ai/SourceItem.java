@@ -11,6 +11,7 @@ public record SourceItem(
 	String sourceType,
 	String sourceId,
 	Integer chunkIndex,
+	String fileName,
 	Integer pageStart,
 	Integer pageEnd,
 	String title,
