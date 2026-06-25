@@ -113,15 +113,16 @@ infra:
     thresholds:
       avg-cpu-percent: 20.0
       max-cpu-percent: 50.0
+    # Map 키에 점(.)이 있으면 Spring Boot가 중첩 경로로 해석하므로 반드시 대괄호로 감싼다.
     instance-specs:
-      t3.medium:
+      "[t3.medium]":
         v-cpu: 2
         memory-gb: 4
-      t3.large:
+      "[t3.large]":
         v-cpu: 2
         memory-gb: 8
     downsize-map:
-      t3.large: t3.medium
+      "[t3.large]": t3.medium
     resources:
       - name: workipedia-be
         instance-id: ${INFRA_ESG_BE_INSTANCE_ID:}
