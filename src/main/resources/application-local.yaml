@@ -128,7 +128,9 @@ infra:
         role: Backend
         instance-type: t3.large
       - name: workipedia-ai
-        asg-name: ${INFRA_ESG_AI_ASG_NAME:}
+        # 현재 단일 EC2. ASG 붙이면 아래 instance-id를 지우고
+        # asg-name: ${INFRA_ESG_AI_ASG_NAME:} 으로 바꾸면 ASG 집계 조회로 전환됨(코드 변경 불필요).
+        instance-id: ${INFRA_ESG_AI_INSTANCE_ID:}
         role: AI Server
         instance-type: t3.large
       - name: workipedia-qdrant
