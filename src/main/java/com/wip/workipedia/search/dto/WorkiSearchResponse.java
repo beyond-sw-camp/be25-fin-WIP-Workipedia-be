@@ -7,16 +7,20 @@ import java.time.LocalDateTime;
 public record WorkiSearchResponse(
         Long questionId,
         String title,
+        String content,
         String status,
         long viewCount,
+        long answerCount,
         LocalDateTime createdAt
 ) {
-    public static WorkiSearchResponse from(WorkiQuestionDocument document) {
+    public static WorkiSearchResponse from(WorkiQuestionDocument document, long answerCount) {
         return new WorkiSearchResponse(
                 document.getQuestionId(),
                 document.getTitle(),
+                document.getContent(),
                 document.getStatus(),
                 document.getViewCount(),
+                answerCount,
                 document.getCreatedAt()
         );
     }
