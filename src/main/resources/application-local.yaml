@@ -128,7 +128,7 @@ infra:
         role: Backend
         instance-type: t3.large
       - name: workipedia-ai
-        instance-id: ${INFRA_ESG_AI_INSTANCE_ID:}
+        asg-name: ${INFRA_ESG_AI_ASG_NAME:}
         role: AI Server
         instance-type: t3.large
       - name: workipedia-qdrant

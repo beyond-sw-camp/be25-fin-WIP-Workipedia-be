@@ -34,7 +34,7 @@ class InfraRecommendationServiceTest {
     @Test
     void lowUsageDownsizableResource_isRecommended() {
         InfraEsgProperties.MonitoredResource be =
-            new InfraEsgProperties.MonitoredResource("workipedia-be", "i-be", "Backend", "t3.large");
+            new InfraEsgProperties.MonitoredResource("workipedia-be", "i-be", null, "Backend", "t3.large");
 
         ResourceRecommendationDto dto = service.evaluate(be, new CpuMetrics(8.4, 23.1));
 
@@ -47,7 +47,7 @@ class InfraRecommendationServiceTest {
     @Test
     void highCpuResource_isKept() {
         InfraEsgProperties.MonitoredResource be =
-            new InfraEsgProperties.MonitoredResource("workipedia-be", "i-be", "Backend", "t3.large");
+            new InfraEsgProperties.MonitoredResource("workipedia-be", "i-be", null, "Backend", "t3.large");
 
         ResourceRecommendationDto dto = service.evaluate(be, new CpuMetrics(35.0, 70.0));
 
@@ -58,10 +58,47 @@ class InfraRecommendationServiceTest {
     @Test
     void lowUsageButNoDownsizeTarget_isKept() {
         InfraEsgProperties.MonitoredResource qdrant =
-            new InfraEsgProperties.MonitoredResource("workipedia-qdrant", "i-q", "Vector DB", "t3.medium");
+            new InfraEsgProperties.MonitoredResource("workipedia-qdrant", "i-q", null, "Vector DB", "t3.medium");
 
         ResourceRecommendationDto dto = service.evaluate(qdrant, new CpuMetrics(11.2, 28.6));
 
         assertThat(dto.status()).isEqualTo(RecommendationStatus.KEEP);
+    }
+
+    private InfraEsgProperties.MonitoredResource aiAsg() {
+        return new InfraEsgProperties.MonitoredResource(
+            "workipedia-ai", null, "workipedia-ai-asg", "AI Server", "t3.large");
+    }
+
+    @Test
+    void asgUnderUtilizedWithMultipleInstances_recommendsScaleIn() {
+        ResourceRecommendationDto dto = service.evaluateAsg(aiAsg(), new CpuMetrics(14.1, 48.5), 2);
+
+        assertThat(dto.status()).isEqualTo(RecommendationStatus.RECOMMENDED);
+        assertThat(dto.optimizationType()).isEqualTo(OptimizationType.ASG_SCALE_IN);
+        assertThat(dto.currentConfiguration()).isEqualTo("t3.large × 2");
+        assertThat(dto.recommendedConfiguration()).isEqualTo("t3.large × 1");
+        assertThat(dto.estimatedCarbonSavingGPerHour().doubleValue()).isGreaterThan(0.0);
+        // current = perInstance × 2, recommended = perInstance × 1 → saving == perInstance carbon
+        assertThat(dto.currentEstimatedCarbonGPerHour().doubleValue())
+            .isCloseTo(dto.recommendedEstimatedCarbonGPerHour().doubleValue() * 2,
+                org.assertj.core.data.Offset.offset(0.05));
+    }
+
+    @Test
+    void asgSingleInstance_cannotScaleIn_isKept() {
+        ResourceRecommendationDto dto = service.evaluateAsg(aiAsg(), new CpuMetrics(14.1, 48.5), 1);
+
+        assertThat(dto.status()).isEqualTo(RecommendationStatus.KEEP);
+        assertThat(dto.optimizationType()).isEqualTo(OptimizationType.KEEP);
+        assertThat(dto.estimatedCarbonSavingGPerHour().doubleValue()).isEqualTo(0.0);
+    }
+
+    @Test
+    void asgHighCpu_isKept() {
+        ResourceRecommendationDto dto = service.evaluateAsg(aiAsg(), new CpuMetrics(35.0, 70.0), 2);
+
+        assertThat(dto.status()).isEqualTo(RecommendationStatus.KEEP);
+        assertThat(dto.estimatedCarbonSavingGPerHour().doubleValue()).isEqualTo(0.0);
     }
 }

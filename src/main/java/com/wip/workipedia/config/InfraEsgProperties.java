@@ -34,7 +34,12 @@ public record InfraEsgProperties(
     public record MonitoredResource(
         String name,
         String instanceId,
+        String asgName,
         String role,
         String instanceType
-    ) {}
+    ) {
+        public boolean isAsg() {
+            return asgName != null && !asgName.isBlank();
+        }
+    }
 }

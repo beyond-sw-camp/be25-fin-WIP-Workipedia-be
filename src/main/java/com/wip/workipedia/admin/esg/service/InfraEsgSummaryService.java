@@ -39,8 +39,7 @@ public class InfraEsgSummaryService {
     @Cacheable("infra:esgSummary")
     public InfraEsgSummaryResponse getSummary() {
         List<ResourceRecommendationDto> resources = properties.resources().stream()
-            .map(resource -> recommendationService.evaluate(
-                resource, cloudWatchMetricService.fetchCpu24h(resource.instanceId())))
+            .map(this::evaluateResource)
             .toList();
 
         List<ResourceRecommendationDto> recommended = resources.stream()
@@ -70,6 +69,16 @@ public class InfraEsgSummaryService {
 
         return new InfraEsgSummaryResponse(
             PERIOD, summary, resources, comparison, equivalent, calculation);
+    }
+
+    private ResourceRecommendationDto evaluateResource(InfraEsgProperties.MonitoredResource resource) {
+        if (resource.isAsg()) {
+            CpuMetrics metrics = cloudWatchMetricService.fetchAsgCpu24h(resource.asgName());
+            int inServiceCount = cloudWatchMetricService.fetchAsgInServiceCount(resource.asgName());
+            return recommendationService.evaluateAsg(resource, metrics, inServiceCount);
+        }
+        CpuMetrics metrics = cloudWatchMetricService.fetchCpu24h(resource.instanceId());
+        return recommendationService.evaluate(resource, metrics);
     }
 
     private EquivalentDto buildEquivalent(BigDecimal savingGramsPerHour) {
