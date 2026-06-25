@@ -75,6 +75,12 @@ class InfraEsgSummaryServiceTest {
 
         assertThat(response.summary().recommendedResourceCount()).isEqualTo(0);
         assertThat(response.summary().recommendedAction()).isEqualTo("KEEP");
+        // 추천이 0개여도 CURRENT/RECOMMENDED는 전체 리소스의 현재 배출을 보여준다(전체 footprint).
+        assertThat(response.totalCarbonComparison().currentEstimatedCarbonGPerHour().doubleValue())
+            .isGreaterThan(0.0);
+        // 추천이 없으니 권장 배출 == 현재 배출, 절감은 0.
+        assertThat(response.totalCarbonComparison().recommendedEstimatedCarbonGPerHour().doubleValue())
+            .isEqualTo(response.totalCarbonComparison().currentEstimatedCarbonGPerHour().doubleValue());
         assertThat(response.totalCarbonComparison().estimatedCarbonSavingGPerHour().doubleValue())
             .isEqualTo(0.0);
     }

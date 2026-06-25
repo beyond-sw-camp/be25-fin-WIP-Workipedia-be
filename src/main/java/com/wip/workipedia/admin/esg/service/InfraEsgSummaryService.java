@@ -46,8 +46,10 @@ public class InfraEsgSummaryService {
             .filter(r -> r.status() == RecommendationStatus.RECOMMENDED)
             .toList();
 
-        BigDecimal totalCurrent = sum(recommended, ResourceRecommendationDto::currentEstimatedCarbonGPerHour);
-        BigDecimal totalRecommended = sum(recommended, ResourceRecommendationDto::recommendedEstimatedCarbonGPerHour);
+        // CURRENT/RECOMMENDED는 전체 리소스를 합산해 인프라 전체 footprint를 보여준다.
+        // KEEP 항목은 현재==권장이라 절감(SAVING)에는 추천 항목만 기여한다.
+        BigDecimal totalCurrent = sum(resources, ResourceRecommendationDto::currentEstimatedCarbonGPerHour);
+        BigDecimal totalRecommended = sum(resources, ResourceRecommendationDto::recommendedEstimatedCarbonGPerHour);
         BigDecimal saving = scale2(totalCurrent.subtract(totalRecommended));
         BigDecimal savingPerDay = scale2(saving.multiply(BigDecimal.valueOf(24)));
         BigDecimal savingKgPerMonth = scale2(
