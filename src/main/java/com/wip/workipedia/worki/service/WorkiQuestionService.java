@@ -20,6 +20,7 @@ import com.wip.workipedia.user.domain.User;
 import com.wip.workipedia.user.repository.UserRepository;
 import com.wip.workipedia.worki.event.WorkiQuestionChangedEvent;
 import com.wip.workipedia.worki.repository.WorkiAnswerRepository;
+import com.wip.workipedia.worki.repository.QuestionAnswerCount;
 import com.wip.workipedia.worki.repository.WorkiQuestionRepository;
 import java.util.HashSet;
 import java.util.List;
@@ -73,11 +74,15 @@ public class WorkiQuestionService {
         Page<WorkiQuestion> page = questionRepository.findByDeletedAtIsNull(pageable);
 
         // 페이지에 담긴 질문들의 좋아요 수를 한 번에 집계한다(질문마다 COUNT 하면 N+1).
-        Map<Long, Long> likeCounts = loadQuestionLikeCounts(
-                page.getContent().stream().map(WorkiQuestion::getQuestionId).toList());
+        List<Long> questionIds = page.getContent().stream().map(WorkiQuestion::getQuestionId).toList();
+        Map<Long, Long> likeCounts = loadQuestionLikeCounts(questionIds);
+        Map<Long, Long> answerCounts = loadQuestionAnswerCounts(questionIds);
 
         return page.map(question ->
-                QuestionSummaryResponse.of(question, likeCounts.getOrDefault(question.getQuestionId(), 0L)));
+                QuestionSummaryResponse.of(
+                        question,
+                        likeCounts.getOrDefault(question.getQuestionId(), 0L),
+                        answerCounts.getOrDefault(question.getQuestionId(), 0L)));
     }
 
     private Map<Long, Long> loadQuestionLikeCounts(List<Long> questionIds) {
@@ -88,6 +93,15 @@ public class WorkiQuestionService {
                         ReactionTargetType.WORKI_QUESTION, ReactionType.LIKE, questionIds)
                 .stream()
                 .collect(Collectors.toMap(TargetLikeCount::getTargetId, TargetLikeCount::getLikeCount));
+    }
+
+    public Map<Long, Long> loadQuestionAnswerCounts(List<Long> questionIds) {
+        if (questionIds.isEmpty()) {
+            return Map.of();
+        }
+        return answerRepository.countAnswersByQuestionIds(questionIds)
+                .stream()
+                .collect(Collectors.toMap(QuestionAnswerCount::getQuestionId, QuestionAnswerCount::getAnswerCount));
     }
 
     // 조회수는 더 이상 여기서 바로 DB에 UPDATE하지 않는다. Redis로 중복 조회를 막고 신규 조회만 누적한 뒤
