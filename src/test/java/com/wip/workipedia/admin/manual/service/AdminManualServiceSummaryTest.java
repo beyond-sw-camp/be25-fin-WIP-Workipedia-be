@@ -37,7 +37,7 @@ class AdminManualServiceSummaryTest {
 
     private AdminManualService service() {
         return new AdminManualService(
-            null, null, manualVersionRepository, null, userRepository,
+            null, null, null, manualVersionRepository, null, userRepository,
             null, null, null, null, null, aiSyncJobService, null);
     }
 

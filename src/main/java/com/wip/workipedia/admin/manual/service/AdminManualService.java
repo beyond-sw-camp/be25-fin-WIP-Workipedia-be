@@ -14,12 +14,14 @@ import com.wip.workipedia.common.response.PageResponse;
 import com.wip.workipedia.department.repository.DepartmentRepository;
 import com.wip.workipedia.manual.domain.Manual;
 import com.wip.workipedia.manual.domain.ManualFile;
+import com.wip.workipedia.manual.domain.ManualPage;
 import com.wip.workipedia.manual.domain.ManualVersion;
 import com.wip.workipedia.manual.domain.ManualStatus;
 import com.wip.workipedia.manual.dto.ManualDetailResponse;
 import com.wip.workipedia.manual.dto.ManualSummaryResponse;
 import com.wip.workipedia.manual.dto.ManualVersionResponse;
 import com.wip.workipedia.manual.repository.ManualFileRepository;
+import com.wip.workipedia.manual.repository.ManualPageRepository;
 import com.wip.workipedia.manual.repository.ManualRepository;
 import com.wip.workipedia.manual.repository.ManualVersionRepository;
 import com.wip.workipedia.notification.service.NotificationService;
@@ -64,6 +66,7 @@ public class AdminManualService {
 
     private final ManualRepository manualRepository;
     private final ManualFileRepository manualFileRepository;
+    private final ManualPageRepository manualPageRepository;
     private final ManualVersionRepository manualVersionRepository;
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
@@ -78,6 +81,7 @@ public class AdminManualService {
     public AdminManualService(
             ManualRepository manualRepository,
             ManualFileRepository manualFileRepository,
+            ManualPageRepository manualPageRepository,
             ManualVersionRepository manualVersionRepository,
             DepartmentRepository departmentRepository,
             UserRepository userRepository,
@@ -91,6 +95,7 @@ public class AdminManualService {
     ) {
         this.manualRepository = manualRepository;
         this.manualFileRepository = manualFileRepository;
+        this.manualPageRepository = manualPageRepository;
         this.manualVersionRepository = manualVersionRepository;
         this.departmentRepository = departmentRepository;
         this.userRepository = userRepository;
@@ -182,6 +187,7 @@ public class AdminManualService {
         Manual savedManual = saveManual(manual);
         List<StoredObject> storedObjects = uploadPdfFiles(uploads);
         attachFiles(savedManual, storedObjects);
+        savePages(savedManual, uploads, storedObjects);
         saveVersion(savedManual, actorUserId, manualNum, "INITIAL_PDF_UPLOAD");
         aiSyncJobService.enqueue(AiSyncSourceType.MANUAL, savedManual.getManualId(), AiSyncOperation.UPSERT);
         return ManualDetailResponse.from(savedManual, toFileUrls(storedObjects));
@@ -234,6 +240,7 @@ public class AdminManualService {
         List<ManualFile> previousFiles = findActiveFiles(manual.getManualId());
         List<StoredObject> storedObjects = uploadPdfFiles(uploads);
         replaceFiles(manual, previousFiles, storedObjects);
+        replacePages(manual, uploads, storedObjects);
         ManualVersion version = saveVersion(manual, actorUserId, manualNum, updateReason, contentDiff);
         // 본문 변경(contentDiff 존재)일 때만 AI 한 줄 요약 잡을 비동기로 큐잉한다.
         // source_id 는 manualId 가 아니라 manualVersionId 임에 주의.
@@ -270,6 +277,7 @@ public class AdminManualService {
         List<ManualFile> files = findActiveFiles(manual.getManualId());
         manual.delete();
         files.forEach(ManualFile::delete);
+        deleteActivePages(manual.getManualId());
         files.forEach(file -> deleteStoredFileAfterCommit(file.getFileKey()));
         aiSyncJobService.enqueue(AiSyncSourceType.MANUAL, manualId, AiSyncOperation.DELETE);
     }
@@ -697,6 +705,42 @@ public class AdminManualService {
     private void replaceFiles(Manual manual, List<ManualFile> previousFiles, List<StoredObject> storedObjects) {
         previousFiles.forEach(ManualFile::delete);
         attachFiles(manual, storedObjects);
+    }
+
+    // manual_pages 에는 원본 파일명과 파일 기준 페이지 번호를 보존해 챗봇 답변 citation 에 사용한다.
+    // manuals.content 는 호환성을 위해 그대로 유지하고, 여기서는 파일별로 페이지 단위 텍스트를 별도 저장한다.
+    private void savePages(Manual manual, List<PdfUpload> uploads, List<StoredObject> storedObjects) {
+        List<ManualPage> pages = new ArrayList<>();
+        int globalPageNumber = 1;
+        for (int fileIndex = 0; fileIndex < uploads.size(); fileIndex++) {
+            PdfUpload upload = uploads.get(fileIndex);
+            StoredObject storedObject = storedObjects.get(fileIndex);
+            String fileName = upload.file().getOriginalFilename();
+            List<String> pageTexts = pdfTextExtractor.extractPages(upload.file(), upload.bytes());
+            for (int pageIndex = 0; pageIndex < pageTexts.size(); pageIndex++) {
+                pages.add(ManualPage.create(
+                        manual,
+                        storedObject.objectKey(),
+                        fileName,
+                        fileIndex,
+                        pageIndex + 1,
+                        globalPageNumber++,
+                        pageTexts.get(pageIndex)
+                ));
+            }
+        }
+        manualPageRepository.saveAll(pages);
+    }
+
+    private void replacePages(Manual manual, List<PdfUpload> uploads, List<StoredObject> storedObjects) {
+        deleteActivePages(manual.getManualId());
+        savePages(manual, uploads, storedObjects);
+    }
+
+    private void deleteActivePages(Long manualId) {
+        manualPageRepository
+                .findByManualManualIdAndDeletedAtIsNullOrderByFileSortOrderAscPageNumberAsc(manualId)
+                .forEach(ManualPage::delete);
     }
 
     private record VersionParts(int major, int minor) {
