@@ -8,6 +8,7 @@ import com.wip.workipedia.aisync.domain.AiSyncOperation;
 import com.wip.workipedia.aisync.domain.CleanupTrigger;
 import com.wip.workipedia.aisync.service.AiSyncCleanupService;
 import com.wip.workipedia.aisync.service.AiSyncJobService;
+import com.wip.workipedia.manual.service.ManualChangeSummaryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -25,6 +26,7 @@ public class AiSyncWorker {
     private final TextDocumentAiClient textDocumentAiClient;
     private final KnowledgeAiClient knowledgeAiClient;
     private final AiSyncCleanupService aiSyncCleanupService;
+    private final ManualChangeSummaryService manualChangeSummaryService;
 
     // MANUAL (PDF 포함) — 파일 다운로드가 있어 느린 작업이므로 별도 주기로 처리
     @Scheduled(cron = "${ai-sync.worker.document-cron}")
@@ -88,6 +90,7 @@ public class AiSyncWorker {
                 if (isUpsert) knowledgeAiClient.sync(job.getSourceId());
                 else knowledgeAiClient.delete(job.getSourceId());
             }
+            case MANUAL_CHANGE_SUMMARY -> manualChangeSummaryService.summarize(job.getSourceId());
         }
     }
 }

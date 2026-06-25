@@ -75,6 +75,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(Exception.class)
 	public Object handleException(Exception exception) {
+		log.error("[500] 처리되지 않은 예외", exception);
 		return ApiResponse.error(ErrorType.INTERNAL_ERROR);
 	}
 

@@ -91,6 +91,15 @@ public class AdminManualController {
         return ResponseEntity.ok(adminManualService.findVersions(actorUserId, manualId));
     }
 
+    @PostMapping("/{manualId}/versions/{versionId}/resummarize")
+    public ResponseEntity<Void> resummarize(
+            @AuthenticationPrincipal Long actorUserId,
+            @PathVariable Long manualId,
+            @PathVariable Long versionId) {
+        adminManualService.resummarize(actorUserId, manualId, versionId);
+        return ResponseEntity.ok().build();
+    }
+
     @PatchMapping("/{manualId}")
     public ResponseEntity<ManualDetailResponse> update(
             @AuthenticationPrincipal Long actorUserId,
