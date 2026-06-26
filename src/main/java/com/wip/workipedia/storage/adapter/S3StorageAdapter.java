@@ -50,9 +50,10 @@ public class S3StorageAdapter implements StoragePort {
             .build();
 
         this.bucket = s3.bucket();
-        // public URL을 명시하지 않으면 버킷+리전으로 표준 S3 가상 호스팅 URL을 조합한다.
-        this.publicBaseUrl = (props.publicUrl() != null && !props.publicUrl().isBlank())
-            ? props.publicUrl()
+        // S3 전용 public-url(CloudFront 등)을 명시하지 않으면 버킷+리전으로 표준 S3 가상 호스팅 URL을 조합한다.
+        // 다른 provider(R2/MinIO)의 public-url은 참조하지 않는다.
+        this.publicBaseUrl = (s3.publicUrl() != null && !s3.publicUrl().isBlank())
+            ? s3.publicUrl()
             : "https://" + s3.bucket() + ".s3." + s3.region() + ".amazonaws.com";
     }
 
