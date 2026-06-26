@@ -3,6 +3,8 @@ package com.wip.workipedia.admin.manual.service;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -38,6 +40,30 @@ public class PdfTextExtractor {
             throw e;
         } catch (IOException e) {
             log.warn("Failed to extract PDF text filename={}", file.getOriginalFilename(), e);
+            throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF 텍스트를 추출할 수 없습니다.");
+        }
+    }
+
+    public List<String> extractPages(MultipartFile file, byte[] bytes) {
+        validateReadable(file, bytes);
+
+        try (PDDocument document = Loader.loadPDF(bytes)) {
+            List<String> pages = new ArrayList<>();
+            PDFTextStripper stripper = new PDFTextStripper();
+            int pageCount = document.getNumberOfPages();
+            for (int pageNumber = 1; pageNumber <= pageCount; pageNumber++) {
+                stripper.setStartPage(pageNumber);
+                stripper.setEndPage(pageNumber);
+                pages.add(stripper.getText(document).trim());
+            }
+            if (pages.stream().allMatch(String::isBlank)) {
+                throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF 파일에서 추출 가능한 텍스트가 없습니다.");
+            }
+            return pages;
+        } catch (CustomException e) {
+            throw e;
+        } catch (IOException e) {
+            log.warn("Failed to extract PDF pages filename={}", file.getOriginalFilename(), e);
             throw new CustomException(ErrorType.MANUAL_INVALID_FILE, "PDF 텍스트를 추출할 수 없습니다.");
         }
     }
