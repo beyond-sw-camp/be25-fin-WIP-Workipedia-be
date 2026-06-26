@@ -53,7 +53,7 @@ public class MinioStorageAdapter implements StoragePort {
             .build();
 
         this.bucket = props.bucket();
-        this.publicBaseUrl = props.publicUrl();
+        this.publicBaseUrl = props.minio().publicUrl();
     }
 
     @Override

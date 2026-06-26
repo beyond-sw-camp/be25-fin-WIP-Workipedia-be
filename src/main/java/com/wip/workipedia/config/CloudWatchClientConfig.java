@@ -5,24 +5,66 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
+import software.amazon.awssdk.services.ec2.Ec2Client;
+import software.amazon.awssdk.services.rds.RdsClient;
 
 @Configuration
 @EnableConfigurationProperties(InfraEsgProperties.class)
 public class CloudWatchClientConfig {
 
     @Bean
-    public CloudWatchClient cloudWatchClient(
-        InfraEsgProperties properties,
+    public AwsCredentialsProvider awsCredentialsProvider(
         @Value("${aws.credentials.access-key}") String accessKey,
         @Value("${aws.credentials.secret-key}") String secretKey
     ) {
-        StaticCredentialsProvider credentials = StaticCredentialsProvider.create(
-            AwsBasicCredentials.create(accessKey, secretKey));
+        return StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey));
+    }
+
+    @Bean
+    public CloudWatchClient cloudWatchClient(
+        InfraEsgProperties properties,
+        AwsCredentialsProvider awsCredentialsProvider
+    ) {
         return CloudWatchClient.builder()
-            .credentialsProvider(credentials)
+            .credentialsProvider(awsCredentialsProvider)
+            .region(Region.of(properties.region()))
+            .build();
+    }
+
+    @Bean
+    public AutoScalingClient autoScalingClient(
+        InfraEsgProperties properties,
+        AwsCredentialsProvider awsCredentialsProvider
+    ) {
+        return AutoScalingClient.builder()
+            .credentialsProvider(awsCredentialsProvider)
+            .region(Region.of(properties.region()))
+            .build();
+    }
+
+    @Bean
+    public Ec2Client ec2Client(
+        InfraEsgProperties properties,
+        AwsCredentialsProvider awsCredentialsProvider
+    ) {
+        return Ec2Client.builder()
+            .credentialsProvider(awsCredentialsProvider)
+            .region(Region.of(properties.region()))
+            .build();
+    }
+
+    @Bean
+    public RdsClient rdsClient(
+        InfraEsgProperties properties,
+        AwsCredentialsProvider awsCredentialsProvider
+    ) {
+        return RdsClient.builder()
+            .credentialsProvider(awsCredentialsProvider)
             .region(Region.of(properties.region()))
             .build();
     }

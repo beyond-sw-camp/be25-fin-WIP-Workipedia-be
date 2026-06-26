@@ -7,6 +7,8 @@ import static org.mockito.Mockito.when;
 import com.wip.workipedia.config.InfraEsgProperties;
 import com.wip.workipedia.admin.esg.domain.OptimizationType;
 import com.wip.workipedia.admin.esg.dto.InfraEsgSummaryResponse;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,8 +27,8 @@ class InfraEsgSummaryServiceTest {
     @BeforeEach
     void setUp() {
         InfraEsgProperties props = propsWith(List.of(
-            new InfraEsgProperties.MonitoredResource("workipedia-be", "i-be", null, "Backend", "t3.large"),
-            new InfraEsgProperties.MonitoredResource("workipedia-qdrant", "i-q", null, "Vector DB", "t3.medium")
+            new InfraEsgProperties.MonitoredResource("workipedia-be", "i-be", null, null, "Backend", "t3.large"),
+            new InfraEsgProperties.MonitoredResource("workipedia-qdrant", "i-q", null, null, "Vector DB", "t3.medium")
         ));
         service = newService(props);
     }
@@ -89,7 +91,7 @@ class InfraEsgSummaryServiceTest {
     void getSummary_asgUnderUtilized_recommendsScaleIn() {
         InfraEsgProperties props = propsWith(List.of(
             new InfraEsgProperties.MonitoredResource(
-                "workipedia-ai", null, "workipedia-ai-asg", "AI Server", "t3.large")
+                "workipedia-ai", null, "workipedia-ai-asg", null, "AI Server", "t3.large")
         ));
         InfraEsgSummaryService asgService = newService(props);
 
@@ -106,5 +108,38 @@ class InfraEsgSummaryServiceTest {
         assertThat(response.resources().get(0).currentConfiguration()).isEqualTo("t3.large × 2");
         assertThat(response.totalCarbonComparison().estimatedCarbonSavingGPerHour().doubleValue())
             .isGreaterThan(0.0);
+    }
+
+    @Test
+    void getSummary_accumulatesFromResourceLaunchTime() {
+        when(cloudWatchMetricService.fetchCpu24h(eq("i-be"))).thenReturn(new CpuMetrics(8.4, 23.1));
+        when(cloudWatchMetricService.fetchCpu24h(eq("i-q"))).thenReturn(new CpuMetrics(11.2, 28.6));
+        when(cloudWatchMetricService.fetchEc2LaunchTime(eq("i-be")))
+            .thenReturn(Instant.now().minus(Duration.ofHours(10)));
+        when(cloudWatchMetricService.fetchEc2LaunchTime(eq("i-q")))
+            .thenReturn(Instant.now().minus(Duration.ofHours(10)));
+
+        InfraEsgSummaryResponse response = service.getSummary();
+
+        assertThat(response.computedAtEpochMs()).isGreaterThan(0L);
+        // 가동 시작(10시간 전)부터 누적되므로 0보다 크다.
+        assertThat(response.totalCarbonComparison().currentEstimatedCarbonAccumKg().doubleValue())
+            .isGreaterThan(0.0);
+        assertThat(response.totalCarbonComparison().estimatedCarbonSavingAccumKg().doubleValue())
+            .isGreaterThan(0.0);
+    }
+
+    @Test
+    void getSummary_unknownLaunchTime_accumIsZero() {
+        when(cloudWatchMetricService.fetchCpu24h(eq("i-be"))).thenReturn(new CpuMetrics(8.4, 23.1));
+        when(cloudWatchMetricService.fetchCpu24h(eq("i-q"))).thenReturn(new CpuMetrics(11.2, 28.6));
+        // fetchEc2LaunchTime 미스텁 → null → 누적 0
+
+        InfraEsgSummaryResponse response = service.getSummary();
+
+        assertThat(response.totalCarbonComparison().currentEstimatedCarbonAccumKg().doubleValue())
+            .isEqualTo(0.0);
+        assertThat(response.totalCarbonComparison().estimatedCarbonSavingAccumKg().doubleValue())
+            .isEqualTo(0.0);
     }
 }

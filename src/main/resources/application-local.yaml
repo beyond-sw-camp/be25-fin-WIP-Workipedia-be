@@ -41,22 +41,25 @@ spring:
 
 storage:
   provider: ${STORAGE_PROVIDER}
-  # 공용 bucket/public-url은 R2·Minio용. S3는 자체 bucket을 쓰고 public-url을 자동 조합하므로 비워둘 수 있다.
+  # 공용 bucket은 R2·Minio용. public-url은 provider별로 분리한다(공용 값은 S3가 R2 URL을 잘못 바라보는 사고를 유발).
   bucket: ${STORAGE_BUCKET:}
-  public-url: ${STORAGE_PUBLIC_BASE_URL:}
   r2:
     access-key: ${R2_ACCESS_KEY}
     secret-key: ${R2_SECRET_KEY}
     account-id: ${R2_ACCOUNT_ID}
+    public-url: ${R2_PUBLIC_BASE_URL:}
   minio:
     access-key: ${MINIO_ACCESS_KEY}
     secret-key: ${MINIO_SECRET_KEY}
     endpoint: ${MINIO_ENDPOINT}
+    public-url: ${MINIO_PUBLIC_BASE_URL:}
   s3:
     access-key: ${AWS_ACCESS_KEY}
     secret-key: ${AWS_SECRET_KEY}
     region: ${AWS_REGION}
     bucket: ${S3_UPLOAD_BUCKET}
+    # S3 전용 public-url(CloudFront 등). 비우면 버킷+리전으로 자동 조합.
+    public-url: ${S3_PUBLIC_BASE_URL:}
 
 ai:
   base-url: ${AI_BASE_URL:http://localhost:8000}
@@ -121,23 +124,36 @@ infra:
       "[t3.large]":
         v-cpu: 2
         memory-gb: 8
+      # RDS(DB) 클래스. CloudWatch AWS/RDS CPU + 탄소 추정·다운사이징 판단에 사용.
+      "[db.t3.small]":
+        v-cpu: 2
+        memory-gb: 2
+      "[db.t3.micro]":
+        v-cpu: 2
+        memory-gb: 1
     downsize-map:
       "[t3.large]": t3.medium
+      "[db.t3.small]": db.t3.micro
     resources:
       - name: workipedia-be
         instance-id: ${INFRA_ESG_BE_INSTANCE_ID:}
         role: Backend
         instance-type: t3.large
       - name: workipedia-ai
-        # 현재 단일 EC2. ASG 붙이면 아래 instance-id를 지우고
-        # asg-name: ${INFRA_ESG_AI_ASG_NAME:} 으로 바꾸면 ASG 집계 조회로 전환됨(코드 변경 불필요).
-        instance-id: ${INFRA_ESG_AI_INSTANCE_ID:}
+        # AI는 ASG로 운영. asg-name이 있으면 그룹 평균 CPU(AutoScalingGroupName 차원)로 집계 조회한다.
+        asg-name: ${INFRA_ESG_AI_ASG_NAME:}
         role: AI Server
         instance-type: t3.large
       - name: workipedia-qdrant
         instance-id: ${INFRA_ESG_QDRANT_INSTANCE_ID:}
         role: Vector DB
         instance-type: t3.medium
+      - name: workipedia-db
+        # RDS. db-instance-id가 있으면 AWS/RDS 네임스페이스로 CPU·생성시각을 조회한다.
+        # 실제 RDS 클래스에 맞춰 instance-type을 조정한다(db.t3.small / db.t3.micro 등).
+        db-instance-id: ${INFRA_ESG_RDS_INSTANCE_ID:}
+        role: Database
+        instance-type: db.t3.small
 
 aws:
   credentials:

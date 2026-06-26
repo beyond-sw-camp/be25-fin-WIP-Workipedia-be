@@ -2,6 +2,10 @@ spring:
   application:
     name: Workipedia
 
+  datasource:
+    hikari:
+      leak-detection-threshold: 10000
+      
   profiles:
     default: local
 
