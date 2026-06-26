@@ -69,7 +69,7 @@ public class InfraRecommendationService {
     }
 
     /**
-     * Auto Scaling Group 리소스를 평가한다. CPU가 임계값보다 낮고 현재 InService 인스턴스가
+     * Auto Scaling Group 리소스를 평가한다. 평균 CPU가 임계값보다 낮고 현재 InService 인스턴스가
      * 2대 이상이면 desired capacity를 한 대 줄이는 ASG_SCALE_IN을 권장한다(최소 1대 유지).
      *
      * @param inServiceCount 현재 InService 인스턴스 수
@@ -83,8 +83,7 @@ public class InfraRecommendationService {
         BigDecimal currentCarbon = perInstanceCarbon.multiply(BigDecimal.valueOf(inServiceCount));
 
         InfraEsgProperties.Thresholds t = properties.thresholds();
-        boolean underUtilized = metrics.averageCpu() < t.avgCpuPercent()
-            && metrics.maxCpu() < t.maxCpuPercent();
+        boolean underUtilized = metrics.averageCpu() < t.avgCpuPercent();
 
         if (underUtilized && inServiceCount > 1) {
             int recommendedCount = inServiceCount - 1;
