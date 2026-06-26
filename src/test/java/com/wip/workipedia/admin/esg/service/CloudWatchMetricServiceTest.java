@@ -10,6 +10,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
+import software.amazon.awssdk.services.autoscaling.model.AutoScalingGroup;
+import software.amazon.awssdk.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
+import software.amazon.awssdk.services.autoscaling.model.DescribeAutoScalingGroupsResponse;
+import software.amazon.awssdk.services.autoscaling.model.Instance;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.cloudwatch.model.Datapoint;
 import software.amazon.awssdk.services.cloudwatch.model.Dimension;
@@ -20,6 +25,7 @@ import software.amazon.awssdk.services.cloudwatch.model.GetMetricStatisticsRespo
 class CloudWatchMetricServiceTest {
 
     @Mock CloudWatchClient cloudWatchClient;
+    @Mock AutoScalingClient autoScalingClient;
 
     @Test
     void fetchCpu24h_returnsAverageAndMax() {
@@ -30,7 +36,7 @@ class CloudWatchMetricServiceTest {
         when(cloudWatchClient.getMetricStatistics(any(GetMetricStatisticsRequest.class)))
             .thenReturn(response);
 
-        CloudWatchMetricService service = new CloudWatchMetricService(cloudWatchClient);
+        CloudWatchMetricService service = new CloudWatchMetricService(cloudWatchClient, autoScalingClient);
         CpuMetrics metrics = service.fetchCpu24h("i-be");
 
         assertThat(metrics.averageCpu()).isEqualTo(8.4);
@@ -42,7 +48,7 @@ class CloudWatchMetricServiceTest {
         when(cloudWatchClient.getMetricStatistics(any(GetMetricStatisticsRequest.class)))
             .thenReturn(GetMetricStatisticsResponse.builder().build());
 
-        CloudWatchMetricService service = new CloudWatchMetricService(cloudWatchClient);
+        CloudWatchMetricService service = new CloudWatchMetricService(cloudWatchClient, autoScalingClient);
         CpuMetrics metrics = service.fetchCpu24h("i-be");
 
         assertThat(metrics.averageCpu()).isEqualTo(0.0);
@@ -58,7 +64,7 @@ class CloudWatchMetricServiceTest {
         when(cloudWatchClient.getMetricStatistics(any(GetMetricStatisticsRequest.class)))
             .thenReturn(response);
 
-        CloudWatchMetricService service = new CloudWatchMetricService(cloudWatchClient);
+        CloudWatchMetricService service = new CloudWatchMetricService(cloudWatchClient, autoScalingClient);
         CpuMetrics metrics = service.fetchAsgCpu24h("workipedia-ai-asg");
 
         assertThat(metrics.averageCpu()).isEqualTo(14.1);
@@ -75,35 +81,36 @@ class CloudWatchMetricServiceTest {
     }
 
     @Test
-    void fetchAsgInServiceCount_returnsRoundedCountFromAutoScalingNamespace() {
-        GetMetricStatisticsResponse response = GetMetricStatisticsResponse.builder()
-            .datapoints(
-                Datapoint.builder().timestamp(Instant.now()).average(2.0).build())
+    void fetchAsgInServiceCount_countsInServiceInstancesFromAutoScalingApi() {
+        DescribeAutoScalingGroupsResponse response = DescribeAutoScalingGroupsResponse.builder()
+            .autoScalingGroups(AutoScalingGroup.builder()
+                .instances(
+                    Instance.builder().lifecycleState("InService").build(),
+                    Instance.builder().lifecycleState("InService").build(),
+                    Instance.builder().lifecycleState("Terminating").build())
+                .build())
             .build();
-        when(cloudWatchClient.getMetricStatistics(any(GetMetricStatisticsRequest.class)))
+        when(autoScalingClient.describeAutoScalingGroups(any(DescribeAutoScalingGroupsRequest.class)))
             .thenReturn(response);
 
-        CloudWatchMetricService service = new CloudWatchMetricService(cloudWatchClient);
+        CloudWatchMetricService service = new CloudWatchMetricService(cloudWatchClient, autoScalingClient);
         int count = service.fetchAsgInServiceCount("workipedia-ai-asg");
 
         assertThat(count).isEqualTo(2);
 
-        ArgumentCaptor<GetMetricStatisticsRequest> captor =
-            ArgumentCaptor.forClass(GetMetricStatisticsRequest.class);
-        org.mockito.Mockito.verify(cloudWatchClient).getMetricStatistics(captor.capture());
-        GetMetricStatisticsRequest req = captor.getValue();
-        assertThat(req.namespace()).isEqualTo("AWS/AutoScaling");
-        assertThat(req.metricName()).isEqualTo("GroupInServiceInstances");
-        assertThat(req.dimensions()).containsExactly(
-            Dimension.builder().name("AutoScalingGroupName").value("workipedia-ai-asg").build());
+        ArgumentCaptor<DescribeAutoScalingGroupsRequest> captor =
+            ArgumentCaptor.forClass(DescribeAutoScalingGroupsRequest.class);
+        org.mockito.Mockito.verify(autoScalingClient).describeAutoScalingGroups(captor.capture());
+        DescribeAutoScalingGroupsRequest req = captor.getValue();
+        assertThat(req.autoScalingGroupNames()).containsExactly("workipedia-ai-asg");
     }
 
     @Test
-    void fetchAsgInServiceCount_noDatapoints_returnsZero() {
-        when(cloudWatchClient.getMetricStatistics(any(GetMetricStatisticsRequest.class)))
-            .thenReturn(GetMetricStatisticsResponse.builder().build());
+    void fetchAsgInServiceCount_noAsg_returnsZero() {
+        when(autoScalingClient.describeAutoScalingGroups(any(DescribeAutoScalingGroupsRequest.class)))
+            .thenReturn(DescribeAutoScalingGroupsResponse.builder().build());
 
-        CloudWatchMetricService service = new CloudWatchMetricService(cloudWatchClient);
+        CloudWatchMetricService service = new CloudWatchMetricService(cloudWatchClient, autoScalingClient);
         int count = service.fetchAsgInServiceCount("workipedia-ai-asg");
 
         assertThat(count).isEqualTo(0);

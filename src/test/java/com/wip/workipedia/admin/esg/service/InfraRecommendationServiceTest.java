@@ -86,6 +86,17 @@ class InfraRecommendationServiceTest {
     }
 
     @Test
+    void asgLowAverageCpu_recommendsScaleInEvenWhenMaxCpuSpiked() {
+        ResourceRecommendationDto dto = service.evaluateAsg(aiAsg(), new CpuMetrics(14.1, 72.0), 2);
+
+        assertThat(dto.status()).isEqualTo(RecommendationStatus.RECOMMENDED);
+        assertThat(dto.optimizationType()).isEqualTo(OptimizationType.ASG_SCALE_IN);
+        assertThat(dto.currentConfiguration()).isEqualTo("t3.large × 2");
+        assertThat(dto.recommendedConfiguration()).isEqualTo("t3.large × 1");
+        assertThat(dto.maxCpu()).isEqualTo(72.0);
+    }
+
+    @Test
     void asgSingleInstance_cannotScaleIn_isKept() {
         ResourceRecommendationDto dto = service.evaluateAsg(aiAsg(), new CpuMetrics(14.1, 48.5), 1);
 

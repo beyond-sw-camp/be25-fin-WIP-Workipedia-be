@@ -37,6 +37,7 @@ dependencies {
 	implementation 'software.amazon.awssdk:s3:2.26.0'
 	implementation 'software.amazon.awssdk:cloudwatch:2.26.0'
 	implementation 'software.amazon.awssdk:ec2:2.26.0'
+	implementation 'software.amazon.awssdk:autoscaling:2.26.0'
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'

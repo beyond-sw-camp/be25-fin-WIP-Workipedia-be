@@ -4,6 +4,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
+import software.amazon.awssdk.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
+import software.amazon.awssdk.services.autoscaling.model.DescribeAutoScalingGroupsResponse;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.cloudwatch.model.Datapoint;
 import software.amazon.awssdk.services.cloudwatch.model.Dimension;
@@ -15,17 +18,17 @@ import software.amazon.awssdk.services.cloudwatch.model.Statistic;
 public class CloudWatchMetricService {
 
     private static final String EC2_NAMESPACE = "AWS/EC2";
-    private static final String AUTOSCALING_NAMESPACE = "AWS/AutoScaling";
     private static final String CPU_METRIC_NAME = "CPUUtilization";
-    private static final String IN_SERVICE_METRIC_NAME = "GroupInServiceInstances";
     private static final String INSTANCE_DIMENSION = "InstanceId";
     private static final String ASG_DIMENSION = "AutoScalingGroupName";
     private static final int PERIOD_SECONDS = 86_400;
 
     private final CloudWatchClient cloudWatchClient;
+    private final AutoScalingClient autoScalingClient;
 
-    public CloudWatchMetricService(CloudWatchClient cloudWatchClient) {
+    public CloudWatchMetricService(CloudWatchClient cloudWatchClient, AutoScalingClient autoScalingClient) {
         this.cloudWatchClient = cloudWatchClient;
+        this.autoScalingClient = autoScalingClient;
     }
 
     /** 단일 EC2 인스턴스의 지난 24시간 CPU(평균/최대)를 조회한다. */
@@ -47,22 +50,22 @@ public class CloudWatchMetricService {
     /**
      * Auto Scaling Group의 현재 InService 인스턴스 수를 조회한다.
      *
-     * <p>{@code AWS/AutoScaling} 네임스페이스의 {@code GroupInServiceInstances} 메트릭으로,
-     * 기존 CloudWatch 조회 권한만으로 읽을 수 있다(추가 autoscaling 권한 불필요).
-     * 데이터포인트가 없으면 0을 반환한다.
+     * <p>인스턴스 수는 CloudWatch 메트릭 지연에 영향을 받지 않도록 Auto Scaling API에서
+     * 직접 조회한다. CloudWatch {@code GroupInServiceInstances}는 ASG 생성 직후나
+     * 메트릭 수집 전에는 0처럼 보일 수 있다.
      */
     public int fetchAsgInServiceCount(String asgName) {
-        GetMetricStatisticsResponse response = getMetricStatistics(
-            AUTOSCALING_NAMESPACE, IN_SERVICE_METRIC_NAME, ASG_DIMENSION, asgName, Statistic.AVERAGE);
-        List<Datapoint> datapoints = response.datapoints();
-        if (datapoints.isEmpty()) {
-            return 0;
-        }
-        double avg = datapoints.stream()
-            .mapToDouble(dp -> dp.average() == null ? 0.0 : dp.average())
-            .average()
-            .orElse(0.0);
-        return (int) Math.round(avg);
+        DescribeAutoScalingGroupsResponse response = autoScalingClient.describeAutoScalingGroups(
+            DescribeAutoScalingGroupsRequest.builder()
+                .autoScalingGroupNames(asgName)
+                .build());
+
+        return response.autoScalingGroups().stream()
+            .findFirst()
+            .map(group -> (int) group.instances().stream()
+                .filter(instance -> "InService".equals(instance.lifecycleStateAsString()))
+                .count())
+            .orElse(0);
     }
 
     private CpuMetrics fetchCpuByDimension(String dimensionName, String dimensionValue) {
