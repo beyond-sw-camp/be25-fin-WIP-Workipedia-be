@@ -23,9 +23,11 @@ class InfraRecommendationServiceTest {
             new InfraEsgProperties.Thresholds(20.0, 50.0),
             Map.of(
                 "t3.large", new InfraEsgProperties.InstanceSpec(2, 8),
-                "t3.medium", new InfraEsgProperties.InstanceSpec(2, 4)
+                "t3.medium", new InfraEsgProperties.InstanceSpec(2, 4),
+                "db.t3.small", new InfraEsgProperties.InstanceSpec(2, 2),
+                "db.t3.micro", new InfraEsgProperties.InstanceSpec(2, 1)
             ),
-            Map.of("t3.large", "t3.medium"),
+            Map.of("t3.large", "t3.medium", "db.t3.small", "db.t3.micro"),
             List.of()
         );
         service = new InfraRecommendationService(props, new CarbonEstimationService(props));
@@ -34,7 +36,7 @@ class InfraRecommendationServiceTest {
     @Test
     void lowUsageDownsizableResource_isRecommended() {
         InfraEsgProperties.MonitoredResource be =
-            new InfraEsgProperties.MonitoredResource("workipedia-be", "i-be", null, "Backend", "t3.large");
+            new InfraEsgProperties.MonitoredResource("workipedia-be", "i-be", null, null, "Backend", "t3.large");
 
         ResourceRecommendationDto dto = service.evaluate(be, new CpuMetrics(8.4, 23.1));
 
@@ -47,7 +49,7 @@ class InfraRecommendationServiceTest {
     @Test
     void highCpuResource_isKept() {
         InfraEsgProperties.MonitoredResource be =
-            new InfraEsgProperties.MonitoredResource("workipedia-be", "i-be", null, "Backend", "t3.large");
+            new InfraEsgProperties.MonitoredResource("workipedia-be", "i-be", null, null, "Backend", "t3.large");
 
         ResourceRecommendationDto dto = service.evaluate(be, new CpuMetrics(35.0, 70.0));
 
@@ -58,7 +60,7 @@ class InfraRecommendationServiceTest {
     @Test
     void lowUsageButNoDownsizeTarget_isKept() {
         InfraEsgProperties.MonitoredResource qdrant =
-            new InfraEsgProperties.MonitoredResource("workipedia-qdrant", "i-q", null, "Vector DB", "t3.medium");
+            new InfraEsgProperties.MonitoredResource("workipedia-qdrant", "i-q", null, null, "Vector DB", "t3.medium");
 
         ResourceRecommendationDto dto = service.evaluate(qdrant, new CpuMetrics(11.2, 28.6));
 
@@ -67,7 +69,30 @@ class InfraRecommendationServiceTest {
 
     private InfraEsgProperties.MonitoredResource aiAsg() {
         return new InfraEsgProperties.MonitoredResource(
-            "workipedia-ai", null, "workipedia-ai-asg", "AI Server", "t3.large");
+            "workipedia-ai", null, "workipedia-ai-asg", null, "AI Server", "t3.large");
+    }
+
+    private InfraEsgProperties.MonitoredResource rdsDb(String type) {
+        return new InfraEsgProperties.MonitoredResource(
+            "workipedia-db", null, null, "workipedia-db", "Database", type);
+    }
+
+    @Test
+    void rdsLowUsageDownsizable_isRecommendedAsRdsDownsize() {
+        ResourceRecommendationDto dto = service.evaluateRds(rdsDb("db.t3.small"), new CpuMetrics(3.2, 9.8));
+
+        assertThat(dto.status()).isEqualTo(RecommendationStatus.RECOMMENDED);
+        assertThat(dto.optimizationType()).isEqualTo(OptimizationType.RDS_DOWNSIZE);
+        assertThat(dto.recommendedConfiguration()).isEqualTo("db.t3.micro");
+        assertThat(dto.estimatedCarbonSavingGPerHour().doubleValue()).isGreaterThan(0.0);
+    }
+
+    @Test
+    void rdsHighCpu_isKept() {
+        ResourceRecommendationDto dto = service.evaluateRds(rdsDb("db.t3.small"), new CpuMetrics(40.0, 75.0));
+
+        assertThat(dto.status()).isEqualTo(RecommendationStatus.KEEP);
+        assertThat(dto.estimatedCarbonSavingGPerHour().doubleValue()).isEqualTo(0.0);
     }
 
     @Test

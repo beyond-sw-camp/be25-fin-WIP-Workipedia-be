@@ -124,8 +124,16 @@ infra:
       "[t3.large]":
         v-cpu: 2
         memory-gb: 8
+      # RDS(DB) 클래스. CloudWatch AWS/RDS CPU + 탄소 추정·다운사이징 판단에 사용.
+      "[db.t3.small]":
+        v-cpu: 2
+        memory-gb: 2
+      "[db.t3.micro]":
+        v-cpu: 2
+        memory-gb: 1
     downsize-map:
       "[t3.large]": t3.medium
+      "[db.t3.small]": db.t3.micro
     resources:
       - name: workipedia-be
         instance-id: ${INFRA_ESG_BE_INSTANCE_ID:}
@@ -140,6 +148,12 @@ infra:
         instance-id: ${INFRA_ESG_QDRANT_INSTANCE_ID:}
         role: Vector DB
         instance-type: t3.medium
+      - name: workipedia-db
+        # RDS. db-instance-id가 있으면 AWS/RDS 네임스페이스로 CPU·생성시각을 조회한다.
+        # 실제 RDS 클래스에 맞춰 instance-type을 조정한다(db.t3.small / db.t3.micro 등).
+        db-instance-id: ${INFRA_ESG_RDS_INSTANCE_ID:}
+        role: Database
+        instance-type: db.t3.small
 
 aws:
   credentials:

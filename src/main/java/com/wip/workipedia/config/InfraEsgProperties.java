@@ -35,11 +35,16 @@ public record InfraEsgProperties(
         String name,
         String instanceId,
         String asgName,
+        String dbInstanceId,
         String role,
         String instanceType
     ) {
         public boolean isAsg() {
             return asgName != null && !asgName.isBlank();
+        }
+
+        public boolean isRds() {
+            return dbInstanceId != null && !dbInstanceId.isBlank();
         }
     }
 }
