@@ -34,6 +34,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Slf4j
 @Service
@@ -49,6 +50,7 @@ public class DepartmentService {
 	private final AiSyncJobService aiSyncJobService;
 	private final AiSyncJobRepository aiSyncJobRepository;
 	private final UserRepository userRepository;
+	private final TransactionTemplate transactionTemplate;
 
 	@Transactional(readOnly = true)
 	public List<DepartmentResponse> findAll() {
@@ -103,34 +105,39 @@ public class DepartmentService {
 		);
 	}
 
-	@Transactional
 	public List<AdminDepartmentResponse> editRoutingPrompts(RoutingPromptEditRequest request) {
-		List<Department> departments = departmentRepository.findActiveDepartments();
-		Map<Long, DepartmentRoutingPrompt> routingPrompts = findRoutingPromptMap(departments);
-		List<RoutingPromptEditTarget> targets = departments.stream()
-			.map(department -> new RoutingPromptEditTarget(
-				department.getDepartmentId(),
-				department.getDepartmentName(),
-				normalizePromptContent(getPromptContent(routingPrompts, department.getDepartmentId()))
-			))
-			.toList();
+		List<RoutingPromptEditTarget> targets = transactionTemplate.execute(status -> {
+			List<Department> departments = departmentRepository.findActiveDepartments();
+			Map<Long, DepartmentRoutingPrompt> routingPrompts = findRoutingPromptMap(departments);
+			return departments.stream()
+				.map(department -> new RoutingPromptEditTarget(
+					department.getDepartmentId(),
+					department.getDepartmentName(),
+					normalizePromptContent(getPromptContent(routingPrompts, department.getDepartmentId()))
+				))
+				.toList();
+		});
+
 		List<RoutingPromptEditResult> editResults = departmentRoutingPromptEditor.edit(targets, request.instruction());
 
 		if (editResults.isEmpty()) {
 			throw new CustomException(ErrorType.BAD_REQUEST, "입력 내용에서 부서명을 찾을 수 없습니다.");
 		}
 
-		Map<Long, Department> departmentMap = departments.stream()
-			.collect(Collectors.toMap(Department::getDepartmentId, Function.identity()));
+		transactionTemplate.executeWithoutResult(status -> {
+			List<Department> departments = departmentRepository.findActiveDepartments();
+			Map<Long, Department> departmentMap = departments.stream()
+				.collect(Collectors.toMap(Department::getDepartmentId, Function.identity()));
 
-		editResults.forEach(editResult -> {
-			Department dept = departmentMap.get(editResult.departmentId());
-			if (dept == null) {
-				log.warn("AI가 반환한 departmentId가 존재하지 않아 건너뜁니다. departmentId={}", editResult.departmentId());
-				return;
-			}
-			upsertRoutingPrompt(dept, editResult.routingPrompt());
-			aiSyncJobService.enqueue(AiSyncSourceType.DEPT_RR, dept.getDepartmentId(), AiSyncOperation.UPSERT);
+			editResults.forEach(editResult -> {
+				Department dept = departmentMap.get(editResult.departmentId());
+				if (dept == null) {
+					log.warn("AI가 반환한 departmentId가 존재하지 않아 건너뜁니다. departmentId={}", editResult.departmentId());
+					return;
+				}
+				upsertRoutingPrompt(dept, editResult.routingPrompt());
+				aiSyncJobService.enqueue(AiSyncSourceType.DEPT_RR, dept.getDepartmentId(), AiSyncOperation.UPSERT);
+			});
 		});
 
 		return findAllForAdmin();

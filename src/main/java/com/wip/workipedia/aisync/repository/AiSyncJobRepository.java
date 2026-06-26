@@ -37,6 +37,34 @@ public interface AiSyncJobRepository extends JpaRepository<AiSyncJob, Long> {
         @Param("limit") int limit
     );
 
+    @Query(
+        value = """
+            SELECT
+              ai_sync_job_id AS aiSyncJobId,
+              source_type AS sourceType,
+              source_id AS sourceId,
+              operation AS operation,
+              status AS status,
+              retry_count AS retryCount,
+              next_retry_at AS nextRetryAt,
+              lease_expires_at AS leaseExpiresAt,
+              created_at AS createdAt,
+              updated_at AS updatedAt
+            FROM ai_sync_jobs
+            WHERE status = 'PENDING'
+              AND source_type = 'MANUAL'
+              AND (next_retry_at IS NULL OR next_retry_at <= :now)
+              AND deleted_at IS NULL
+            ORDER BY created_at ASC
+            LIMIT :limit
+            """,
+        nativeQuery = true
+    )
+    List<AiSyncClaimCandidate> findDocumentClaimCandidates(
+        @Param("now") LocalDateTime now,
+        @Param("limit") int limit
+    );
+
     // 텍스트 계열 (WORKI, KNOWLEDGE_DATA, MANUAL_KNOWLEDGE, DEPT_RR, MANUAL_CHANGE_SUMMARY) — text-delay-ms 주기로 처리
     @Modifying
     @Query(
@@ -53,6 +81,34 @@ public interface AiSyncJobRepository extends JpaRepository<AiSyncJob, Long> {
         nativeQuery = true
     )
     List<AiSyncJob> claimPendingTextJobs(
+        @Param("now") LocalDateTime now,
+        @Param("limit") int limit
+    );
+
+    @Query(
+        value = """
+            SELECT
+              ai_sync_job_id AS aiSyncJobId,
+              source_type AS sourceType,
+              source_id AS sourceId,
+              operation AS operation,
+              status AS status,
+              retry_count AS retryCount,
+              next_retry_at AS nextRetryAt,
+              lease_expires_at AS leaseExpiresAt,
+              created_at AS createdAt,
+              updated_at AS updatedAt
+            FROM ai_sync_jobs
+            WHERE status = 'PENDING'
+              AND source_type IN ('WORKI', 'KNOWLEDGE_DATA', 'MANUAL_KNOWLEDGE', 'DEPT_RR', 'MANUAL_CHANGE_SUMMARY')
+              AND (next_retry_at IS NULL OR next_retry_at <= :now)
+              AND deleted_at IS NULL
+            ORDER BY created_at ASC
+            LIMIT :limit
+            """,
+        nativeQuery = true
+    )
+    List<AiSyncClaimCandidate> findTextClaimCandidates(
         @Param("now") LocalDateTime now,
         @Param("limit") int limit
     );
@@ -216,5 +272,18 @@ public interface AiSyncJobRepository extends JpaRepository<AiSyncJob, Long> {
     interface AiSyncStatusCount {
         AiSyncStatus getStatus();
         long getCount();
+    }
+
+    interface AiSyncClaimCandidate {
+        Long getAiSyncJobId();
+        String getSourceType();
+        Long getSourceId();
+        String getOperation();
+        String getStatus();
+        Integer getRetryCount();
+        LocalDateTime getNextRetryAt();
+        LocalDateTime getLeaseExpiresAt();
+        LocalDateTime getCreatedAt();
+        LocalDateTime getUpdatedAt();
     }
 }
