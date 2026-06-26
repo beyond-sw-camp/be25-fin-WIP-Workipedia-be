@@ -180,11 +180,11 @@
 
 ### 민정기
 
-- [ ] 워키 질문 CRUD
-- [ ] 워키 답변 등록/채택
-- [ ] 좋아요/싫어요 반응
-- [ ] Elasticsearch 연동: 워키 검색, kNN 벡터 검색
-- [ ] FAQ/인기 워키·매뉴얼 API
+- [x] 워키 질문 CRUD
+- [x] 워키 답변 등록/채택
+- [x] 좋아요 반응
+- [x] Elasticsearch 연동: 워키 검색 (kNN 벡터 검색은 AI 측 Qdrant로 이관)
+- [x] FAQ/인기 워키·매뉴얼 API
 - [ ] 챗봇 UI/컴포넌트 FE 합류
 - [ ] 모바일 반응형 + PWA/Capacitor 검토
 - [ ] CDN 스크립트 주입 CORS 정책 연계
