@@ -10,6 +10,8 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
+import software.amazon.awssdk.services.ec2.Ec2Client;
+import software.amazon.awssdk.services.rds.RdsClient;
 
 @Configuration
 @EnableConfigurationProperties(InfraEsgProperties.class)
@@ -40,6 +42,28 @@ public class CloudWatchClientConfig {
         AwsCredentialsProvider awsCredentialsProvider
     ) {
         return AutoScalingClient.builder()
+            .credentialsProvider(awsCredentialsProvider)
+            .region(Region.of(properties.region()))
+            .build();
+    }
+
+    @Bean
+    public Ec2Client ec2Client(
+        InfraEsgProperties properties,
+        AwsCredentialsProvider awsCredentialsProvider
+    ) {
+        return Ec2Client.builder()
+            .credentialsProvider(awsCredentialsProvider)
+            .region(Region.of(properties.region()))
+            .build();
+    }
+
+    @Bean
+    public RdsClient rdsClient(
+        InfraEsgProperties properties,
+        AwsCredentialsProvider awsCredentialsProvider
+    ) {
+        return RdsClient.builder()
             .credentialsProvider(awsCredentialsProvider)
             .region(Region.of(properties.region()))
             .build();

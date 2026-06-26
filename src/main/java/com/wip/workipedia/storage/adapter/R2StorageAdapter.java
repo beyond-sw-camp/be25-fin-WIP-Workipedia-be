@@ -53,7 +53,7 @@ public class R2StorageAdapter implements StoragePort {
             .build();
 
         this.bucket = props.bucket();
-        this.publicBaseUrl = props.publicUrl();
+        this.publicBaseUrl = props.r2().publicUrl();
     }
 
     @Override

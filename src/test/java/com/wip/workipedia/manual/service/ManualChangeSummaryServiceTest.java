@@ -3,6 +3,7 @@ package com.wip.workipedia.manual.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.wip.workipedia.common.exception.CustomException;
@@ -14,18 +15,30 @@ import com.wip.workipedia.manual.domain.ManualStatus;
 import com.wip.workipedia.manual.domain.ManualVersion;
 import com.wip.workipedia.manual.repository.ManualVersionRepository;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @ExtendWith(MockitoExtension.class)
 class ManualChangeSummaryServiceTest {
 
     @Mock ManualVersionRepository manualVersionRepository;
     @Mock ManualChangeSummaryAiClient aiClient;
-    @InjectMocks ManualChangeSummaryService service;
+
+    private ManualChangeSummaryService service;
+
+    @BeforeEach
+    void setUp() {
+        // 가짜 트랜잭션 매니저로 만든 실제 TransactionTemplate. execute/executeWithoutResult가
+        // 콜백을 동기 실행하므로 서비스의 2-트랜잭션 흐름이 실제대로 동작한다.
+        TransactionTemplate transactionTemplate =
+            new TransactionTemplate(mock(PlatformTransactionManager.class));
+        service = new ManualChangeSummaryService(manualVersionRepository, aiClient, transactionTemplate);
+    }
 
     private ManualVersion versionWithDiff() {
         Manual manual = Manual.create(null, "소개서", "content", ManualStatus.PUBLISHED, null, "1.0", 1L);

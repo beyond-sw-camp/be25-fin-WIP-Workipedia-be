@@ -69,6 +69,58 @@ public class InfraRecommendationService {
     }
 
     /**
+     * RDS 인스턴스를 평가한다. EC2 다운사이징과 같은 기준(평균·최대 CPU 임계값 미만 + downsize 대상 존재)이지만,
+     * 최적화 유형을 {@link OptimizationType#RDS_DOWNSIZE}로 표기해 DB 다운사이징임을 구분한다.
+     */
+    public ResourceRecommendationDto evaluateRds(InfraEsgProperties.MonitoredResource resource,
+                                                 CpuMetrics metrics) {
+        String currentType = resource.instanceType();
+        BigDecimal currentCarbon =
+            carbonEstimationService.estimateGramsPerHour(currentType, metrics.averageCpu());
+
+        InfraEsgProperties.Thresholds t = properties.thresholds();
+        String downsizeTarget = properties.downsizeMap().get(currentType);
+        boolean underUtilized = metrics.averageCpu() < t.avgCpuPercent()
+            && metrics.maxCpu() < t.maxCpuPercent();
+
+        if (underUtilized && downsizeTarget != null) {
+            BigDecimal recommendedCarbon =
+                carbonEstimationService.estimateGramsPerHour(downsizeTarget, metrics.averageCpu());
+            BigDecimal saving = currentCarbon.subtract(recommendedCarbon)
+                .setScale(2, RoundingMode.HALF_UP);
+            return new ResourceRecommendationDto(
+                resource.name(),
+                resource.role(),
+                OptimizationType.RDS_DOWNSIZE,
+                currentType,
+                downsizeTarget,
+                round1(metrics.averageCpu()),
+                round1(metrics.maxCpu()),
+                currentCarbon,
+                recommendedCarbon,
+                saving,
+                downsizeTarget + " 변경 검토",
+                RecommendationStatus.RECOMMENDED
+            );
+        }
+
+        return new ResourceRecommendationDto(
+            resource.name(),
+            resource.role(),
+            OptimizationType.KEEP,
+            currentType,
+            currentType,
+            round1(metrics.averageCpu()),
+            round1(metrics.maxCpu()),
+            currentCarbon,
+            currentCarbon,
+            BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
+            "현재 구성을 유지합니다.",
+            RecommendationStatus.KEEP
+        );
+    }
+
+    /**
      * Auto Scaling Group 리소스를 평가한다. 평균 CPU가 임계값보다 낮고 현재 InService 인스턴스가
      * 2대 이상이면 desired capacity를 한 대 줄이는 ASG_SCALE_IN을 권장한다(최소 1대 유지).
      *
