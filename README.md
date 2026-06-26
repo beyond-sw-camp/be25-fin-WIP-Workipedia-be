@@ -8,27 +8,27 @@
 <table>
   <tr>
     <td align="center" width="16%">
-      <img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/dev/ChatGPT%20Image%202026%EB%85%84%206%EC%9B%94%2025%EC%9D%BC%20%EC%98%A4%ED%9B%84%2003_27_59.png?raw=true"/></a>
+      <img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/dev/images/%ED%8C%80%EC%9B%90%20%EC%82%AC%EC%A7%84/ChatGPT%20Image%202026%EB%85%84%206%EC%9B%94%2025%EC%9D%BC%20%EC%98%A4%ED%9B%84%2003_27_59.png?raw=true"/></a>
       <b>김진혁(팀장)</b><br>
       <a href="https://github.com/jin605"><img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"/></a>
     </td>
     <td align="center" width="16%">
-      <img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/dev/ChatGPT%20Image%202026%EB%85%84%206%EC%9B%94%2025%EC%9D%BC%20%EC%98%A4%ED%9B%84%2003_27_56.png?raw=true"/></a>
+      <img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/dev/images/%ED%8C%80%EC%9B%90%20%EC%82%AC%EC%A7%84/ChatGPT%20Image%202026%EB%85%84%206%EC%9B%94%2025%EC%9D%BC%20%EC%98%A4%ED%9B%84%2003_27_56.png?raw=true"/></a>
       <b>김가영</b><br>
       <a href="https://github.com/gahyoung920-eng"><img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"/></a>
     </td>
     <td align="center" width="16%">
-      <img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/dev/ChatGPT%20Image%202026%EB%85%84%206%EC%9B%94%2025%EC%9D%BC%20%EC%98%A4%ED%9B%84%2003_34_45.png?raw=true"/></a>
+      <img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/dev/images/%ED%8C%80%EC%9B%90%20%EC%82%AC%EC%A7%84/ChatGPT%20Image%202026%EB%85%84%206%EC%9B%94%2025%EC%9D%BC%20%EC%98%A4%ED%9B%84%2003_34_45.png?raw=true"/></a>
       <b>민정기</b><br>
       <a href="https://github.com/calendar3450"><img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"/></a>
     </td>
     <td align="center" width="16%">
-      <img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/dev/ChatGPT%20Image%202026%EB%85%84%206%EC%9B%94%2025%EC%9D%BC%20%EC%98%A4%ED%9B%84%2003_27_49.png?raw=true"/></a>
+      <img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/dev/images/%ED%8C%80%EC%9B%90%20%EC%82%AC%EC%A7%84/ChatGPT%20Image%202026%EB%85%84%206%EC%9B%94%2025%EC%9D%BC%20%EC%98%A4%ED%9B%84%2003_27_49.png?raw=true"/></a>
       <b>이슬이</b><br>
       <a href="https://github.com/0lthree"><img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"/></a>
     </td>
     <td align="center" width="16%">
-      <img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/dev/ChatGPT%20Image%202026%EB%85%84%206%EC%9B%94%2025%EC%9D%BC%20%EC%98%A4%ED%9B%84%2003_27_53.png?raw=true"/></a>
+      <img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/dev/images/%ED%8C%80%EC%9B%90%20%EC%82%AC%EC%A7%84/ChatGPT%20Image%202026%EB%85%84%206%EC%9B%94%2025%EC%9D%BC%20%EC%98%A4%ED%9B%84%2003_27_53.png?raw=true"/></a>
       <b>황희수</b><br>
       <a href="https://github.com/huisu73"><img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"/></a>
     </td>
@@ -199,7 +199,7 @@ AI 답변이 부족하면 워키 질문 등록 또는 담당 부서 티켓 발�
 
 [🧩 ERD](https://www.erdcloud.com/d/N5pR99x6kArMGp4Xe)
 
-<img src="images/ERDF.png" />
+<img src="images/ERD.png" />
 </details>
 
 <br>
@@ -210,7 +210,9 @@ AI 답변이 부족하면 워키 질문 등록 또는 담당 부서 티켓 발�
 <details>
 <summary>세부사항</summary>
 
-<img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/dev/images/시스템아키텍처.png?raw=true"/>
+[🛠️ 시스템아키텍쳐](https://excalidraw.com/#json=9v80ncfjm36Hn2IHww8A4,EI-QU18LDajObNvNnOATgA)
+
+<img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/dev/images/%EC%8B%9C%EC%8A%A4%ED%85%9C%EC%95%84%ED%82%A4%ED%85%8D%EC%B3%90.png?raw=true"/>
 </details>
 
 <br>
@@ -248,7 +250,9 @@ AI 답변이 부족하면 워키 질문 등록 또는 담당 부서 티켓 발�
 
 [✔️ 백엔드테스트보고서](https://docs.google.com/spreadsheets/d/1UwKgzHGSBpIbeOFRVJ_3B759vdDhf5sKBs9VNqmtCpI/edit?gid=506689780#gid=506689780)
 
+<img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/dev/images/be_test.png?raw=true"/>
 </details>
+
 
 <br>
 
@@ -259,6 +263,7 @@ AI 답변이 부족하면 워키 질문 등록 또는 담당 부서 티켓 발�
 <summary>세부사항</summary>
 
 [✅ 프론트엔드테스트보고서](https://docs.google.com/spreadsheets/d/1UwKgzHGSBpIbeOFRVJ_3B759vdDhf5sKBs9VNqmtCpI/edit?gid=454562383#gid=454562383)
+<img src="https://github.com/beyond-sw-camp/be25-fin-WIP-Workipedia-be/blob/dev/images/fe_test.png?raw=true"/>
 
 </details>
 
