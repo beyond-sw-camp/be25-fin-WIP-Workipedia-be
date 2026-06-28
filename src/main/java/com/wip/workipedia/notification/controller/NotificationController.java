@@ -5,8 +5,10 @@ import com.wip.workipedia.notification.domain.NotificationTab;
 import com.wip.workipedia.notification.dto.NotificationResponse;
 import com.wip.workipedia.notification.dto.UnreadCountResponse;
 import com.wip.workipedia.notification.service.NotificationService;
+import com.wip.workipedia.notification.service.NotificationSseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @RequestMapping("/api/v1/notifications")
@@ -23,6 +26,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final NotificationSseService notificationSseService;
+
+    // 실시간 알림 SSE 구독. FE EventSource가 연결하며, 인증은 JwtFilter가 ?token= 쿼리로 처리한다.
+    // 명시적 GET /stream 매핑이라 DELETE /{notificationId} 패턴과 충돌하지 않는다(405 해소).
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter stream(@AuthenticationPrincipal Long actorUserId) {
+        return notificationSseService.subscribe(actorUserId);
+    }
 
     // 전체 알림 목록 조회
     // 프론트는 응답의 targetUrl을 알림 클릭 시 이동 경로로 사용한다.
