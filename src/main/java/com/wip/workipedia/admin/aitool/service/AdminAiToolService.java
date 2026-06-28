@@ -2,6 +2,8 @@ package com.wip.workipedia.admin.aitool.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wip.workipedia.admin.aitool.dto.AiToolCreateRequest;
+import com.wip.workipedia.admin.aitool.dto.AiToolDraftRequest;
+import com.wip.workipedia.admin.aitool.dto.AiToolDraftResponse;
 import com.wip.workipedia.admin.aitool.dto.AiToolResponse;
 import com.wip.workipedia.admin.aitool.dto.AiToolUpdateRequest;
 import com.wip.workipedia.admin.aitool.dto.HealthCheckRequest;
@@ -11,6 +13,7 @@ import com.wip.workipedia.admin.repository.AdminLogRepository;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.response.PageResponse;
+import com.wip.workipedia.tool.domain.AccessScope;
 import com.wip.workipedia.tool.domain.AiTool;
 import com.wip.workipedia.tool.domain.ApprovalStatus;
 import com.wip.workipedia.tool.domain.AuthType;
@@ -22,13 +25,14 @@ import com.wip.workipedia.tool.executor.SsrfGuard;
 import com.wip.workipedia.tool.repository.AiToolRepository;
 import java.util.Set;
 import java.util.regex.Pattern;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 @Service
-@RequiredArgsConstructor
 public class AdminAiToolService {
 
 	private static final Set<String> SUPPORTED_AUTH_TYPES = Set.of("NONE", "API_KEY", "BEARER_TOKEN");
@@ -43,6 +47,25 @@ public class AdminAiToolService {
 	private final SsrfGuard ssrfGuard;
 	private final HttpApiHealthChecker httpApiHealthChecker;
 	private final DbQueryHealthChecker dbQueryHealthChecker;
+	private final RestClient routingAiRestClient;
+
+	public AdminAiToolService(
+		AiToolRepository aiToolRepository,
+		AdminLogRepository adminLogRepository,
+		ObjectMapper objectMapper,
+		SsrfGuard ssrfGuard,
+		HttpApiHealthChecker httpApiHealthChecker,
+		DbQueryHealthChecker dbQueryHealthChecker,
+		@Qualifier("routingAiRestClient") RestClient routingAiRestClient
+	) {
+		this.aiToolRepository = aiToolRepository;
+		this.adminLogRepository = adminLogRepository;
+		this.objectMapper = objectMapper;
+		this.ssrfGuard = ssrfGuard;
+		this.httpApiHealthChecker = httpApiHealthChecker;
+		this.dbQueryHealthChecker = dbQueryHealthChecker;
+		this.routingAiRestClient = routingAiRestClient;
+	}
 
 	// 삭제되지 않은 Tool만 페이지네이션으로 조회한다.
 	@Transactional(readOnly = true)
@@ -92,14 +115,41 @@ public class AdminAiToolService {
 		return new HealthCheckResponse(result.success(), draft.getToolType().name(), result.latencyMs(), result.errorMessage());
 	}
 
+	// Endpoint URL을 AI 서버에 전달해 저장 전 Tool 초안을 만든다. 생성 결과는 FE 폼에 채우는 용도이며 DB에는 저장하지 않는다.
+	@Transactional(readOnly = true)
+	public AiToolDraftResponse draft(AiToolDraftRequest request) {
+		if (!isHttpUrl(request.endpointUrl())) {
+			throw new CustomException(ErrorType.BAD_REQUEST, "Endpoint URL은 http:// 또는 https:// 로 시작하는 전체 URL이어야 합니다.");
+		}
+		try {
+			AiToolDraftResponse response = routingAiRestClient.post()
+				.uri("/api/v1/tools/draft")
+				.body(new AiToolDraftRequest(request.endpointUrl(), request.httpMethod() != null ? request.httpMethod() : "GET"))
+				.retrieve()
+				.body(AiToolDraftResponse.class);
+			if (response == null || response.name() == null || response.name().isBlank()) {
+				throw new CustomException(ErrorType.INTERNAL_ERROR, "AI Tool 초안 응답이 비어 있습니다.");
+			}
+			return response;
+		} catch (CustomException e) {
+			throw e;
+		} catch (RestClientException e) {
+			throw new CustomException(ErrorType.INTERNAL_ERROR, "AI Tool 초안 생성 중 오류가 발생했습니다.");
+		}
+	}
+
 	// Tool 등록. 공통 검증(toolType, authType, JSON Schema) 후 타입별 나머지 검증·생성은 buildTool에 위임하고,
 	// 등록 자체는 관리자 행동이라 AdminLog에도 남긴다(Tool 실행 기록인 ToolExecutionLog와는 별개).
 	@Transactional
 	public AiToolResponse create(Long adminUserId, AiToolCreateRequest request) {
 		validateToolType(request.toolType());
 		AuthType authType = parseAuthType(request.authType());
+		AccessScope accessScope = parseAccessScope(request.accessScope());
+		validateAccessPolicy(accessScope, request.selfIdentityParam());
 		validateJsonSchema(request.parametersSchema());
+		validateSelfIdentityParamDeclared(accessScope, request.selfIdentityParam(), request.parametersSchema());
 		AiTool tool = buildTool(adminUserId, request, authType);
+		tool.updateAccessPolicy(accessScope, normalizedSelfIdentityParam(accessScope, request.selfIdentityParam()), adminUserId);
 		aiToolRepository.save(tool);
 
 		adminLogRepository.save(AdminLog.of(
@@ -137,6 +187,9 @@ public class AdminAiToolService {
 	public AiToolResponse update(Long adminUserId, Long aiToolId, AiToolUpdateRequest request) {
 		AiTool tool = findTool(aiToolId);
 		validateUpdateAgainstToolType(tool.getToolType(), request);
+		AccessScope accessScope = request.accessScope() != null ? parseAccessScope(request.accessScope()) : tool.getAccessScope();
+		String selfIdentityParam = request.selfIdentityParam() != null ? request.selfIdentityParam() : tool.getSelfIdentityParam();
+		validateAccessPolicy(accessScope, selfIdentityParam);
 
 		AuthType authType = request.authType() != null ? parseAuthType(request.authType()) : null;
 		if (authType != null) {
@@ -146,6 +199,8 @@ public class AdminAiToolService {
 		if (request.parametersSchema() != null) {
 			validateJsonSchema(request.parametersSchema());
 		}
+		String effectiveParametersSchema = request.parametersSchema() != null ? request.parametersSchema() : tool.getParametersSchema();
+		validateSelfIdentityParamDeclared(accessScope, selfIdentityParam, effectiveParametersSchema);
 		if (request.endpointUrl() != null) {
 			validateEndpointHost(request.endpointUrl());
 		}
@@ -158,6 +213,7 @@ public class AdminAiToolService {
 			request.datasourceKey(), request.queryTemplate(), request.parametersSchema(), request.responseSchema(),
 			authType, request.credentialRef(), request.timeoutMs(), request.maxResultCount(), adminUserId
 		);
+		tool.updateAccessPolicy(accessScope, normalizedSelfIdentityParam(accessScope, selfIdentityParam), adminUserId);
 
 		if (request.approvalStatus() != null) {
 			tool.changeApprovalStatus(parseApprovalStatus(request.approvalStatus()), adminUserId);
@@ -198,6 +254,18 @@ public class AdminAiToolService {
 		}
 	}
 
+	private boolean isHttpUrl(String endpointUrl) {
+		if (endpointUrl == null || endpointUrl.isBlank()) {
+			return false;
+		}
+		try {
+			String scheme = java.net.URI.create(endpointUrl).getScheme();
+			return "http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme);
+		} catch (IllegalArgumentException e) {
+			return false;
+		}
+	}
+
 	// DB_QUERY Tool은 AI가 SQL을 만들지 못하게 인증을 안 쓰고(authType=NONE), datasource·query 둘 다 필수다.
 	private void validateDbQueryConfig(AuthType authType, String datasourceKey, String queryTemplate) {
 		if (authType != AuthType.NONE) {
@@ -233,6 +301,45 @@ public class AdminAiToolService {
 			throw new CustomException(ErrorType.AI_TOOL_INVALID_AUTH_TYPE, "M2 범위에서는 OAUTH2 인증을 지원하지 않습니다.");
 		}
 		return parsed;
+	}
+
+	private AccessScope parseAccessScope(String accessScope) {
+		if (accessScope == null || accessScope.isBlank()) {
+			return AccessScope.UNRESTRICTED;
+		}
+		try {
+			return AccessScope.valueOf(accessScope);
+		} catch (IllegalArgumentException e) {
+			throw new CustomException(ErrorType.BAD_REQUEST, "올바르지 않은 accessScope입니다.");
+		}
+	}
+
+	private void validateAccessPolicy(AccessScope accessScope, String selfIdentityParam) {
+		if (accessScope == AccessScope.SELF_ONLY && (selfIdentityParam == null || selfIdentityParam.isBlank())) {
+			throw new CustomException(ErrorType.BAD_REQUEST, "호출자 본인 Tool은 selfIdentityParam이 필요합니다.");
+		}
+		if (accessScope == AccessScope.SELF_ONLY && !selfIdentityParam.matches("^[A-Za-z_][A-Za-z0-9_]*$")) {
+			throw new CustomException(ErrorType.BAD_REQUEST, "selfIdentityParam은 파라미터 이름 형식이어야 합니다.");
+		}
+	}
+
+	private String normalizedSelfIdentityParam(AccessScope accessScope, String selfIdentityParam) {
+		return accessScope == AccessScope.SELF_ONLY ? selfIdentityParam.trim() : null;
+	}
+
+	private void validateSelfIdentityParamDeclared(AccessScope accessScope, String selfIdentityParam, String parametersSchema) {
+		if (accessScope != AccessScope.SELF_ONLY) {
+			return;
+		}
+		try {
+			if (!objectMapper.readTree(parametersSchema).path("properties").has(selfIdentityParam.trim())) {
+				throw new CustomException(ErrorType.BAD_REQUEST, "selfIdentityParam은 parametersSchema에 등록된 파라미터여야 합니다.");
+			}
+		} catch (CustomException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new CustomException(ErrorType.BAD_REQUEST, "parametersSchema가 올바른 JSON 형식이 아닙니다.");
+		}
 	}
 
 	// 인증이 필요한 Tool은 credentialRef(환경변수 이름)가 있어야 하고, 형식도 CREDENTIAL_REF_PATTERN을 따라야 한다.

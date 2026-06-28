@@ -56,6 +56,13 @@ public class AiTool {
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 30)
+	private AccessScope accessScope;
+
+	@Column(length = 100)
+	private String selfIdentityParam;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, length = 30)
 	private AuthType authType;
 
 	@Column(length = 255)
@@ -113,6 +120,7 @@ public class AiTool {
 		tool.httpMethod = httpMethod;
 		tool.parametersSchema = parametersSchema;
 		tool.responseSchema = responseSchema;
+		tool.accessScope = AccessScope.UNRESTRICTED;
 		tool.authType = authType;
 		tool.credentialRef = credentialRef;
 		tool.timeoutMs = timeoutMs;
@@ -138,6 +146,7 @@ public class AiTool {
 		tool.queryTemplate = queryTemplate;
 		tool.parametersSchema = parametersSchema;
 		tool.responseSchema = responseSchema;
+		tool.accessScope = AccessScope.UNRESTRICTED;
 		tool.authType = AuthType.NONE;
 		tool.timeoutMs = timeoutMs;
 		tool.maxResultCount = maxResultCount;
@@ -165,6 +174,12 @@ public class AiTool {
 		if (credentialRef != null) this.credentialRef = credentialRef;
 		if (timeoutMs != null) this.timeoutMs = timeoutMs;
 		if (maxResultCount != null) this.maxResultCount = maxResultCount;
+		this.updatedBy = updatedBy;
+	}
+
+	public void updateAccessPolicy(AccessScope accessScope, String selfIdentityParam, Long updatedBy) {
+		this.accessScope = accessScope != null ? accessScope : AccessScope.UNRESTRICTED;
+		this.selfIdentityParam = this.accessScope == AccessScope.SELF_ONLY ? selfIdentityParam : null;
 		this.updatedBy = updatedBy;
 	}
 

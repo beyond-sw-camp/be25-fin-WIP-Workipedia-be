@@ -1,6 +1,8 @@
 package com.wip.workipedia.admin.aitool.controller;
 
 import com.wip.workipedia.admin.aitool.dto.AiToolCreateRequest;
+import com.wip.workipedia.admin.aitool.dto.AiToolDraftRequest;
+import com.wip.workipedia.admin.aitool.dto.AiToolDraftResponse;
 import com.wip.workipedia.admin.aitool.dto.AiToolResponse;
 import com.wip.workipedia.admin.aitool.dto.AiToolUpdateRequest;
 import com.wip.workipedia.admin.aitool.dto.HealthCheckRequest;
@@ -45,6 +47,12 @@ public class AdminAiToolController {
 		@Valid @RequestBody AiToolCreateRequest request
 	) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(adminAiToolService.create(adminUserId, request));
+	}
+
+	// 저장 전 Endpoint URL만으로 Tool 이름/설명/query parameter 설명 초안을 만든다. DB에는 저장하지 않는다.
+	@PostMapping("/draft")
+	public ResponseEntity<AiToolDraftResponse> draft(@Valid @RequestBody AiToolDraftRequest request) {
+		return ResponseEntity.ok(adminAiToolService.draft(request));
 	}
 
 	// 설정 변경(엔드포인트, 인증 등) + 승인 상태/활성 여부 변경을 같은 요청으로 처리한다.
