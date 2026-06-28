@@ -5,7 +5,12 @@ spring:
   datasource:
     hikari:
       leak-detection-threshold: 10000
-      
+
+  jpa:
+    # OSIV 비활성화: DB 커넥션을 트랜잭션 동안만 점유(요청 끝까지 잡지 않음).
+    # 느린 AI 호출이 커넥션을 물고 있지 않게 해 커넥션 누수·풀 고갈을 방지한다.
+    open-in-view: false
+
   profiles:
     default: local
 
