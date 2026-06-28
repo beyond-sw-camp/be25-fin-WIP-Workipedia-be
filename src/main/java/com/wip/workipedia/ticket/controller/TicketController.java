@@ -8,9 +8,12 @@ import com.wip.workipedia.ticket.dto.TicketAnswerCreateRequest;
 import com.wip.workipedia.ticket.dto.TicketAnswerResponse;
 import com.wip.workipedia.ticket.dto.TicketAssigneeRequest;
 import com.wip.workipedia.ticket.dto.TicketAssigneeResponse;
+import com.wip.workipedia.ticket.dto.TicketDraftRequest;
+import com.wip.workipedia.ticket.dto.TicketDraftResponse;
 import com.wip.workipedia.ticket.dto.TicketResponse;
 import com.wip.workipedia.ticket.dto.TicketStatusRequest;
 import com.wip.workipedia.ticket.service.TicketAnswerService;
+import com.wip.workipedia.ticket.service.TicketDraftService;
 import com.wip.workipedia.ticket.service.TicketService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +40,15 @@ import java.util.stream.Stream;
 public class TicketController {
 	private final TicketService ticketService;
 	private final TicketAnswerService ticketAnswerService;
+	private final TicketDraftService ticketDraftService;
+
+	// 티켓 초안 생성: 사용자 요청 원문을 AI로 정리해 제목/내용 초안을 돌려준다. (티켓을 만들지는 않음)
+	@PostMapping("/draft")
+	public ResponseEntity<TicketDraftResponse> draft(
+			@AuthenticationPrincipal Long userId,
+			@Valid @RequestBody TicketDraftRequest request) {
+		return ResponseEntity.ok(ticketDraftService.draft(request));
+	}
 
 	// 티켓 생성
 	@PostMapping
