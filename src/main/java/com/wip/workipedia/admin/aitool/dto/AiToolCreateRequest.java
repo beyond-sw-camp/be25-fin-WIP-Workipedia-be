@@ -15,6 +15,8 @@ public record AiToolCreateRequest(
 	String queryTemplate,
 	@NotBlank String parametersSchema,
 	String responseSchema,
+	String accessScope,
+	String selfIdentityParam,
 	@NotBlank String authType,
 	String credentialRef,
 	@Min(100) @Max(60000) int timeoutMs,

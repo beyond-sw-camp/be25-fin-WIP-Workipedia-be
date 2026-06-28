@@ -7,7 +7,9 @@ public record ActiveAiToolResponse(
 	String toolType,
 	String name,
 	String description,
-	String parametersSchema
+	String parametersSchema,
+	String accessScope,
+	String selfIdentityParam
 ) {
 	public static ActiveAiToolResponse from(AiTool tool) {
 		return new ActiveAiToolResponse(
@@ -15,7 +17,9 @@ public record ActiveAiToolResponse(
 			tool.getToolType().name(),
 			tool.getName(),
 			tool.getDescription(),
-			tool.getParametersSchema()
+			tool.getParametersSchema(),
+			tool.getAccessScope().name(),
+			tool.getSelfIdentityParam()
 		);
 	}
 }

@@ -3,6 +3,7 @@ package com.wip.workipedia.tool.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
+import com.wip.workipedia.tool.domain.AccessScope;
 import com.wip.workipedia.tool.domain.AiTool;
 import com.wip.workipedia.tool.domain.ApprovalStatus;
 import com.wip.workipedia.tool.domain.ToolExecutionLog;
@@ -46,12 +47,13 @@ public class ToolExecutionService {
 	// ToolExecutionException은 여기서 끝까지 잡아서 HTTP 200 + success:false로 변환한다 — AI 입장에서 "Tool 실행 실패"는
 	// API 에러가 아니라 흔히 있는 결과라서, GlobalExceptionHandler까지 올려보내지 않는다.
 	@Transactional
-	public ToolExecuteResponse execute(String caller, Long aiToolId, Map<String, Object> parameters) {
+	public ToolExecuteResponse execute(String caller, Long aiToolId, Map<String, Object> parameters, String callerEmployeeId) {
 		AiTool tool = aiToolRepository.findByAiToolIdAndIsDeleted(aiToolId, "N")
 			.orElseThrow(() -> new CustomException(ErrorType.AI_TOOL_NOT_FOUND));
 
 		long startedAt = System.currentTimeMillis();
-		String maskedParametersJson = maskParametersAsJson(parameters);
+		Map<String, Object> effectiveParameters = applyAccessPolicy(tool, parameters, callerEmployeeId);
+		String maskedParametersJson = maskParametersAsJson(effectiveParameters);
 
 		if (!tool.isExecutable()) {
 			recordLog(tool, caller, maskedParametersJson, null, elapsed(startedAt), false, "AI_TOOL_NOT_EXECUTABLE");
@@ -59,20 +61,36 @@ public class ToolExecutionService {
 		}
 
 		ParameterSchemaValidator.ValidationResult validation =
-			parameterSchemaValidator.validate(tool.getParametersSchema(), parameters);
+			parameterSchemaValidator.validate(tool.getParametersSchema(), effectiveParameters);
 		if (!validation.valid()) {
 			recordLog(tool, caller, maskedParametersJson, null, elapsed(startedAt), false, "AI_TOOL_PARAMETER_MISMATCH");
 			throw new CustomException(ErrorType.AI_TOOL_PARAMETER_MISMATCH, validation.message());
 		}
 
 		try {
-			ToolExecutionResult result = executeByType(tool, parameters);
+			ToolExecutionResult result = executeByType(tool, effectiveParameters);
 			recordLog(tool, caller, maskedParametersJson, result.resultCount(), elapsed(startedAt), true, null);
 			return ToolExecuteResponse.success(result.data());
 		} catch (ToolExecutionException e) {
 			recordLog(tool, caller, maskedParametersJson, null, elapsed(startedAt), false, e.getErrorCode());
 			return ToolExecuteResponse.failure(e.getErrorCode(), e.getMessage());
 		}
+	}
+
+	private Map<String, Object> applyAccessPolicy(AiTool tool, Map<String, Object> parameters, String callerEmployeeId) {
+		Map<String, Object> effective = new LinkedHashMap<>(parameters != null ? parameters : Map.of());
+		if (tool.getAccessScope() != AccessScope.SELF_ONLY) {
+			return effective;
+		}
+		if (callerEmployeeId == null || callerEmployeeId.isBlank()) {
+			throw new CustomException(ErrorType.AI_TOOL_PARAMETER_MISMATCH, "호출자 본인 Tool은 callerEmployeeId가 필요합니다.");
+		}
+		String selfIdentityParam = tool.getSelfIdentityParam();
+		if (selfIdentityParam == null || selfIdentityParam.isBlank()) {
+			throw new CustomException(ErrorType.AI_TOOL_PARAMETER_MISMATCH, "호출자 본인 Tool의 selfIdentityParam 설정이 없습니다.");
+		}
+		effective.put(selfIdentityParam, callerEmployeeId.trim());
+		return effective;
 	}
 
 	// toolType별로 맞는 executor(HttpApiToolExecutor/DbQueryToolExecutor)에 실행을 위임한다.
