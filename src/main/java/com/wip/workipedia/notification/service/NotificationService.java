@@ -11,6 +11,7 @@ import com.wip.workipedia.notification.dto.NotificationResponse;
 import com.wip.workipedia.notification.dto.UnreadCountResponse;
 import com.wip.workipedia.notification.repository.NotificationRepository;
 import com.wip.workipedia.ticket.domain.Ticket;
+import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +31,7 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final PlatformTransactionManager transactionManager;
+    private final NotificationSseService notificationSseService;
 
     public PageResponse<NotificationResponse> list(Long userId, NotificationTab tab, Pageable pageable) {
         // 탭 조회는 현재 도메인 상태가 아니라, 생성된 알림 이력을 기준으로 분류한다.
@@ -243,7 +245,7 @@ public class NotificationService {
 
     // 알림은 핵심 도메인 트랜잭션이 성공적으로 커밋된 뒤 생성한다.
     // 알림 저장 실패가 답변 등록 및 티켓 상태 변경 같은 본 기능을 롤백시키지 않도록 분리한다.
-    private void createAfterCommit(String context, Runnable notificationCreation) {
+    private void createAfterCommit(String context, Supplier<Notification> notificationCreation) {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
             createInNewTransaction(context, notificationCreation);
             return;
@@ -259,11 +261,15 @@ public class NotificationService {
 
     // 알림 저장은 별도 트랜잭션에서 수행하고, 실패 시 로그만 남긴다.
     // 알림은 부가 기능이므로 저장 실패를 호출 도메인으로 전파하지 않는다.
-    private void createInNewTransaction(String context, Runnable notificationCreation) {
+    // 저장이 커밋된 뒤 해당 사용자의 실시간 SSE 구독으로 push 한다(연결 없으면 무시).
+    private void createInNewTransaction(String context, Supplier<Notification> notificationCreation) {
         try {
             TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
             transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-            transactionTemplate.executeWithoutResult(status -> notificationCreation.run());
+            Notification saved = transactionTemplate.execute(status -> notificationCreation.get());
+            if (saved != null) {
+                notificationSseService.send(saved.getUserId(), NotificationResponse.from(saved));
+            }
         } catch (RuntimeException exception) {
             log.warn("Failed to create {}.", context, exception);
         }
