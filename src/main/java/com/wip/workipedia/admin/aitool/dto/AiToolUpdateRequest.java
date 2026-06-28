@@ -8,6 +8,8 @@ public record AiToolUpdateRequest(
 	String queryTemplate,
 	String parametersSchema,
 	String responseSchema,
+	String accessScope,
+	String selfIdentityParam,
 	String authType,
 	String credentialRef,
 	Integer timeoutMs,

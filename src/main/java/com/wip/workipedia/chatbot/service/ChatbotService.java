@@ -25,6 +25,7 @@ import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.response.PageResponse;
 import com.wip.workipedia.ragcitation.service.RagCitationService;
+import com.wip.workipedia.user.repository.UserRepository;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -58,6 +59,7 @@ public class ChatbotService {
     private final AdminAiPromptService adminAiPromptService;
     private final ObjectMapper objectMapper;
     private final RagCitationService ragCitationService;
+    private final UserRepository userRepository;
 
     // self-injection: @Transactional 서브메서드를 같은 빈 내에서 프록시로 호출하기 위해 필요
     // (직접 this.method()로 호출하면 트랜잭션이 적용되지 않음)
@@ -103,8 +105,9 @@ public class ChatbotService {
 
         // 2단계: AI 서버 호출 (실패 시 FallbackChatbotAiClient 가 안내 메시지 반환)
         String customPrompt = adminAiPromptService.findActiveCustomPrompt();
+        String callerEmployeeId = findCallerEmployeeId(userId);
         ChatbotAiResponse aiResponse = chatbotAiClient.ask(
-                new ChatbotAiRequest(request.question(), customPrompt, context)
+                new ChatbotAiRequest(request.question(), customPrompt, context, callerEmployeeId)
         );
 
         // 3단계: ASSISTANT 응답 저장 (트랜잭션 커밋)
@@ -121,7 +124,8 @@ public class ChatbotService {
         // 1단계: 컨텍스트 빌드 + USER 메시지 저장 (여기서 예외가 나면 Flux 생성 전이라 일반 JSON 에러로 응답됨)
         List<SessionMessage> context = self.prepareContextAndSaveUserMessage(userId, sessionId, request.question());
         String customPrompt = adminAiPromptService.findActiveCustomPrompt();
-        ChatbotAiRequest aiRequest = new ChatbotAiRequest(request.question(), customPrompt, context);
+        String callerEmployeeId = findCallerEmployeeId(userId);
+        ChatbotAiRequest aiRequest = new ChatbotAiRequest(request.question(), customPrompt, context, callerEmployeeId);
 
         // 스트림 전체에서 공유되는 가변 누적 상태:
         //   - answerBuffer: token 조각을 이어붙여 최종 답변 완성
@@ -194,6 +198,12 @@ public class ChatbotService {
 
     private ServerSentEvent<Object> doneEvent(ChatbotMessageResponse saved) {
         return ServerSentEvent.builder((Object) saved).event("done").build();
+    }
+
+    private String findCallerEmployeeId(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorType.AUTH_USER_NOT_FOUND))
+                .getEmployeeId();
     }
 
     // done 프레임 JSON에서 sources/route/action만 추출 (type·step_history 등 나머지는 무시)

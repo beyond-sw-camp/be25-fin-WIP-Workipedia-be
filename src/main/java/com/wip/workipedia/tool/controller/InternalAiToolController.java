@@ -38,6 +38,6 @@ public class InternalAiToolController {
 		@RequestBody ToolExecuteRequest request
 	) {
 		Map<String, Object> parameters = request.parameters() != null ? request.parameters() : Map.of();
-		return ResponseEntity.ok(toolExecutionService.execute(CALLER, aiToolId, parameters));
+		return ResponseEntity.ok(toolExecutionService.execute(CALLER, aiToolId, parameters, request.callerEmployeeId()));
 	}
 }
