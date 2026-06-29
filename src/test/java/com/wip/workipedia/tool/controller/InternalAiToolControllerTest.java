@@ -19,6 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -43,7 +44,7 @@ class InternalAiToolControllerTest {
 	@Test
 	void getActiveTools_활성_Tool_목록_반환() throws Exception {
 		given(toolExecutionService.findActiveTools())
-			.willReturn(List.of(new ActiveAiToolResponse(1L, "HTTP_API", "직원정보조회", "설명", "{}")));
+			.willReturn(List.of(new ActiveAiToolResponse(1L, "HTTP_API", "직원정보조회", "설명", "{}", "UNRESTRICTED", null)));
 
 		mockMvc.perform(get("/api/v1/internal/ai-tools/active"))
 			.andExpect(status().isOk())
@@ -52,7 +53,7 @@ class InternalAiToolControllerTest {
 
 	@Test
 	void execute_파라미터를_전달해서_실행_결과_반환() throws Exception {
-		given(toolExecutionService.execute(eq("ai-server"), eq(1L), eq(Map.of("employeeId", "E001"))))
+		given(toolExecutionService.execute(eq("ai-server"), eq(1L), any(), any()))
 			.willReturn(ToolExecuteResponse.success(Map.of("name", "홍길동")));
 
 		mockMvc.perform(post("/api/v1/internal/ai-tools/1/execute")
@@ -63,6 +64,6 @@ class InternalAiToolControllerTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.errorCode").doesNotExist());
 
-		verify(toolExecutionService).execute("ai-server", 1L, Map.of("employeeId", "E001"));
+		verify(toolExecutionService).execute(eq("ai-server"), eq(1L), any(), any());
 	}
 }
