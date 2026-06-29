@@ -35,7 +35,7 @@ class DepartmentSyncScenarioTest {
 		ErpDepartmentItem i1 = new ErpDepartmentItem("S-1", "영업1팀", "국내영업", "Y");
 		ErpDepartmentItem i2 = new ErpDepartmentItem("S-2", "영업2팀", "해외영업", "Y");
 		syncService.preview(new SyncPreviewRequest(source, List.of(i1, i2)));
-		syncService.apply(new SyncApplyRequest(source, List.of(i1, i2), List.of(), null), 1L);
+		syncService.apply(new SyncApplyRequest(source, List.of(i1, i2), List.of(), List.of(), null), 1L);
 
 		Long dept1 = externalDepartmentRepository.findBySourceSystemAndExternalId(source, "S-1")
 			.orElseThrow().getMappedDepartmentId();
@@ -46,7 +46,7 @@ class DepartmentSyncScenarioTest {
 		ErpDepartmentItem i3 = new ErpDepartmentItem("S-3", "통합영업팀", "국내외 영업", "Y");
 		syncService.preview(new SyncPreviewRequest(source, List.of(i3)));
 		SyncApplyResponse res = syncService.apply(new SyncApplyRequest(source, List.of(i3),
-			List.of(new MergeResolution(List.of("S-1", "S-2"), "S-3", "MERGE")), null), 1L);
+			List.of(new MergeResolution(List.of("S-1", "S-2"), "S-3", "MERGE")), List.of(), null), 1L);
 
 		Long mergedDeptId = externalDepartmentRepository.findBySourceSystemAndExternalId(source, "S-3")
 			.orElseThrow().getMappedDepartmentId();

@@ -10,6 +10,7 @@ import com.wip.workipedia.department.repository.RoutingPromptRepository;
 import com.wip.workipedia.departmentsync.domain.ExternalDepartment;
 import com.wip.workipedia.departmentsync.domain.SyncState;
 import com.wip.workipedia.departmentsync.dto.ErpDepartmentItem;
+import com.wip.workipedia.departmentsync.dto.ManualLink;
 import com.wip.workipedia.departmentsync.dto.MergeResolution;
 import com.wip.workipedia.departmentsync.dto.SyncApplyRequest;
 import com.wip.workipedia.departmentsync.dto.SyncApplyResponse;
@@ -54,34 +55,44 @@ public class DepartmentSyncService {
 				.findBySourceSystemAndExternalId(source, item.externalId())
 				.orElse(null);
 
+			// 원본 적재(신규 stage 또는 갱신)
+			if (ext == null) {
+				ext = ExternalDepartment.stage(source, item.externalId(),
+					item.departmentName(), null, item.dutyDesc(), item.useYn(), null);
+				externalDepartmentRepository.save(ext);
+			} else {
+				ext.refreshFrom(item.departmentName(), null, item.dutyDesc(), item.useYn(), null);
+			}
+
 			SyncState state;
 			String previousName = null;
-			Long mappedDeptId = null;
+			Long mappedDeptId = ext.getMappedDepartmentId();
 
-			if (ext == null) {
-				state = SyncState.NEW;
-				ExternalDepartment staged = ExternalDepartment.stage(source, item.externalId(),
-					item.departmentName(), null, item.dutyDesc(), item.useYn(), null);
-				staged.assignState(SyncState.NEW);
-				externalDepartmentRepository.save(staged);
-				created++;
-			} else {
-				mappedDeptId = ext.getMappedDepartmentId();
-				boolean renamedNow = mappedDeptId != null
-					&& !ext.getDepartmentName().equals(item.departmentName());
-				previousName = renamedNow ? ext.getDepartmentName() : null;
-				if (mappedDeptId == null) {
-					state = SyncState.NEW;
-					created++;
-				} else if (renamedNow) {
+			if (mappedDeptId != null) {
+				// 이미 운영 부서와 연결됨 → 개명/유지 (운영 부서명 기준 비교)
+				String currentName = departmentRepository.findByDepartmentIdAndDeletedAtIsNull(mappedDeptId)
+					.map(Department::getDepartmentName).orElse(item.departmentName());
+				if (!currentName.equals(item.departmentName())) {
 					state = SyncState.RENAMED;
+					previousName = currentName;
 					renamed++;
 				} else {
 					state = SyncState.MATCHED;
 				}
-				ext.refreshFrom(item.departmentName(), null, item.dutyDesc(), item.useYn(), null);
-				ext.assignState(state);
+			} else {
+				// 미연결 → 같은 이름의 기존 부서가 있으면 흡수(연결), 없으면 신설
+				Long byNameId = departmentRepository
+					.findByDepartmentNameAndDeletedAtIsNull(item.departmentName())
+					.map(Department::getDepartmentId).orElse(null);
+				if (byNameId != null) {
+					state = SyncState.MATCHED;
+					mappedDeptId = byNameId;
+				} else {
+					state = SyncState.NEW;
+					created++;
+				}
 			}
+			ext.assignState(state);
 			rows.add(new SyncDiffRow(item.externalId(), item.departmentName(),
 				previousName, state, 0, mappedDeptId));
 		}
@@ -112,11 +123,34 @@ public class DepartmentSyncService {
 		int updated = 0;
 		int deleted = 0;
 		int merged = 0;
+		int linked = 0;
 		long membersReassigned = 0;
 
 		Set<String> mergedFrom = new HashSet<>();
+		Set<String> manuallyLinked = new HashSet<>();
 
-		// 1) 통폐합 먼저 처리
+		// 0) 수동 연결 먼저 처리 (이름이 달라 자동 매칭 안 되는 동일 부서를 관리자가 직접 연결)
+		if (request.manualLinks() != null) {
+			for (ManualLink link : request.manualLinks()) {
+				ExternalDepartment ext = externalDepartmentRepository
+					.findBySourceSystemAndExternalId(source, link.externalId()).orElseThrow();
+				Department target = departmentRepository
+					.findByDepartmentIdAndDeletedAtIsNull(link.departmentId()).orElseThrow();
+				ext.markApplied(target.getDepartmentId());
+				manuallyLinked.add(link.externalId());
+				if (link.applyRoutingPrompt()) {
+					ErpDepartmentItem item = request.items().stream()
+						.filter(i -> i.externalId().equals(link.externalId()))
+						.findFirst().orElse(null);
+					if (item != null) {
+						forceRoutingPrompt(target.getDepartmentId(), item.dutyDesc(), actorUserId);
+					}
+				}
+				linked++;
+			}
+		}
+
+		// 1) 통폐합 처리
 		if (request.merges() != null) {
 			for (MergeResolution m : request.merges()) {
 				ExternalDepartment toExt = externalDepartmentRepository
@@ -142,7 +176,7 @@ public class DepartmentSyncService {
 
 		// 2) 신설/개명/폐지 처리
 		for (ErpDepartmentItem item : request.items()) {
-			if (mergedFrom.contains(item.externalId())) {
+			if (mergedFrom.contains(item.externalId()) || manuallyLinked.contains(item.externalId())) {
 				continue;
 			}
 			ExternalDepartment ext = externalDepartmentRepository
@@ -163,11 +197,17 @@ public class DepartmentSyncService {
 				continue;
 			}
 
-			if (ext.getMappedDepartmentId() == null) { // 신설
-				Department dept = departmentRepository.save(Department.create(item.departmentName()));
+			if (ext.getMappedDepartmentId() == null) { // 미연결 → 이름 흡수 또는 신설
+				Department byName = departmentRepository
+					.findByDepartmentNameAndDeletedAtIsNull(item.departmentName()).orElse(null);
+				Department dept = byName != null
+					? byName
+					: departmentRepository.save(Department.create(item.departmentName()));
+				if (byName == null) {
+					created++;
+				}
 				applyRoutingPrompt(dept.getDepartmentId(), item.dutyDesc(), actorUserId);
 				ext.markApplied(dept.getDepartmentId());
-				created++;
 			} else { // 개명/유지
 				Department dept = departmentRepository
 					.findByDepartmentIdAndDeletedAtIsNull(ext.getMappedDepartmentId()).orElseThrow();
@@ -180,15 +220,16 @@ public class DepartmentSyncService {
 			}
 		}
 
-		return new SyncApplyResponse(created, updated, deleted, merged, membersReassigned);
+		return new SyncApplyResponse(created, updated, deleted, merged, linked, membersReassigned);
 	}
 
-	// 통폐합 대상 부서를 보장한다(없으면 신설). 매핑된 부서 id 반환.
+	// 통폐합 대상 부서를 보장한다(연결됨→그대로 / 같은 이름 있으면 흡수 / 없으면 신설). 매핑된 부서 id 반환.
 	private Long ensureDepartment(ExternalDepartment toExt, List<ErpDepartmentItem> items, Long actorUserId) {
 		if (toExt.getMappedDepartmentId() != null) {
 			return toExt.getMappedDepartmentId();
 		}
-		Department dept = departmentRepository.save(Department.create(toExt.getDepartmentName()));
+		Department dept = departmentRepository.findByDepartmentNameAndDeletedAtIsNull(toExt.getDepartmentName())
+			.orElseGet(() -> departmentRepository.save(Department.create(toExt.getDepartmentName())));
 		items.stream()
 			.filter(i -> i.externalId().equals(toExt.getExternalId()))
 			.findFirst()
@@ -197,8 +238,24 @@ public class DepartmentSyncService {
 		return dept.getDepartmentId();
 	}
 
-	// R&R을 department_routing_prompts에 반영하고 AI 동기화 job(DEPT_RR/UPSERT)을 등록한다.
+	// R&R 정책: 신설 시에만 ERP duty_desc로 채운다. 이미 R&R이 있으면 수기 튜닝 보호를 위해 덮어쓰지 않는다.
+	// (기존 R&R을 건드리지 않으므로 AI 동기화 job도 신설 때만 등록한다.)
 	private void applyRoutingPrompt(Long departmentId, String dutyDesc, Long actorUserId) {
+		if (dutyDesc == null || dutyDesc.isBlank()) {
+			return;
+		}
+		boolean alreadyHasRoutingPrompt = routingPromptRepository
+			.findByDepartment_DepartmentIdAndDeletedAtIsNull(departmentId).isPresent();
+		if (alreadyHasRoutingPrompt) {
+			return;
+		}
+		Department dept = departmentRepository.findByDepartmentIdAndDeletedAtIsNull(departmentId).orElseThrow();
+		routingPromptRepository.save(DepartmentRoutingPrompt.create(dept, dutyDesc, actorUserId));
+		aiSyncJobService.enqueue(AiSyncSourceType.DEPT_RR, departmentId, AiSyncOperation.UPSERT);
+	}
+
+	// 수동 연결 시 관리자 의사로 R&R을 명시 설정한다(기존 값 덮어쓰기 허용). 빈 값이면 건드리지 않는다.
+	private void forceRoutingPrompt(Long departmentId, String dutyDesc, Long actorUserId) {
 		if (dutyDesc == null || dutyDesc.isBlank()) {
 			return;
 		}

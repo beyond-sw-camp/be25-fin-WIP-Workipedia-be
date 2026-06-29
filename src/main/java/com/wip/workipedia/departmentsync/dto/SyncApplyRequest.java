@@ -9,5 +9,6 @@ public record SyncApplyRequest(
 	@NotBlank String sourceSystem,
 	@NotEmpty @Valid List<ErpDepartmentItem> items,
 	List<MergeResolution> merges,
+	List<ManualLink> manualLinks,
 	Long reassignTargetDepartmentId
 ) {}
