@@ -10,8 +10,12 @@ import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.flashchat.domain.FlashChatPolicy;
 import com.wip.workipedia.flashchat.dto.FlashChatDeleteBroadcast;
+import com.wip.workipedia.flashchat.dto.FlashChatReexpireBroadcast;
 import com.wip.workipedia.flashchat.repository.FlashChatPolicyRepository;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -66,6 +70,7 @@ public class AdminFlashChatService {
     @Transactional
     public FlashChatPolicyResponse updatePolicy(Long adminUserId, FlashChatPolicyRequest request) {
         FlashChatPolicy policy = loadPolicy();
+        int previousTtlSeconds = policy.getMessageTtlSeconds();
 
         String bannedWordsJson = null;
         if (request.bannedWords() != null && !request.bannedWords().isEmpty()) {
@@ -89,7 +94,40 @@ public class AdminFlashChatService {
             throw new CustomException(ErrorType.INTERNAL_ERROR);
         }
 
+        // TTL이 바뀌면 현재 활성 메시지 전체의 만료를 '지금 + 새 TTL'로 재설정(옵션 B)하고 실시간 브로드캐스트한다.
+        if (request.messageTtlSeconds() != previousTtlSeconds) {
+            reexpireActiveMessages(request.messageTtlSeconds());
+        }
+
         return toPolicyResponse(policy);
+    }
+
+    // 현재 활성 메시지 전체의 만료 시각을 now + ttlSeconds로 통일한다(ZSet score·Redis 키 TTL·Hash expiresAt 갱신).
+    // 모든 메시지가 동일한 만료 시각을 갖게 되므로 단일 REEXPIRE 브로드캐스트로 클라이언트에 즉시 반영한다.
+    private void reexpireActiveMessages(int ttlSeconds) {
+        Set<String> ids = stringRedisTemplate.opsForZSet().range(MESSAGES_ZSET_KEY, 0, -1);
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+
+        LocalDateTime newExpiresAt = LocalDateTime.now().plusSeconds(ttlSeconds);
+        String newExpiresAtIso = newExpiresAt.toString();
+        long newExpiresEpoch = System.currentTimeMillis() + (ttlSeconds * 1000L);
+
+        for (String id : ids) {
+            String messageKey = MESSAGE_KEY_PREFIX + id;
+            // 이미 만료/삭제된 Hash의 잔여 ZSet 엔트리는 정리만 한다.
+            if (!Boolean.TRUE.equals(stringRedisTemplate.hasKey(messageKey))) {
+                stringRedisTemplate.opsForZSet().remove(MESSAGES_ZSET_KEY, id);
+                continue;
+            }
+            stringRedisTemplate.opsForZSet().add(MESSAGES_ZSET_KEY, id, (double) newExpiresEpoch);
+            stringRedisTemplate.expire(messageKey, Duration.ofSeconds(ttlSeconds));
+            stringRedisTemplate.opsForHash().put(messageKey, "expiresAt", newExpiresAtIso);
+        }
+
+        messagingTemplate.convertAndSend("/topic/flash-chat",
+                FlashChatReexpireBroadcast.of(newExpiresAtIso));
     }
 
     private FlashChatPolicy loadPolicy() {
