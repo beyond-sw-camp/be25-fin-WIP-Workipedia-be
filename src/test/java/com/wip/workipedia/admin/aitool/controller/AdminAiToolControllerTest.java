@@ -47,7 +47,9 @@ class AdminAiToolControllerTest {
 	void findAll_목록_조회() throws Exception {
 		AiToolResponse response = new AiToolResponse(
 			1L, "직원정보조회", "설명", "HTTP_API",
-			"https://hr.example.com", "GET", null, null, "NONE", null, 5000, 100,
+			"https://hr.example.com", "GET", null, null,
+			"{}", null, "UNRESTRICTED", null,
+			"NONE", null, 5000, 100,
 			"APPROVED", false, LocalDateTime.now(), LocalDateTime.now()
 		);
 		given(adminAiToolService.findAll(any())).willReturn(
@@ -63,7 +65,9 @@ class AdminAiToolControllerTest {
 	void create_등록_요청() throws Exception {
 		AiToolResponse response = new AiToolResponse(
 			1L, "직원정보조회", "설명", "HTTP_API",
-			"https://hr.example.com", "GET", null, null, "NONE", null, 5000, 100,
+			"https://hr.example.com", "GET", null, null,
+			"{}", null, "UNRESTRICTED", null,
+			"NONE", null, 5000, 100,
 			"APPROVED", false, LocalDateTime.now(), LocalDateTime.now()
 		);
 		given(adminAiToolService.create(nullable(Long.class), any())).willReturn(response);

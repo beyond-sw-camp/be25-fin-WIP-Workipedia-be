@@ -24,6 +24,7 @@ import com.wip.workipedia.chatbot.repository.ChatbotSessionRepository;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.ragcitation.service.RagCitationService;
+import com.wip.workipedia.user.repository.UserRepository;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -39,9 +40,10 @@ class ChatbotServiceTest {
     private final FallbackChatbotAiClient fallbackAiClient = mock(FallbackChatbotAiClient.class);
     private final AdminAiPromptService adminAiPromptService = mock(AdminAiPromptService.class);
     private final RagCitationService ragCitationService = mock(RagCitationService.class);
+    private final UserRepository userRepository = mock(UserRepository.class);
     private final ChatbotService service = new ChatbotService(
             sessionRepository, messageRepository, aiClient, aiStreamClient, fallbackAiClient,
-            adminAiPromptService, new ObjectMapper(), ragCitationService);
+            adminAiPromptService, new ObjectMapper(), ragCitationService, userRepository);
 
     @Test
     void createSession_저장하고_세션을_반환한다() {
