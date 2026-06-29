@@ -2,6 +2,7 @@ package com.wip.workipedia.tool.executor;
 
 import com.wip.workipedia.tool.domain.AiTool;
 import com.wip.workipedia.tool.domain.AuthType;
+import com.wip.workipedia.tool.domain.SideEffectType;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
@@ -26,7 +27,7 @@ class HttpApiHealthCheckerTest {
 		return AiTool.createHttpApiTool(
 			"직원정보조회", "설명",
 			"https://hr.example.com/api/employees", httpMethod,
-			"{\"properties\":{}}", null, AuthType.NONE, null, 5000, 100, 1L
+			"{\"properties\":{}}", null, SideEffectType.READ_ONLY, AuthType.NONE, null, 5000, 100, 1L
 		);
 	}
 

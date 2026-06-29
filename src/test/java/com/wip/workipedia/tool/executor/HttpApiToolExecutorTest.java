@@ -2,6 +2,7 @@ package com.wip.workipedia.tool.executor;
 
 import com.wip.workipedia.tool.domain.AiTool;
 import com.wip.workipedia.tool.domain.AuthType;
+import com.wip.workipedia.tool.domain.SideEffectType;
 import com.wip.workipedia.tool.exception.ToolExecutionException;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -32,7 +33,7 @@ class HttpApiToolExecutorTest {
 			"직원정보조회", "직원 정보를 조회합니다.",
 			"https://hr.example.com/api/employees", "GET",
 			"{\"properties\":{\"employeeId\":{\"type\":\"string\",\"required\":true}}}",
-			null, AuthType.NONE, null, 5000, 100, 1L
+			null, SideEffectType.READ_ONLY, AuthType.NONE, null, 5000, 100, 1L
 		);
 
 		server.expect(MockRestRequestMatchers.requestTo("https://hr.example.com/api/employees?employeeId=E001"))
@@ -51,7 +52,7 @@ class HttpApiToolExecutorTest {
 		AiTool tool = AiTool.createHttpApiTool(
 			"직원목록조회", "직원 목록을 조회합니다.",
 			"https://hr.example.com/api/employees/list", "GET",
-			"{\"properties\":{}}", null, AuthType.NONE, null, 5000, 1, 1L
+			"{\"properties\":{}}", null, SideEffectType.READ_ONLY, AuthType.NONE, null, 5000, 1, 1L
 		);
 
 		server.expect(MockRestRequestMatchers.requestTo("https://hr.example.com/api/employees/list"))
@@ -69,7 +70,7 @@ class HttpApiToolExecutorTest {
 		AiTool tool = AiTool.createHttpApiTool(
 			"직원정보조회", "직원 정보를 조회합니다.",
 			"https://hr.example.com/api/employees", "GET",
-			"{\"properties\":{}}", null, AuthType.API_KEY, "TOOL_HR_API_KEY", 5000, 100, 1L
+			"{\"properties\":{}}", null, SideEffectType.READ_ONLY, AuthType.API_KEY, "TOOL_HR_API_KEY", 5000, 100, 1L
 		);
 		when(environment.getProperty("TOOL_HR_API_KEY")).thenReturn("secret-key");
 
@@ -85,7 +86,7 @@ class HttpApiToolExecutorTest {
 		AiTool tool = AiTool.createHttpApiTool(
 			"직원정보조회", "직원 정보를 조회합니다.",
 			"https://hr.example.com/api/employees", "GET",
-			"{\"properties\":{}}", null, AuthType.API_KEY, "TOOL_HR_API_KEY", 5000, 100, 1L
+			"{\"properties\":{}}", null, SideEffectType.READ_ONLY, AuthType.API_KEY, "TOOL_HR_API_KEY", 5000, 100, 1L
 		);
 		when(environment.getProperty("TOOL_HR_API_KEY")).thenReturn(null);
 
@@ -99,7 +100,7 @@ class HttpApiToolExecutorTest {
 		AiTool tool = AiTool.createHttpApiTool(
 			"직원정보조회", "직원 정보를 조회합니다.",
 			"https://hr.example.com/api/employees", "GET",
-			"{\"properties\":{}}", null, AuthType.NONE, null, 5000, 100, 1L
+			"{\"properties\":{}}", null, SideEffectType.READ_ONLY, AuthType.NONE, null, 5000, 100, 1L
 		);
 
 		server.expect(MockRestRequestMatchers.requestTo("https://hr.example.com/api/employees"))
@@ -117,7 +118,7 @@ class HttpApiToolExecutorTest {
 		AiTool tool = AiTool.createHttpApiTool(
 			"내부망조회", "설명",
 			"https://192.168.1.1/api", "GET",
-			"{\"properties\":{}}", null, AuthType.NONE, null, 5000, 100, 1L
+			"{\"properties\":{}}", null, SideEffectType.READ_ONLY, AuthType.NONE, null, 5000, 100, 1L
 		);
 
 		assertThatThrownBy(() -> unsafeExecutor.execute(tool, Map.of()))

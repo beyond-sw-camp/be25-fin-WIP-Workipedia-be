@@ -11,6 +11,7 @@ import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.tool.domain.AiTool;
 import com.wip.workipedia.tool.domain.ApprovalStatus;
 import com.wip.workipedia.tool.domain.AuthType;
+import com.wip.workipedia.tool.domain.SideEffectType;
 import com.wip.workipedia.tool.executor.DbQueryHealthChecker;
 import com.wip.workipedia.tool.executor.HealthCheckResult;
 import com.wip.workipedia.tool.executor.HttpApiHealthChecker;
@@ -30,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class AdminAiToolServiceTest {
@@ -57,7 +59,7 @@ class AdminAiToolServiceTest {
 	private AiToolCreateRequest createRequest() {
 		return new AiToolCreateRequest(
 			"직원정보조회", "직원 정보를 조회합니다.",
-			"HTTP_API", "https://hr.example.com/api/employees", "GET",
+			"HTTP_API", "READ_ONLY", "https://hr.example.com/api/employees", "GET",
 			null, null,
 			"{\"properties\":{\"employeeId\":{\"type\":\"string\",\"required\":true}}}",
 			null, "UNRESTRICTED", null, "API_KEY", "TOOL_HR_API_KEY", 5000, 100
@@ -71,6 +73,7 @@ class AdminAiToolServiceTest {
 		AiToolResponse response = adminAiToolService.create(1L, request);
 
 		assertThat(response.name()).isEqualTo("직원정보조회");
+		assertThat(response.sideEffectType()).isEqualTo("READ_ONLY");
 		assertThat(response.approvalStatus()).isEqualTo("APPROVED");
 		assertThat(response.active()).isFalse();
 		verify(aiToolRepository).save(any(AiTool.class));
@@ -80,7 +83,7 @@ class AdminAiToolServiceTest {
 	@Test
 	void create_DB_QUERY_등록_성공시_AdminLog_기록() {
 		AiToolCreateRequest request = new AiToolCreateRequest(
-			"휴가잔여일조회", "설명", "DB_QUERY", null, null,
+			"휴가잔여일조회", "설명", "DB_QUERY", "READ_ONLY", null, null,
 			"workipediaReadonly",
 			"SELECT name, remaining_days FROM employee_vacations WHERE employee_id = :employeeId LIMIT 1",
 			"{\"properties\":{}}", null, "UNRESTRICTED", null, "NONE", null, 5000, 100
@@ -95,9 +98,34 @@ class AdminAiToolServiceTest {
 	}
 
 	@Test
+	void create_MUTATING_HTTP_API_등록_성공() {
+		AiToolCreateRequest request = new AiToolCreateRequest(
+			"휴가신청", "설명", "HTTP_API", "MUTATING",
+			"https://hr.example.com/api/vacations", "POST", null, null,
+			"{\"properties\":{}}", null, "UNRESTRICTED", null, "NONE", null, 5000, 100
+		);
+
+		AiToolResponse response = adminAiToolService.create(1L, request);
+
+		assertThat(response.sideEffectType()).isEqualTo("MUTATING");
+	}
+
+	@Test
+	void create_DB_QUERY를_MUTATING으로_등록하면_거부() {
+		AiToolCreateRequest request = new AiToolCreateRequest(
+			"휴가잔여일조회", "설명", "DB_QUERY", "MUTATING", null, null,
+			"workipediaReadonly", "SELECT remaining_days FROM employee_vacations LIMIT 1",
+			"{\"properties\":{}}", null, "UNRESTRICTED", null, "NONE", null, 5000, 100
+		);
+
+		assertThatThrownBy(() -> adminAiToolService.create(1L, request))
+			.isInstanceOf(CustomException.class);
+	}
+
+	@Test
 	void create_DB_QUERY인데_datasourceKey가_없으면_거부() {
 		AiToolCreateRequest request = new AiToolCreateRequest(
-			"휴가잔여일조회", "설명", "DB_QUERY", null, null,
+			"휴가잔여일조회", "설명", "DB_QUERY", "READ_ONLY", null, null,
 			null, "SELECT name FROM employee_vacations LIMIT 1",
 			"{\"properties\":{}}", null, "UNRESTRICTED", null, "NONE", null, 5000, 100
 		);
@@ -109,7 +137,7 @@ class AdminAiToolServiceTest {
 	@Test
 	void create_DB_QUERY인데_queryTemplate이_없으면_거부() {
 		AiToolCreateRequest request = new AiToolCreateRequest(
-			"휴가잔여일조회", "설명", "DB_QUERY", null, null,
+			"휴가잔여일조회", "설명", "DB_QUERY", "READ_ONLY", null, null,
 			"workipediaReadonly", null,
 			"{\"properties\":{}}", null, "UNRESTRICTED", null, "NONE", null, 5000, 100
 		);
@@ -121,7 +149,7 @@ class AdminAiToolServiceTest {
 	@Test
 	void create_authType_API_KEY인데_credentialRef_없으면_거부() {
 		AiToolCreateRequest request = new AiToolCreateRequest(
-			"직원정보조회", "설명", "HTTP_API", "https://hr.example.com", "GET",
+			"직원정보조회", "설명", "HTTP_API", "READ_ONLY", "https://hr.example.com", "GET",
 			null, null,
 			"{\"properties\":{}}", null, "UNRESTRICTED", null, "API_KEY", null, 5000, 100
 		);
@@ -133,7 +161,7 @@ class AdminAiToolServiceTest {
 	@Test
 	void create_OAUTH2_인증타입은_M2범위에서_거부() {
 		AiToolCreateRequest request = new AiToolCreateRequest(
-			"직원정보조회", "설명", "HTTP_API", "https://hr.example.com", "GET",
+			"직원정보조회", "설명", "HTTP_API", "READ_ONLY", "https://hr.example.com", "GET",
 			null, null,
 			"{\"properties\":{}}", null, "UNRESTRICTED", null, "OAUTH2", "ref", 5000, 100
 		);
@@ -155,13 +183,13 @@ class AdminAiToolServiceTest {
 	void update_active를_true로_변경() {
 		AiTool tool = AiTool.createHttpApiTool(
 			"직원정보조회", "설명", "https://hr.example.com", "GET",
-			"{\"properties\":{}}", null, AuthType.NONE, null, 5000, 100, 1L
+			"{\"properties\":{}}", null, SideEffectType.READ_ONLY, AuthType.NONE, null, 5000, 100, 1L
 		);
 		given(aiToolRepository.findById(1L)).willReturn(Optional.of(tool));
 
 		AiToolResponse response = adminAiToolService.update(
 			1L, 1L,
-			new AiToolUpdateRequest(null, null, null, null, null, null, null, null, null, null, null, null, null, "APPROVED", true)
+			new AiToolUpdateRequest(null, null, null, null, null, null, null, null, null, null, null, null, null, null, "APPROVED", true)
 		);
 
 		assertThat(response.approvalStatus()).isEqualTo("APPROVED");
@@ -174,7 +202,7 @@ class AdminAiToolServiceTest {
 
 		assertThatThrownBy(() -> adminAiToolService.update(
 			1L, 99L,
-			new AiToolUpdateRequest(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
+			new AiToolUpdateRequest(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
 		)).isInstanceOf(CustomException.class);
 	}
 
@@ -182,14 +210,14 @@ class AdminAiToolServiceTest {
 	void update_allowlist에_없는_endpointUrl로_변경시_AI_TOOL_UNSAFE_ENDPOINT_예외() {
 		AiTool tool = AiTool.createHttpApiTool(
 			"직원정보조회", "설명", "https://hr.example.com", "GET",
-			"{\"properties\":{}}", null, AuthType.NONE, null, 5000, 100, 1L
+			"{\"properties\":{}}", null, SideEffectType.READ_ONLY, AuthType.NONE, null, 5000, 100, 1L
 		);
 		given(aiToolRepository.findById(1L)).willReturn(Optional.of(tool));
 		ssrfSafe = false;
 
 		assertThatThrownBy(() -> adminAiToolService.update(
 			1L, 1L,
-			new AiToolUpdateRequest(null, "https://other.example.com", null, null, null, null, null, null, null, null, null, null, null, null, null)
+			new AiToolUpdateRequest(null, null, "https://other.example.com", null, null, null, null, null, null, null, null, null, null, null, null, null)
 		)).isInstanceOf(CustomException.class);
 	}
 
@@ -197,13 +225,13 @@ class AdminAiToolServiceTest {
 	void update_HTTP_API_Tool에_datasourceKey_설정시_거부() {
 		AiTool tool = AiTool.createHttpApiTool(
 			"직원정보조회", "설명", "https://hr.example.com", "GET",
-			"{\"properties\":{}}", null, AuthType.NONE, null, 5000, 100, 1L
+			"{\"properties\":{}}", null, SideEffectType.READ_ONLY, AuthType.NONE, null, 5000, 100, 1L
 		);
 		given(aiToolRepository.findById(1L)).willReturn(Optional.of(tool));
 
 		assertThatThrownBy(() -> adminAiToolService.update(
 			1L, 1L,
-			new AiToolUpdateRequest(null, null, null, "workipediaReadonly", null, null, null, null, null, null, null, null, null, null, null)
+			new AiToolUpdateRequest(null, null, null, null, "workipediaReadonly", null, null, null, null, null, null, null, null, null, null, null)
 		)).isInstanceOf(CustomException.class);
 	}
 
@@ -218,7 +246,7 @@ class AdminAiToolServiceTest {
 
 		assertThatThrownBy(() -> adminAiToolService.update(
 			1L, 2L,
-			new AiToolUpdateRequest(null, "https://hr.example.com", null, null, null, null, null, null, null, null, null, null, null, null, null)
+			new AiToolUpdateRequest(null, null, "https://hr.example.com", null, null, null, null, null, null, null, null, null, null, null, null, null)
 		)).isInstanceOf(CustomException.class);
 	}
 
@@ -226,7 +254,7 @@ class AdminAiToolServiceTest {
 	void healthCheck_HTTP_API_Tool은_HttpApiHealthChecker_호출() {
 		AiTool tool = AiTool.createHttpApiTool(
 			"직원정보조회", "설명", "https://hr.example.com", "GET",
-			"{\"properties\":{}}", null, AuthType.NONE, null, 5000, 100, 1L
+			"{\"properties\":{}}", null, SideEffectType.READ_ONLY, AuthType.NONE, null, 5000, 100, 1L
 		);
 		given(aiToolRepository.findById(1L)).willReturn(Optional.of(tool));
 		given(httpApiHealthChecker.check(tool)).willReturn(HealthCheckResult.success(120));
@@ -235,6 +263,22 @@ class AdminAiToolServiceTest {
 
 		assertThat(response.success()).isTrue();
 		assertThat(response.toolType()).isEqualTo("HTTP_API");
+	}
+
+	@Test
+	void healthCheck_MUTATING_HTTP_API_Tool은_실제_호출하지_않는다() {
+		AiTool tool = AiTool.createHttpApiTool(
+			"휴가신청", "설명", "https://hr.example.com/api/vacations", "POST",
+			"{\"properties\":{}}", null, SideEffectType.MUTATING,
+			AuthType.NONE, null, 5000, 100, 1L
+		);
+		given(aiToolRepository.findById(1L)).willReturn(Optional.of(tool));
+
+		HealthCheckResponse response = adminAiToolService.healthCheck(1L);
+
+		assertThat(response.success()).isFalse();
+		assertThat(response.errorMessage()).contains("MUTATING");
+		verifyNoInteractions(httpApiHealthChecker);
 	}
 
 	@Test

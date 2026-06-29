@@ -1,6 +1,7 @@
 package com.wip.workipedia.chatbot.ai;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 // AI 서버 스트림의 done 이벤트 data — 토큰이 모두 끝난 뒤 메타데이터만 한 번 전달된다.
@@ -10,9 +11,10 @@ import java.util.List;
 public record ChatbotStreamDone(
 	List<SourceItem> sources,
 	String route,
-	String action
+	String action,
+	@JsonProperty("step_history") List<StepHistoryItem> stepHistory
 ) {
 	public static ChatbotStreamDone empty() {
-		return new ChatbotStreamDone(List.of(), null, null);
+		return new ChatbotStreamDone(List.of(), null, null, List.of());
 	}
 }

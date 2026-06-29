@@ -146,10 +146,10 @@ Authorization: Bearer <accessToken>
 | `PUT` | `/admin/ai-sync-jobs/settings` | AI 동기화 설정 수정 | Controller |
 | `GET` | `/admin/ai-sync-jobs/stats` | AI 동기화 작업 통계 조회 | Controller |
 | `GET` | `/admin/ai-tools` | AI Tool 목록 조회 | Controller |
-| `POST` | `/admin/ai-tools` | AI Tool 등록 | Controller |
-| `PATCH` | `/admin/ai-tools/{aiToolId}` | AI Tool 설정 수정 | Controller |
-| `POST` | `/admin/ai-tools/{aiToolId}/health-check` | 등록된 AI Tool 상태 점검 | Controller |
-| `POST` | `/admin/ai-tools/health-check` | 저장 전 AI Tool 초안 상태 점검 | Controller |
+| `POST` | `/admin/ai-tools` | AI Tool 등록 (`sideEffectType`: `READ_ONLY`/`MUTATING`) | Controller |
+| `PATCH` | `/admin/ai-tools/{aiToolId}` | AI Tool 설정 및 `sideEffectType` 수정 | Controller |
+| `POST` | `/admin/ai-tools/{aiToolId}/health-check` | 등록된 READ_ONLY AI Tool 상태 점검(MUTATING은 실행 차단) | Controller |
+| `POST` | `/admin/ai-tools/health-check` | 저장 전 READ_ONLY AI Tool 초안 상태 점검(`sideEffectType` 전달) | Controller |
 
 ### 3.11 Admin Departments
 
@@ -304,8 +304,8 @@ Authorization: Bearer <accessToken>
 
 | Method | Path | 설명 | 비고 |
 | --- | --- | --- | --- |
-| `POST` | `/internal/ai-tools/{aiToolId}/execute` | AI Tool 내부 실행 | Controller |
-| `GET` | `/internal/ai-tools/active` | 활성 AI Tool 목록 내부 조회 | Controller |
+| `POST` | `/internal/ai-tools/{aiToolId}/execute` | READ_ONLY AI Tool 내부 실행 (`callerEmployeeId` 전달, SELF_ONLY 강제 주입) | Controller |
+| `GET` | `/internal/ai-tools/active` | 활성·승인 READ_ONLY AI Tool 목록 내부 조회(5분 캐시) | Controller |
 
 ## 4. 관리 메모
 
