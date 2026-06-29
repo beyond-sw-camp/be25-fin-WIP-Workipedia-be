@@ -60,7 +60,7 @@ class ToolExecutionServiceTest {
 		given(httpApiToolExecutor.execute(tool, Map.of("employeeId", "E001")))
 			.willReturn(new ToolExecutionResult(Map.of("name", "홍길동"), 1));
 
-		ToolExecuteResponse response = toolExecutionService.execute("ai-server", 1L, Map.of("employeeId", "E001"));
+		ToolExecuteResponse response = toolExecutionService.execute("ai-server", 1L, Map.<String, Object>of("employeeId", "E001"), "E001");
 
 		assertThat(response.errorCode()).isNull();
 		assertThat(response.data()).isNotNull();
@@ -81,7 +81,7 @@ class ToolExecutionServiceTest {
 		given(dbQueryToolExecutor.execute(tool, Map.of("employeeId", "E001")))
 			.willReturn(new ToolExecutionResult(java.util.List.of(Map.of("remainingDays", 3)), 1));
 
-		ToolExecuteResponse response = toolExecutionService.execute("ai-server", 2L, Map.of("employeeId", "E001"));
+		ToolExecuteResponse response = toolExecutionService.execute("ai-server", 2L, Map.<String, Object>of("employeeId", "E001"), "E001");
 
 		assertThat(response.errorCode()).isNull();
 		verify(dbQueryToolExecutor).execute(tool, Map.of("employeeId", "E001"));
@@ -97,7 +97,7 @@ class ToolExecutionServiceTest {
 		);
 		given(aiToolRepository.findByAiToolIdAndIsDeleted(1L, "N")).willReturn(Optional.of(tool));
 
-		assertThatThrownBy(() -> toolExecutionService.execute("ai-server", 1L, Map.of("employeeId", "E001")))
+		assertThatThrownBy(() -> toolExecutionService.execute("ai-server", 1L, Map.<String, Object>of("employeeId", "E001"), "E001"))
 			.isInstanceOf(CustomException.class);
 		verify(toolExecutionLogRepository).save(any());
 	}
@@ -107,7 +107,7 @@ class ToolExecutionServiceTest {
 		AiTool tool = executableTool();
 		given(aiToolRepository.findByAiToolIdAndIsDeleted(1L, "N")).willReturn(Optional.of(tool));
 
-		assertThatThrownBy(() -> toolExecutionService.execute("ai-server", 1L, Map.of()))
+		assertThatThrownBy(() -> toolExecutionService.execute("ai-server", 1L, Map.<String, Object>of(), "E001"))
 			.isInstanceOf(CustomException.class);
 		verify(toolExecutionLogRepository).save(any());
 	}
@@ -119,7 +119,7 @@ class ToolExecutionServiceTest {
 		given(httpApiToolExecutor.execute(tool, Map.of("employeeId", "E001")))
 			.willThrow(new ToolExecutionException("EXTERNAL_API_ERROR", "외부 API 호출에 실패했습니다."));
 
-		ToolExecuteResponse response = toolExecutionService.execute("ai-server", 1L, Map.of("employeeId", "E001"));
+		ToolExecuteResponse response = toolExecutionService.execute("ai-server", 1L, Map.<String, Object>of("employeeId", "E001"), "E001");
 
 		assertThat(response.data()).isNull();
 		assertThat(response.errorCode()).isEqualTo("EXTERNAL_API_ERROR");
@@ -130,7 +130,7 @@ class ToolExecutionServiceTest {
 	void execute_삭제된_Tool은_AI_TOOL_NOT_FOUND_예외() {
 		given(aiToolRepository.findByAiToolIdAndIsDeleted(1L, "N")).willReturn(Optional.empty());
 
-		assertThatThrownBy(() -> toolExecutionService.execute("ai-server", 1L, Map.of("employeeId", "E001")))
+		assertThatThrownBy(() -> toolExecutionService.execute("ai-server", 1L, Map.<String, Object>of("employeeId", "E001"), "E001"))
 			.isInstanceOf(CustomException.class);
 	}
 

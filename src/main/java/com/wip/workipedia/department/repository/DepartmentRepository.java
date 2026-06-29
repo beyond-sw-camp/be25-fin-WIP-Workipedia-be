@@ -29,6 +29,8 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
 
 	Optional<Department> findByDepartmentIdAndDeletedAtIsNull(Long departmentId);
 
+	Optional<Department> findByDepartmentNameAndDeletedAtIsNull(String departmentName);
+
 	@Query("""
 		SELECT d
 		FROM Department d

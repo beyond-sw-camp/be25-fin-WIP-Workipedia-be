@@ -23,6 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.client.RestClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -38,6 +39,7 @@ class AdminAiToolServiceTest {
 	@Spy ObjectMapper objectMapper = new ObjectMapper();
 	@Mock HttpApiHealthChecker httpApiHealthChecker;
 	@Mock DbQueryHealthChecker dbQueryHealthChecker;
+	@Mock RestClient routingAiRestClient;
 
 	private boolean ssrfSafe = true;
 	private final SsrfGuard ssrfGuard = endpointUrl -> ssrfSafe;
@@ -47,7 +49,8 @@ class AdminAiToolServiceTest {
 	@BeforeEach
 	void setUp() {
 		adminAiToolService = new AdminAiToolService(
-			aiToolRepository, adminLogRepository, objectMapper, ssrfGuard, httpApiHealthChecker, dbQueryHealthChecker
+			aiToolRepository, adminLogRepository, objectMapper, ssrfGuard, httpApiHealthChecker, dbQueryHealthChecker,
+			routingAiRestClient
 		);
 	}
 
@@ -57,7 +60,7 @@ class AdminAiToolServiceTest {
 			"HTTP_API", "https://hr.example.com/api/employees", "GET",
 			null, null,
 			"{\"properties\":{\"employeeId\":{\"type\":\"string\",\"required\":true}}}",
-			null, "API_KEY", "TOOL_HR_API_KEY", 5000, 100
+			null, "UNRESTRICTED", null, "API_KEY", "TOOL_HR_API_KEY", 5000, 100
 		);
 	}
 
@@ -80,7 +83,7 @@ class AdminAiToolServiceTest {
 			"휴가잔여일조회", "설명", "DB_QUERY", null, null,
 			"workipediaReadonly",
 			"SELECT name, remaining_days FROM employee_vacations WHERE employee_id = :employeeId LIMIT 1",
-			"{\"properties\":{}}", null, "NONE", null, 5000, 100
+			"{\"properties\":{}}", null, "UNRESTRICTED", null, "NONE", null, 5000, 100
 		);
 
 		AiToolResponse response = adminAiToolService.create(1L, request);
@@ -96,7 +99,7 @@ class AdminAiToolServiceTest {
 		AiToolCreateRequest request = new AiToolCreateRequest(
 			"휴가잔여일조회", "설명", "DB_QUERY", null, null,
 			null, "SELECT name FROM employee_vacations LIMIT 1",
-			"{\"properties\":{}}", null, "NONE", null, 5000, 100
+			"{\"properties\":{}}", null, "UNRESTRICTED", null, "NONE", null, 5000, 100
 		);
 
 		assertThatThrownBy(() -> adminAiToolService.create(1L, request))
@@ -108,7 +111,7 @@ class AdminAiToolServiceTest {
 		AiToolCreateRequest request = new AiToolCreateRequest(
 			"휴가잔여일조회", "설명", "DB_QUERY", null, null,
 			"workipediaReadonly", null,
-			"{\"properties\":{}}", null, "NONE", null, 5000, 100
+			"{\"properties\":{}}", null, "UNRESTRICTED", null, "NONE", null, 5000, 100
 		);
 
 		assertThatThrownBy(() -> adminAiToolService.create(1L, request))
@@ -120,7 +123,7 @@ class AdminAiToolServiceTest {
 		AiToolCreateRequest request = new AiToolCreateRequest(
 			"직원정보조회", "설명", "HTTP_API", "https://hr.example.com", "GET",
 			null, null,
-			"{\"properties\":{}}", null, "API_KEY", null, 5000, 100
+			"{\"properties\":{}}", null, "UNRESTRICTED", null, "API_KEY", null, 5000, 100
 		);
 
 		assertThatThrownBy(() -> adminAiToolService.create(1L, request))
@@ -132,7 +135,7 @@ class AdminAiToolServiceTest {
 		AiToolCreateRequest request = new AiToolCreateRequest(
 			"직원정보조회", "설명", "HTTP_API", "https://hr.example.com", "GET",
 			null, null,
-			"{\"properties\":{}}", null, "OAUTH2", "ref", 5000, 100
+			"{\"properties\":{}}", null, "UNRESTRICTED", null, "OAUTH2", "ref", 5000, 100
 		);
 
 		assertThatThrownBy(() -> adminAiToolService.create(1L, request))
@@ -158,7 +161,7 @@ class AdminAiToolServiceTest {
 
 		AiToolResponse response = adminAiToolService.update(
 			1L, 1L,
-			new AiToolUpdateRequest(null, null, null, null, null, null, null, null, null, null, null, "APPROVED", true)
+			new AiToolUpdateRequest(null, null, null, null, null, null, null, null, null, null, null, null, null, "APPROVED", true)
 		);
 
 		assertThat(response.approvalStatus()).isEqualTo("APPROVED");
@@ -171,7 +174,7 @@ class AdminAiToolServiceTest {
 
 		assertThatThrownBy(() -> adminAiToolService.update(
 			1L, 99L,
-			new AiToolUpdateRequest(null, null, null, null, null, null, null, null, null, null, null, null, null)
+			new AiToolUpdateRequest(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
 		)).isInstanceOf(CustomException.class);
 	}
 
@@ -186,7 +189,7 @@ class AdminAiToolServiceTest {
 
 		assertThatThrownBy(() -> adminAiToolService.update(
 			1L, 1L,
-			new AiToolUpdateRequest(null, "https://other.example.com", null, null, null, null, null, null, null, null, null, null, null)
+			new AiToolUpdateRequest(null, "https://other.example.com", null, null, null, null, null, null, null, null, null, null, null, null, null)
 		)).isInstanceOf(CustomException.class);
 	}
 
@@ -200,7 +203,7 @@ class AdminAiToolServiceTest {
 
 		assertThatThrownBy(() -> adminAiToolService.update(
 			1L, 1L,
-			new AiToolUpdateRequest(null, null, null, "workipediaReadonly", null, null, null, null, null, null, null, null, null)
+			new AiToolUpdateRequest(null, null, null, "workipediaReadonly", null, null, null, null, null, null, null, null, null, null, null)
 		)).isInstanceOf(CustomException.class);
 	}
 
@@ -215,7 +218,7 @@ class AdminAiToolServiceTest {
 
 		assertThatThrownBy(() -> adminAiToolService.update(
 			1L, 2L,
-			new AiToolUpdateRequest(null, "https://hr.example.com", null, null, null, null, null, null, null, null, null, null, null)
+			new AiToolUpdateRequest(null, "https://hr.example.com", null, null, null, null, null, null, null, null, null, null, null, null, null)
 		)).isInstanceOf(CustomException.class);
 	}
 
