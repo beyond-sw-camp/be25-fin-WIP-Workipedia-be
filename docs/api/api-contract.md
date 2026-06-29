@@ -161,6 +161,9 @@ Authorization: Bearer <accessToken>
 | `PATCH` | `/admin/departments/{departmentId}` | 부서 수정 | - |
 | `PATCH` | `/admin/departments/{departmentId}/routing-prompt` | 특정 부서 라우팅 프롬프트 직접 수정 | Controller |
 | `PATCH` | `/admin/departments/routing-prompt/instruction` | 부서 라우팅 프롬프트 일괄 편집 | - |
+| `POST` | `/admin/departments/sync/fetch` | ERP 부서 API URL 조회(BE 프록시, CORS 회피) → {columns, rows} | Controller |
+| `POST` | `/admin/departments/sync/preview` | ERP 부서 목록 vs 운영 부서 diff 미리보기 | Controller |
+| `POST` | `/admin/departments/sync/apply` | 검토 완료 변경 반영(부서 upsert/soft-delete + 사원 재배치 + R&R + ai_sync) | Controller |
 
 ### 3.12 Admin Manuals
 
