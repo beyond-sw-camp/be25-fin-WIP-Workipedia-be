@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wip.workipedia.admin.aiprompt.service.AdminAiPromptService;
 import com.wip.workipedia.chatbot.ai.ChatbotAiClient;
+import com.wip.workipedia.chatbot.ai.ChatbotAiRequest;
 import com.wip.workipedia.chatbot.ai.ChatbotAiResponse;
 import com.wip.workipedia.chatbot.ai.FallbackChatbotAiClient;
 import com.wip.workipedia.chatbot.ai.HttpChatbotAiStreamClient;
@@ -18,6 +19,7 @@ import com.wip.workipedia.chatbot.domain.ChatbotMessage;
 import com.wip.workipedia.chatbot.domain.ChatbotSession;
 import com.wip.workipedia.chatbot.domain.NextAction;
 import com.wip.workipedia.chatbot.dto.ChatbotMessageResponse;
+import com.wip.workipedia.chatbot.dto.ChatbotMessageRequest;
 import com.wip.workipedia.chatbot.dto.ChatbotSessionResponse;
 import com.wip.workipedia.chatbot.repository.ChatbotMessageRepository;
 import com.wip.workipedia.chatbot.repository.ChatbotSessionRepository;
@@ -25,6 +27,7 @@ import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.ragcitation.service.RagCitationService;
 import com.wip.workipedia.user.repository.UserRepository;
+import com.wip.workipedia.user.domain.User;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -79,6 +82,30 @@ class ChatbotServiceTest {
                 .isInstanceOf(CustomException.class)
                 .extracting("errorType")
                 .isEqualTo(ErrorType.CHATBOT_SESSION_NOT_FOUND);
+    }
+
+    @Test
+    void sendMessage_인증_사용자의_사번을_AI_요청에_전달한다() {
+        ChatbotSession session = ChatbotSession.create(1L, "내 세션");
+        ReflectionTestUtils.setField(session, "sessionId", 5L);
+        User user = User.signup(null, "E001", "user@example.com", "encoded", "사용자");
+        when(sessionRepository.findBySessionIdAndIsDeleted(5L, "N")).thenReturn(Optional.of(session));
+        when(messageRepository.findTop10BySessionIdAndIsDeletedOrderByCreatedAtDescMessageIdDesc(5L, "N"))
+                .thenReturn(List.of());
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(aiClient.ask(any())).thenReturn(new ChatbotAiResponse("답변", List.of(), "AGGREGATED", null));
+        when(messageRepository.save(any())).thenAnswer(invocation -> {
+            ChatbotMessage message = invocation.getArgument(0);
+            ReflectionTestUtils.setField(message, "messageId", 10L);
+            return message;
+        });
+        ReflectionTestUtils.setField(service, "self", service);
+
+        service.sendMessage(1L, 5L, new ChatbotMessageRequest("내 휴가 일수는?"));
+
+        ArgumentCaptor<ChatbotAiRequest> captor = ArgumentCaptor.forClass(ChatbotAiRequest.class);
+        verify(aiClient).ask(captor.capture());
+        assertThat(captor.getValue().callerEmployeeId()).isEqualTo("E001");
     }
 
     @Test

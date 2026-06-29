@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wip.workipedia.faq.dto.ManualSummaryResponse;
 import com.wip.workipedia.faq.dto.PopularWorkiResponse;
+import com.wip.workipedia.tool.dto.ActiveAiToolResponse;
 import java.time.Duration;
 import java.util.List;
 import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
@@ -72,15 +73,26 @@ public class RedisCacheConfig {
         return builder -> builder.withCacheConfiguration("infra:esgSummary", config);
     }
 
+    @Bean
+    public RedisCacheManagerBuilderCustomizer activeAiToolCacheCustomizer() {
+        return builder -> builder.withCacheConfiguration(
+                "aiTool:active",
+                listCacheConfig(ActiveAiToolResponse.class, Duration.ofMinutes(5)));
+    }
+
     /** {@code List<elementType>} 형태의 값을 저장하는 캐시 설정을 만든다. */
     private RedisCacheConfiguration listCacheConfig(Class<?> elementType) {
+        return listCacheConfig(elementType, DEFAULT_TTL);
+    }
+
+    private RedisCacheConfiguration listCacheConfig(Class<?> elementType, Duration ttl) {
         JavaType listType = objectMapper.getTypeFactory()
                 .constructCollectionType(List.class, elementType);
         Jackson2JsonRedisSerializer<Object> serializer =
                 new Jackson2JsonRedisSerializer<>(objectMapper, listType);
 
         return RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(DEFAULT_TTL)
+                .entryTtl(ttl)
                 .disableCachingNullValues()
                 .serializeValuesWith(
                         RedisSerializationContext.SerializationPair.fromSerializer(serializer));

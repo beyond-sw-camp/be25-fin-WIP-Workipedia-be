@@ -46,7 +46,7 @@ class AdminAiToolControllerTest {
 	@Test
 	void findAll_목록_조회() throws Exception {
 		AiToolResponse response = new AiToolResponse(
-			1L, "직원정보조회", "설명", "HTTP_API",
+			1L, "직원정보조회", "설명", "HTTP_API", "READ_ONLY",
 			"https://hr.example.com", "GET", null, null,
 			"{}", null, "UNRESTRICTED", null,
 			"NONE", null, 5000, 100,
@@ -64,7 +64,7 @@ class AdminAiToolControllerTest {
 	@Test
 	void create_등록_요청() throws Exception {
 		AiToolResponse response = new AiToolResponse(
-			1L, "직원정보조회", "설명", "HTTP_API",
+			1L, "직원정보조회", "설명", "HTTP_API", "READ_ONLY",
 			"https://hr.example.com", "GET", null, null,
 			"{}", null, "UNRESTRICTED", null,
 			"NONE", null, 5000, 100,
@@ -80,6 +80,7 @@ class AdminAiToolControllerTest {
 						  "name": "직원정보조회",
 						  "description": "직원 정보를 조회합니다.",
 						  "toolType": "HTTP_API",
+						  "sideEffectType": "READ_ONLY",
 						  "endpointUrl": "https://hr.example.com",
 						  "httpMethod": "GET",
 						  "parametersSchema": "{\\"properties\\":{}}",

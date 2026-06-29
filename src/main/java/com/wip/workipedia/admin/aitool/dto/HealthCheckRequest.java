@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 // 저장된 Tool 재검증(AiToolResponse 기반)과는 다르게, 이 값들은 DB에 남지 않는다.
 public record HealthCheckRequest(
 	@NotBlank String toolType,
+	String sideEffectType,
 	String endpointUrl,
 	String httpMethod,
 	String authType,

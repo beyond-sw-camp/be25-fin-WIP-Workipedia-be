@@ -36,6 +36,10 @@ public class AiTool {
 	@Column(nullable = false, length = 30)
 	private ToolType toolType;
 
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, length = 30)
+	private SideEffectType sideEffectType;
+
 	@Column(length = 1000)
 	private String endpointUrl;
 
@@ -110,12 +114,14 @@ public class AiTool {
 	public static AiTool createHttpApiTool(
 		String name, String description,
 		String endpointUrl, String httpMethod, String parametersSchema, String responseSchema,
-		AuthType authType, String credentialRef, int timeoutMs, int maxResultCount, Long createdBy
+		SideEffectType sideEffectType, AuthType authType, String credentialRef,
+		int timeoutMs, int maxResultCount, Long createdBy
 	) {
 		AiTool tool = new AiTool();
 		tool.name = name;
 		tool.description = description;
 		tool.toolType = ToolType.HTTP_API;
+		tool.sideEffectType = sideEffectType;
 		tool.endpointUrl = endpointUrl;
 		tool.httpMethod = httpMethod;
 		tool.parametersSchema = parametersSchema;
@@ -142,6 +148,7 @@ public class AiTool {
 		tool.name = name;
 		tool.description = description;
 		tool.toolType = ToolType.DB_QUERY;
+		tool.sideEffectType = SideEffectType.READ_ONLY;
 		tool.datasourceKey = datasourceKey;
 		tool.queryTemplate = queryTemplate;
 		tool.parametersSchema = parametersSchema;
@@ -183,6 +190,11 @@ public class AiTool {
 		this.updatedBy = updatedBy;
 	}
 
+	public void changeSideEffectType(SideEffectType sideEffectType, Long updatedBy) {
+		this.sideEffectType = sideEffectType;
+		this.updatedBy = updatedBy;
+	}
+
 	public void changeApprovalStatus(ApprovalStatus approvalStatus, Long updatedBy) {
 		this.approvalStatus = approvalStatus;
 		this.updatedBy = updatedBy;
@@ -203,5 +215,9 @@ public class AiTool {
 
 	public boolean isExecutable() {
 		return isActive() && !isDeleted() && approvalStatus == ApprovalStatus.APPROVED;
+	}
+
+	public boolean isAiExecutable() {
+		return isExecutable() && sideEffectType == SideEffectType.READ_ONLY;
 	}
 }

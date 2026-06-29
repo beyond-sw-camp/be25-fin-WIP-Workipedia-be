@@ -5,6 +5,7 @@ import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.tool.domain.AiTool;
 import com.wip.workipedia.tool.domain.ApprovalStatus;
 import com.wip.workipedia.tool.domain.AuthType;
+import com.wip.workipedia.tool.domain.SideEffectType;
 import com.wip.workipedia.tool.dto.ToolExecuteResponse;
 import com.wip.workipedia.tool.exception.ToolExecutionException;
 import com.wip.workipedia.tool.executor.DbQueryToolExecutor;
@@ -46,7 +47,7 @@ class ToolExecutionServiceTest {
 		AiTool tool = AiTool.createHttpApiTool(
 			"직원정보조회", "직원 정보를 조회합니다.",
 			"https://hr.example.com/api/employees", "GET", SCHEMA, null,
-			AuthType.NONE, null, 5000, 100, 1L
+			SideEffectType.READ_ONLY, AuthType.NONE, null, 5000, 100, 1L
 		);
 		tool.changeApprovalStatus(ApprovalStatus.APPROVED, 1L);
 		tool.changeActive(true, 1L);
@@ -93,7 +94,7 @@ class ToolExecutionServiceTest {
 		AiTool tool = AiTool.createHttpApiTool(
 			"직원정보조회", "직원 정보를 조회합니다.",
 			"https://hr.example.com/api/employees", "GET", SCHEMA, null,
-			AuthType.NONE, null, 5000, 100, 1L
+			SideEffectType.READ_ONLY, AuthType.NONE, null, 5000, 100, 1L
 		);
 		given(aiToolRepository.findByAiToolIdAndIsDeleted(1L, "N")).willReturn(Optional.of(tool));
 
@@ -135,8 +136,25 @@ class ToolExecutionServiceTest {
 	}
 
 	@Test
-	void findActiveTools_활성화되고_승인된_Tool만_반환() {
-		given(aiToolRepository.findByIsActiveAndApprovalStatusAndIsDeleted("Y", ApprovalStatus.APPROVED, "N"))
+	void execute_MUTATING_Tool은_활성화되어도_거부() {
+		AiTool tool = AiTool.createHttpApiTool(
+			"휴가신청", "휴가를 신청합니다.",
+			"https://hr.example.com/api/vacations", "POST", SCHEMA, null,
+			SideEffectType.MUTATING, AuthType.NONE, null, 5000, 100, 1L
+		);
+		tool.changeActive(true, 1L);
+		given(aiToolRepository.findByAiToolIdAndIsDeleted(3L, "N")).willReturn(Optional.of(tool));
+
+		assertThatThrownBy(() -> toolExecutionService.execute(
+			"ai-server", 3L, Map.<String, Object>of("employeeId", "E001"), "E001"))
+			.isInstanceOf(CustomException.class);
+		verify(toolExecutionLogRepository).save(any());
+	}
+
+	@Test
+	void findActiveTools_활성화되고_승인된_READ_ONLY_Tool만_반환() {
+		given(aiToolRepository.findByIsActiveAndApprovalStatusAndSideEffectTypeAndIsDeleted(
+			"Y", ApprovalStatus.APPROVED, SideEffectType.READ_ONLY, "N"))
 			.willReturn(java.util.List.of(executableTool()));
 
 		var result = toolExecutionService.findActiveTools();

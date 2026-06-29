@@ -2,6 +2,7 @@ package com.wip.workipedia.admin.aitool.dto;
 
 public record AiToolUpdateRequest(
 	String description,
+	String sideEffectType,
 	String endpointUrl,
 	String httpMethod,
 	String datasourceKey,

@@ -9,6 +9,7 @@ public record AiToolCreateRequest(
 	@NotBlank @Size(max = 100) String name,
 	@NotBlank @Size(max = 1000) String description,
 	@NotBlank String toolType,
+	@NotBlank String sideEffectType,
 	@Size(max = 1000) String endpointUrl,
 	String httpMethod,
 	@Size(max = 100) String datasourceKey,
