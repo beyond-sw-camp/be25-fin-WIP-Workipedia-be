@@ -144,6 +144,10 @@ public class User {
 		this.status = status;
 	}
 
+	public void reassignDepartment(Department department) {
+		this.department = department;
+	}
+
 	public void changeRole(UserRole role) {
 		this.role = role;
 	}
