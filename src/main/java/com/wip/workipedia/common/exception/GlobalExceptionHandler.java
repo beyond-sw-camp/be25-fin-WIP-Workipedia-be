@@ -12,6 +12,7 @@ import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -71,6 +72,13 @@ public class GlobalExceptionHandler {
 	// web 예외처리가 없으면, 따로 추가하여 만드는것.
 	public Object handleBadRequestException(Exception exception) {
 		return ApiResponse.error(ErrorType.BAD_REQUEST);
+	}
+
+	// SSE/비동기 응답 도중 클라이언트가 연결을 끊으면 발생(Broken pipe). 응답을 쓸 수 없고 정상 종료이므로
+	// catch-all로 흘러가 ERROR 로 남지 않도록 별도 처리한다. 연결이 이미 끊겨 응답 본문은 의미가 없다.
+	@ExceptionHandler(AsyncRequestNotUsableException.class)
+	public void handleAsyncRequestNotUsable(AsyncRequestNotUsableException exception) {
+		log.debug("[ASYNC] 클라이언트 연결 종료로 응답 불가: {}", exception.getMessage());
 	}
 
 	@ExceptionHandler(Exception.class)
