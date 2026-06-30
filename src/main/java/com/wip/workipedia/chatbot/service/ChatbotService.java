@@ -12,6 +12,7 @@ import com.wip.workipedia.chatbot.ai.ChatbotStreamToken;
 import com.wip.workipedia.chatbot.ai.FallbackChatbotAiClient;
 import com.wip.workipedia.chatbot.ai.HttpChatbotAiStreamClient;
 import com.wip.workipedia.chatbot.ai.SessionMessage;
+import com.wip.workipedia.chatbot.ai.StepHistoryItem;
 import com.wip.workipedia.chatbot.domain.ChatbotMessage;
 import com.wip.workipedia.chatbot.domain.ChatbotSession;
 import com.wip.workipedia.chatbot.domain.NextAction;
@@ -109,6 +110,7 @@ public class ChatbotService {
         ChatbotAiResponse aiResponse = chatbotAiClient.ask(
                 new ChatbotAiRequest(request.question(), customPrompt, context, callerEmployeeId)
         );
+        logStepHistory(aiResponse.stepHistory());
 
         // 3단계: ASSISTANT 응답 저장 (트랜잭션 커밋)
         return self.saveAssistantMessage(sessionId, aiResponse);
@@ -142,8 +144,9 @@ public class ChatbotService {
         // JPA 저장은 블로킹이므로 reactor-netty 이벤트 루프가 아닌 boundedElastic 스레드에서 실행한다.
         Mono<ServerSentEvent<Object>> doneFlux = Mono.defer(() -> {
             ChatbotStreamDone meta = doneMeta.get();
+            logStepHistory(meta.stepHistory());
             ChatbotAiResponse aiResponse = new ChatbotAiResponse(
-                    answerBuffer.toString(), meta.sources(), meta.route(), meta.action());
+                    answerBuffer.toString(), meta.sources(), meta.route(), meta.action(), meta.stepHistory());
             ChatbotMessageResponse saved = self.saveAssistantMessage(sessionId, aiResponse);
             return Mono.just(doneEvent(saved));
         }).subscribeOn(Schedulers.boundedElastic());
@@ -206,7 +209,7 @@ public class ChatbotService {
                 .getEmployeeId();
     }
 
-    // done 프레임 JSON에서 sources/route/action만 추출 (type·step_history 등 나머지는 무시)
+    // done 프레임 JSON에서 sources/route/action/step_history를 추출한다.
     private ChatbotStreamDone toStreamDone(JsonNode node) {
         try {
             return objectMapper.treeToValue(node, ChatbotStreamDone.class);
@@ -214,6 +217,25 @@ public class ChatbotService {
             log.warn("스트림 done 이벤트 파싱 실패: {}", ex.getMessage());
             return ChatbotStreamDone.empty();
         }
+    }
+
+    private void logStepHistory(List<StepHistoryItem> stepHistory) {
+        if (stepHistory == null || stepHistory.isEmpty()) {
+            return;
+        }
+        stepHistory.forEach(item -> {
+            if (item == null) {
+                return;
+            }
+            boolean failed = item.errorMessage() != null && !item.errorMessage().isBlank()
+                    || "FAILED".equalsIgnoreCase(item.status())
+                    || "ERROR".equalsIgnoreCase(item.status());
+            if (failed) {
+                log.warn("AI 챗봇 처리 단계 실패: step={}, status={}", item.step(), item.status());
+            } else {
+                log.debug("AI 챗봇 처리 단계 완료: step={}, status={}", item.step(), item.status());
+            }
+        });
     }
 
     // 1단계 트랜잭션: 컨텍스트 빌드 → USER 메시지 저장

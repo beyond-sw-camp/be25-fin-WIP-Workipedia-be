@@ -44,11 +44,13 @@ class InternalAiToolControllerTest {
 	@Test
 	void getActiveTools_활성_Tool_목록_반환() throws Exception {
 		given(toolExecutionService.findActiveTools())
-			.willReturn(List.of(new ActiveAiToolResponse(1L, "HTTP_API", "직원정보조회", "설명", "{}", "UNRESTRICTED", null)));
+			.willReturn(List.of(new ActiveAiToolResponse(
+				1L, "HTTP_API", "READ_ONLY", "직원정보조회", "설명", "{}", "UNRESTRICTED", null)));
 
 		mockMvc.perform(get("/api/v1/internal/ai-tools/active"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$[0].name").value("직원정보조회"));
+			.andExpect(jsonPath("$[0].name").value("직원정보조회"))
+			.andExpect(jsonPath("$[0].sideEffectType").value("READ_ONLY"));
 	}
 
 	@Test

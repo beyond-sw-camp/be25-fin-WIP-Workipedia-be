@@ -17,6 +17,7 @@ import com.wip.workipedia.tool.domain.AccessScope;
 import com.wip.workipedia.tool.domain.AiTool;
 import com.wip.workipedia.tool.domain.ApprovalStatus;
 import com.wip.workipedia.tool.domain.AuthType;
+import com.wip.workipedia.tool.domain.SideEffectType;
 import com.wip.workipedia.tool.domain.ToolType;
 import com.wip.workipedia.tool.executor.DbQueryHealthChecker;
 import com.wip.workipedia.tool.executor.HealthCheckResult;
@@ -26,6 +27,7 @@ import com.wip.workipedia.tool.repository.AiToolRepository;
 import java.util.Set;
 import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,6 +79,9 @@ public class AdminAiToolService {
 	@Transactional(readOnly = true)
 	public HealthCheckResponse healthCheck(Long aiToolId) {
 		AiTool tool = findTool(aiToolId);
+		if (tool.getSideEffectType() == SideEffectType.MUTATING) {
+			return mutatingHealthCheckBlocked(tool.getToolType());
+		}
 		HealthCheckResult result = tool.getToolType() == ToolType.HTTP_API
 			? httpApiHealthChecker.check(tool)
 			: dbQueryHealthChecker.check(tool);
@@ -89,6 +94,14 @@ public class AdminAiToolService {
 	@Transactional(readOnly = true)
 	public HealthCheckResponse healthCheckDraft(HealthCheckRequest request) {
 		validateToolType(request.toolType());
+		SideEffectType sideEffectType = request.sideEffectType() == null
+			? SideEffectType.READ_ONLY
+			: parseSideEffectType(request.sideEffectType());
+		ToolType toolType = ToolType.valueOf(request.toolType());
+		validateSideEffectType(toolType, sideEffectType);
+		if (sideEffectType == SideEffectType.MUTATING) {
+			return mutatingHealthCheckBlocked(toolType);
+		}
 		int timeoutMs = request.timeoutMs() != null ? request.timeoutMs() : 5000;
 
 		AiTool draft;
@@ -99,7 +112,7 @@ public class AdminAiToolService {
 				: parseAuthType(request.authType());
 			draft = AiTool.createHttpApiTool(
 				"draft", "draft", request.endpointUrl(), request.httpMethod(),
-				"{}", null, authType, request.credentialRef(), timeoutMs, 1, null
+				"{}", null, SideEffectType.READ_ONLY, authType, request.credentialRef(), timeoutMs, 1, null
 			);
 		} else {
 			// DbQueryHealthChecker는 queryTemplate을 실행하지 않고 datasourceKey로 "SELECT 1"만 날리므로 더미 값을 채운다.
@@ -113,6 +126,13 @@ public class AdminAiToolService {
 			: dbQueryHealthChecker.check(draft);
 
 		return new HealthCheckResponse(result.success(), draft.getToolType().name(), result.latencyMs(), result.errorMessage());
+	}
+
+	private HealthCheckResponse mutatingHealthCheckBlocked(ToolType toolType) {
+		return new HealthCheckResponse(
+			false, toolType.name(), 0,
+			"MUTATING Tool은 실제 변경 요청을 발생시킬 수 있어 자동 health-check를 지원하지 않습니다."
+		);
 	}
 
 	// Endpoint URL을 AI 서버에 전달해 저장 전 Tool 초안을 만든다. 생성 결과는 FE 폼에 채우는 용도이며 DB에는 저장하지 않는다.
@@ -140,15 +160,18 @@ public class AdminAiToolService {
 
 	// Tool 등록. 공통 검증(toolType, authType, JSON Schema) 후 타입별 나머지 검증·생성은 buildTool에 위임하고,
 	// 등록 자체는 관리자 행동이라 AdminLog에도 남긴다(Tool 실행 기록인 ToolExecutionLog와는 별개).
+	@CacheEvict(cacheNames = "aiTool:active", allEntries = true)
 	@Transactional
 	public AiToolResponse create(Long adminUserId, AiToolCreateRequest request) {
 		validateToolType(request.toolType());
+		SideEffectType sideEffectType = parseSideEffectType(request.sideEffectType());
+		validateSideEffectType(ToolType.valueOf(request.toolType()), sideEffectType);
 		AuthType authType = parseAuthType(request.authType());
 		AccessScope accessScope = parseAccessScope(request.accessScope());
 		validateAccessPolicy(accessScope, request.selfIdentityParam());
 		validateJsonSchema(request.parametersSchema());
 		validateSelfIdentityParamDeclared(accessScope, request.selfIdentityParam(), request.parametersSchema());
-		AiTool tool = buildTool(adminUserId, request, authType);
+		AiTool tool = buildTool(adminUserId, request, sideEffectType, authType);
 		tool.updateAccessPolicy(accessScope, normalizedSelfIdentityParam(accessScope, request.selfIdentityParam()), adminUserId);
 		aiToolRepository.save(tool);
 
@@ -162,7 +185,9 @@ public class AdminAiToolService {
 	}
 
 	// toolType에 따라 HTTP_API/DB_QUERY 전용 검증을 거친 뒤 해당 타입의 AiTool을 생성한다.
-	private AiTool buildTool(Long adminUserId, AiToolCreateRequest request, AuthType authType) {
+	private AiTool buildTool(
+		Long adminUserId, AiToolCreateRequest request, SideEffectType sideEffectType, AuthType authType
+	) {
 		if ("HTTP_API".equals(request.toolType())) {
 			validateHttpApiConfig(request.endpointUrl(), request.httpMethod());
 			validateCredentialRef(authType, request.credentialRef());
@@ -170,7 +195,8 @@ public class AdminAiToolService {
 			return AiTool.createHttpApiTool(
 				request.name(), request.description(),
 				request.endpointUrl(), request.httpMethod(), request.parametersSchema(), request.responseSchema(),
-				authType, request.credentialRef(), request.timeoutMs(), request.maxResultCount(), adminUserId
+				sideEffectType, authType, request.credentialRef(),
+				request.timeoutMs(), request.maxResultCount(), adminUserId
 			);
 		}
 
@@ -183,10 +209,15 @@ public class AdminAiToolService {
 	}
 
 	// 설정 변경 + 승인 상태/활성 여부 변경을 한 요청으로 처리한다. 필드별로 null이면 "변경 안 함"으로 취급한다.
+	@CacheEvict(cacheNames = "aiTool:active", allEntries = true)
 	@Transactional
 	public AiToolResponse update(Long adminUserId, Long aiToolId, AiToolUpdateRequest request) {
 		AiTool tool = findTool(aiToolId);
 		validateUpdateAgainstToolType(tool.getToolType(), request);
+		SideEffectType sideEffectType = request.sideEffectType() != null
+			? parseSideEffectType(request.sideEffectType())
+			: tool.getSideEffectType();
+		validateSideEffectType(tool.getToolType(), sideEffectType);
 		AccessScope accessScope = request.accessScope() != null ? parseAccessScope(request.accessScope()) : tool.getAccessScope();
 		String selfIdentityParam = request.selfIdentityParam() != null ? request.selfIdentityParam() : tool.getSelfIdentityParam();
 		validateAccessPolicy(accessScope, selfIdentityParam);
@@ -214,6 +245,7 @@ public class AdminAiToolService {
 			authType, request.credentialRef(), request.timeoutMs(), request.maxResultCount(), adminUserId
 		);
 		tool.updateAccessPolicy(accessScope, normalizedSelfIdentityParam(accessScope, selfIdentityParam), adminUserId);
+		tool.changeSideEffectType(sideEffectType, adminUserId);
 
 		if (request.approvalStatus() != null) {
 			tool.changeApprovalStatus(parseApprovalStatus(request.approvalStatus()), adminUserId);
@@ -242,6 +274,20 @@ public class AdminAiToolService {
 	private void validateToolType(String toolType) {
 		if (!"HTTP_API".equals(toolType) && !"DB_QUERY".equals(toolType)) {
 			throw new CustomException(ErrorType.AI_TOOL_INVALID_TYPE, "M2 범위에서는 HTTP_API/DB_QUERY Tool만 등록할 수 있습니다.");
+		}
+	}
+
+	private SideEffectType parseSideEffectType(String sideEffectType) {
+		try {
+			return SideEffectType.valueOf(sideEffectType);
+		} catch (IllegalArgumentException | NullPointerException e) {
+			throw new CustomException(ErrorType.BAD_REQUEST, "올바르지 않은 sideEffectType입니다.");
+		}
+	}
+
+	private void validateSideEffectType(ToolType toolType, SideEffectType sideEffectType) {
+		if (toolType == ToolType.DB_QUERY && sideEffectType != SideEffectType.READ_ONLY) {
+			throw new CustomException(ErrorType.BAD_REQUEST, "DB_QUERY Tool은 READ_ONLY만 허용합니다.");
 		}
 	}
 

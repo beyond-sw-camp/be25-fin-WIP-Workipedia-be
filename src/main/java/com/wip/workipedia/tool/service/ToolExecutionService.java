@@ -6,6 +6,7 @@ import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.tool.domain.AccessScope;
 import com.wip.workipedia.tool.domain.AiTool;
 import com.wip.workipedia.tool.domain.ApprovalStatus;
+import com.wip.workipedia.tool.domain.SideEffectType;
 import com.wip.workipedia.tool.domain.ToolExecutionLog;
 import com.wip.workipedia.tool.domain.ToolType;
 import com.wip.workipedia.tool.dto.ActiveAiToolResponse;
@@ -20,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,10 +36,12 @@ public class ToolExecutionService {
 	private final ParameterSchemaValidator parameterSchemaValidator;
 	private final ObjectMapper objectMapper;
 
-	// AI가 고를 수 있는 후보 Tool 목록. 활성+승인+미삭제 셋 다 만족해야 노출된다(AiTool.isExecutable()과 동일 조건).
+	// AI가 고를 수 있는 후보 Tool 목록. 활성+승인+읽기전용+미삭제 조건을 모두 만족해야 노출된다.
+	@Cacheable(cacheNames = "aiTool:active", sync = true)
 	@Transactional(readOnly = true)
 	public List<ActiveAiToolResponse> findActiveTools() {
-		return aiToolRepository.findByIsActiveAndApprovalStatusAndIsDeleted("Y", ApprovalStatus.APPROVED, "N")
+		return aiToolRepository.findByIsActiveAndApprovalStatusAndSideEffectTypeAndIsDeleted(
+				"Y", ApprovalStatus.APPROVED, SideEffectType.READ_ONLY, "N")
 			.stream()
 			.map(ActiveAiToolResponse::from)
 			.toList();
@@ -55,7 +59,7 @@ public class ToolExecutionService {
 		Map<String, Object> effectiveParameters = applyAccessPolicy(tool, parameters, callerEmployeeId);
 		String maskedParametersJson = maskParametersAsJson(effectiveParameters);
 
-		if (!tool.isExecutable()) {
+		if (!tool.isAiExecutable()) {
 			recordLog(tool, caller, maskedParametersJson, null, elapsed(startedAt), false, "AI_TOOL_NOT_EXECUTABLE");
 			throw new CustomException(ErrorType.AI_TOOL_NOT_EXECUTABLE);
 		}

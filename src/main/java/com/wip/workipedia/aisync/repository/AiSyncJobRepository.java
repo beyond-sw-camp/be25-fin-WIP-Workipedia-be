@@ -18,7 +18,6 @@ import java.util.Optional;
 public interface AiSyncJobRepository extends JpaRepository<AiSyncJob, Long> {
 
     // MANUAL 전용 (PDF 포함) — document-delay-ms 주기로 처리
-    @Modifying
     @Query(
         value = """
             SELECT * FROM ai_sync_jobs
@@ -66,7 +65,6 @@ public interface AiSyncJobRepository extends JpaRepository<AiSyncJob, Long> {
     );
 
     // 텍스트 계열 (WORKI, KNOWLEDGE_DATA, MANUAL_KNOWLEDGE, DEPT_RR, MANUAL_CHANGE_SUMMARY) — text-delay-ms 주기로 처리
-    @Modifying
     @Query(
         value = """
             SELECT * FROM ai_sync_jobs

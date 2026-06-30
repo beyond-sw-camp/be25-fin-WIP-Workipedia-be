@@ -5,6 +5,7 @@ import com.wip.workipedia.tool.domain.AiTool;
 public record ActiveAiToolResponse(
 	Long aiToolId,
 	String toolType,
+	String sideEffectType,
 	String name,
 	String description,
 	String parametersSchema,
@@ -15,6 +16,7 @@ public record ActiveAiToolResponse(
 		return new ActiveAiToolResponse(
 			tool.getAiToolId(),
 			tool.getToolType().name(),
+			tool.getSideEffectType().name(),
 			tool.getName(),
 			tool.getDescription(),
 			tool.getParametersSchema(),
