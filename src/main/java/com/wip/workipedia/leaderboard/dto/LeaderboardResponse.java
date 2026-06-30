@@ -1,5 +1,7 @@
 package com.wip.workipedia.leaderboard.dto;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wip.workipedia.leaderboard.domain.EsgMetricWeekly;
 import com.wip.workipedia.leaderboard.repository.LeaderboardMySummaryProjection;
 import com.wip.workipedia.leaderboard.repository.LeaderboardRankerProjection;
@@ -18,6 +20,9 @@ public record LeaderboardResponse(
     long totalEsgScore,
     EnvironmentImpactResponse environmentImpact
 ) {
+
+    private static final BigDecimal DEFAULT_MINUTES_PER_CITED_ANSWER = BigDecimal.valueOf(3);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public static LeaderboardResponse empty() {
         return new LeaderboardResponse(null, null, List.of(), null, 0L, EnvironmentImpactResponse.empty());
@@ -49,11 +54,12 @@ public record LeaderboardResponse(
         BigDecimal savedWorkHours,
         BigDecimal electricitySavedKwh,
         BigDecimal co2SavedKg,
-        long smartphoneChargeEquivalentCount
+        long smartphoneChargeEquivalentCount,
+        BigDecimal minutesPerCitedAnswer
     ) {
 
         private static EnvironmentImpactResponse empty() {
-            return new EnvironmentImpactResponse(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, 0L);
+            return new EnvironmentImpactResponse(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, 0L, BigDecimal.ZERO);
         }
 
         private static EnvironmentImpactResponse from(EsgMetricWeekly metric) {
@@ -62,8 +68,30 @@ public record LeaderboardResponse(
                 metric.getSavedWorkHours(),
                 metric.getElectricitySavedKwh(),
                 co2SavedKg,
-                EsgEnvironmentImpactCalculator.toSmartphoneChargeEquivalentCount(co2SavedKg)
+                EsgEnvironmentImpactCalculator.toSmartphoneChargeEquivalentCount(co2SavedKg),
+                extractMinutesPerCitedAnswer(metric.getCalculationBasisJson())
             );
+        }
+
+        private static BigDecimal extractMinutesPerCitedAnswer(String calculationBasisJson) {
+            if (calculationBasisJson == null || calculationBasisJson.isBlank()) {
+                return DEFAULT_MINUTES_PER_CITED_ANSWER;
+            }
+            try {
+                JsonNode node = OBJECT_MAPPER.readTree(calculationBasisJson).path("minutesPerCitedAnswer");
+                if (node.isMissingNode() || node.isNull()) {
+                    return DEFAULT_MINUTES_PER_CITED_ANSWER;
+                }
+                if (node.isNumber()) {
+                    return node.decimalValue();
+                }
+                if (node.isTextual() && !node.asText().isBlank()) {
+                    return new BigDecimal(node.asText());
+                }
+                return DEFAULT_MINUTES_PER_CITED_ANSWER;
+            } catch (Exception e) {
+                return DEFAULT_MINUTES_PER_CITED_ANSWER;
+            }
         }
     }
 
