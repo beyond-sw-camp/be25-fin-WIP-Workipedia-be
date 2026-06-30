@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface EsgMetricWeeklyRepository extends JpaRepository<EsgMetricWeekly, Long> {
 
@@ -45,6 +46,35 @@ public interface EsgMetricWeeklyRepository extends JpaRepository<EsgMetricWeekly
         BigDecimal minutesPerCitedAnswer,
         BigDecimal dailyCapMinutes
     );
+
+    @Query(
+        value = """
+                SELECT
+                    AVG(
+                        GREATEST(
+                            TIMESTAMPDIFF(SECOND, q.created_at, first_answer.first_answer_created_at)
+                                - :chatbotResponseSeconds,
+                            0
+                        )
+                    ) / 60.0
+                FROM worki_questions q
+                JOIN (
+                    SELECT
+                        question_id,
+                        MIN(created_at) AS first_answer_created_at
+                    FROM worki_answers
+                    WHERE deleted_at IS NULL
+                        AND is_deleted = 'N'
+                    GROUP BY question_id
+                ) first_answer
+                    ON first_answer.question_id = q.question_id
+                WHERE q.deleted_at IS NULL
+                    AND q.is_deleted = 'N'
+                    AND first_answer.first_answer_created_at >= q.created_at
+                """,
+        nativeQuery = true
+    )
+    BigDecimal calculateAverageSavedMinutesPerWorkiAnswer(@Param("chatbotResponseSeconds") int chatbotResponseSeconds);
 
     boolean existsByMetricWeekStart(LocalDate metricWeekStart);
 
