@@ -7,7 +7,9 @@ import com.wip.workipedia.admin.aisync.dto.AiSyncJobResponse;
 import com.wip.workipedia.admin.aisync.dto.AiSyncJobStatsResponse;
 import com.wip.workipedia.admin.aisync.dto.AiSyncSettingResponse;
 import com.wip.workipedia.admin.aisync.dto.AiSyncSettingUpdateRequest;
+import com.wip.workipedia.admin.aisync.dto.KnowledgeSyncRequest;
 import com.wip.workipedia.admin.aisync.service.AdminAiSyncJobService;
+import com.wip.workipedia.aisync.domain.AiSyncSourceType;
 import com.wip.workipedia.aisync.domain.CleanupTrigger;
 import com.wip.workipedia.aisync.service.AiSyncCleanupService;
 import com.wip.workipedia.common.response.PageResponse;
@@ -35,8 +37,23 @@ public class AdminAiSyncJobController {
     }
 
     @GetMapping("/stats")
-    public ResponseEntity<AiSyncJobStatsResponse> getStats() {
-        return ResponseEntity.ok(adminAiSyncJobService.getStats());
+    public ResponseEntity<AiSyncJobStatsResponse> getStats(
+            @RequestParam(required = false) List<AiSyncSourceType> sourceTypes) {
+        return ResponseEntity.ok(adminAiSyncJobService.getStats(sourceTypes));
+    }
+
+    // 지식 데이터 대기 작업 즉시 실행 (비동기 드레인) — 응답 { "queued": n }
+    @PostMapping("/run-now")
+    public ResponseEntity<Map<String, Long>> runNow(@RequestBody(required = false) KnowledgeSyncRequest req) {
+        return ResponseEntity.ok(adminAiSyncJobService.runNowKnowledge(
+            req != null ? req : new KnowledgeSyncRequest(null)));
+    }
+
+    // 지식 데이터 전체 재동기화 — 응답 { "enqueued": e, "skipped": s }
+    @PostMapping("/resync-knowledge")
+    public ResponseEntity<Map<String, Integer>> resyncKnowledge(@RequestBody(required = false) KnowledgeSyncRequest req) {
+        return ResponseEntity.ok(adminAiSyncJobService.resyncKnowledge(
+            req != null ? req : new KnowledgeSyncRequest(null)));
     }
 
     @PostMapping("/{jobId}/retry")
