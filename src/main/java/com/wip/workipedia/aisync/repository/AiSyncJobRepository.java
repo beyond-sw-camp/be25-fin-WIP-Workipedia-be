@@ -223,6 +223,73 @@ public interface AiSyncJobRepository extends JpaRepository<AiSyncJob, Long> {
 
     Optional<AiSyncJob> findByAiSyncJobIdAndDeletedAtIsNull(Long aiSyncJobId);
 
+    // 동일 source의 미완료(PENDING/PROCESSING) 잡 존재 여부 — 중복 enqueue 방지용
+    @Query("""
+        SELECT COUNT(j) > 0 FROM AiSyncJob j
+        WHERE j.sourceType = :sourceType
+          AND j.sourceId = :sourceId
+          AND j.status IN (com.wip.workipedia.aisync.domain.AiSyncStatus.PENDING,
+                           com.wip.workipedia.aisync.domain.AiSyncStatus.PROCESSING)
+          AND j.deletedAt IS NULL
+        """)
+    boolean existsActiveJob(
+        @Param("sourceType") AiSyncSourceType sourceType,
+        @Param("sourceId") Long sourceId
+    );
+
+    // 지식 스코프 즉시 실행(run-now) 드레인용 claim — sourceType 파라미터화
+    @Query(
+        value = """
+            SELECT * FROM ai_sync_jobs
+            WHERE status = 'PENDING'
+              AND source_type IN (:sourceTypes)
+              AND (next_retry_at IS NULL OR next_retry_at <= :now)
+              AND deleted_at IS NULL
+            ORDER BY created_at ASC
+            LIMIT :limit
+            FOR UPDATE SKIP LOCKED
+            """,
+        nativeQuery = true
+    )
+    List<AiSyncJob> claimPendingKnowledgeJobs(
+        @Param("sourceTypes") List<String> sourceTypes,
+        @Param("now") LocalDateTime now,
+        @Param("limit") int limit
+    );
+
+    // 스코프 PENDING 총건수 (run-now 응답 queued 계산용)
+    @Query(
+        value = """
+            SELECT COUNT(*) FROM ai_sync_jobs
+            WHERE status = 'PENDING'
+              AND source_type IN (:sourceTypes)
+              AND deleted_at IS NULL
+            """,
+        nativeQuery = true
+    )
+    long countPendingBySourceTypes(@Param("sourceTypes") List<String> sourceTypes);
+
+    // 스코프 sourceType의 source별 최신 잡 상태 카운트
+    @Query(
+        value = """
+            SELECT j.status AS status, COUNT(*) AS count
+            FROM ai_sync_jobs j
+            INNER JOIN (
+                SELECT source_type, source_id, MAX(ai_sync_job_id) AS max_id
+                FROM ai_sync_jobs
+                WHERE deleted_at IS NULL
+                GROUP BY source_type, source_id
+            ) latest ON j.ai_sync_job_id = latest.max_id
+            WHERE j.deleted_at IS NULL
+              AND j.source_type IN (:sourceTypes)
+            GROUP BY j.status
+            """,
+        nativeQuery = true
+    )
+    List<AiSyncStatusCount> countByStatusLatestForSourceTypes(
+        @Param("sourceTypes") List<String> sourceTypes
+    );
+
     /**
      * sourceId별 최신 WORKI 잡이 SYNCED이고 completed_at이 cutoff보다 오래된 것 조회.
      */

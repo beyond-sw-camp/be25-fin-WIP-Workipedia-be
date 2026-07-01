@@ -30,6 +30,26 @@ public class AiSyncJobService {
         aiSyncJobRepository.save(AiSyncJob.create(sourceType, sourceId, operation));
     }
 
+    // 동일 source의 미완료 잡이 있으면 skip(false), 없으면 생성(true) — 벌크 재동기화 중복 방지
+    @Transactional
+    public boolean enqueueIfAbsent(AiSyncSourceType sourceType, Long sourceId, AiSyncOperation operation) {
+        if (aiSyncJobRepository.existsActiveJob(sourceType, sourceId)) {
+            return false;
+        }
+        aiSyncJobRepository.save(AiSyncJob.create(sourceType, sourceId, operation));
+        return true;
+    }
+
+    // 지식 스코프 PENDING 한 배치를 claim + PROCESSING 전이 후 반환 (run-now 드레인용)
+    @Transactional
+    public List<AiSyncJob> claimPendingKnowledgeJobs(List<AiSyncSourceType> sourceTypes) {
+        LocalDateTime now = LocalDateTime.now();
+        int batchSize = aiSyncProperties.batchSize();
+        List<String> names = sourceTypes.stream().map(Enum::name).toList();
+        List<AiSyncJob> claimed = aiSyncJobRepository.claimPendingKnowledgeJobs(names, now, batchSize);
+        return claim(claimed);
+    }
+
     // PROCESSING 중 lease 만료된 작업 복구
     @Transactional
     public void recoverExpiredLeases() {

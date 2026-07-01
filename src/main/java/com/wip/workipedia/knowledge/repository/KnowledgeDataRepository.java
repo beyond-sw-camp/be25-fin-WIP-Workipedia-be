@@ -16,6 +16,13 @@ public interface KnowledgeDataRepository extends JpaRepository<KnowledgeData, Lo
 
 	Optional<KnowledgeData> findByKnowledgeDataIdAndDeletedAtIsNull(Long knowledgeDataId);
 
+	// 전체 재동기화용 — 활성(미삭제) 지식 데이터 ID 전체
+	@Query(value = """
+		SELECT knowledge_data_id FROM knowledge_data
+		WHERE deleted_at IS NULL AND is_deleted = 'N'
+		""", nativeQuery = true)
+	List<Long> findActiveIds();
+
 	Page<KnowledgeData> findByDepartmentIdAndDeletedAtIsNull(Long departmentId, Pageable pageable);
 
 	Optional<KnowledgeData> findByKnowledgeDataIdAndDeletedAtIsNullAndIsDeleted(Long knowledgeDataId, String isDeleted);

@@ -144,7 +144,9 @@ Authorization: Bearer <accessToken>
 | `POST` | `/admin/ai-sync-jobs/retry-all` | 실패한 AI 동기화 작업 전체 재시도 | Controller |
 | `GET` | `/admin/ai-sync-jobs/settings` | AI 동기화 설정 조회 | Controller |
 | `PUT` | `/admin/ai-sync-jobs/settings` | AI 동기화 설정 수정 | Controller |
-| `GET` | `/admin/ai-sync-jobs/stats` | AI 동기화 작업 통계 조회 | Controller |
+| `GET` | `/admin/ai-sync-jobs/stats` | AI 동기화 작업 통계 조회 (`sourceTypes` 쿼리로 스코프 필터, 예: `KNOWLEDGE_DATA,MANUAL_KNOWLEDGE`) | Controller |
+| `POST` | `/admin/ai-sync-jobs/run-now` | 지식 데이터 대기 작업 즉시 실행 (비동기 드레인, 응답 `{queued}`) | Controller |
+| `POST` | `/admin/ai-sync-jobs/resync-knowledge` | 지식 데이터 전체 재동기화 (활성 원본 UPSERT, 응답 `{enqueued, skipped}`) | Controller |
 | `GET` | `/admin/ai-tools` | AI Tool 목록 조회 | Controller |
 | `POST` | `/admin/ai-tools` | AI Tool 등록 (`sideEffectType`: `READ_ONLY`/`MUTATING`) | Controller |
 | `PATCH` | `/admin/ai-tools/{aiToolId}` | AI Tool 설정 및 `sideEffectType` 수정 | Controller |
