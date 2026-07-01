@@ -17,7 +17,8 @@ public record AiSyncJobResponse(
     String lastError,
     LocalDateTime startedAt,
     LocalDateTime completedAt,
-    LocalDateTime createdAt
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt
 ) {
     public static AiSyncJobResponse from(AiSyncJob job) {
         return new AiSyncJobResponse(
@@ -30,7 +31,8 @@ public record AiSyncJobResponse(
             job.getLastError(),
             job.getStartedAt(),
             job.getCompletedAt(),
-            job.getCreatedAt()
+            job.getCreatedAt(),
+            job.getUpdatedAt()
         );
     }
 }
