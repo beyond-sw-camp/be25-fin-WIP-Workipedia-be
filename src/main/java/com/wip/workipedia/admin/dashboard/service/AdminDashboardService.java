@@ -1,9 +1,16 @@
 package com.wip.workipedia.admin.dashboard.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wip.workipedia.admin.dashboard.dto.DepartmentAutoAssignmentRateResponse;
 import com.wip.workipedia.admin.dashboard.dto.DepartmentAutoAssignmentRateResponse.DepartmentAutoAssignmentRateItem;
 import com.wip.workipedia.admin.dashboard.dto.DepartmentTicketStatusResponse;
 import com.wip.workipedia.admin.dashboard.dto.DepartmentTicketStatusResponse.DepartmentTicketStatusItem;
+import com.wip.workipedia.admin.dashboard.dto.LlmUsageSavingsResponse;
+import com.wip.workipedia.admin.dashboard.dto.LlmUsageSavingsResponse.RecentSample;
+import com.wip.workipedia.admin.dashboard.dto.LlmUsageSavingsResponse.SourceBreakdown;
+import com.wip.workipedia.admin.dashboard.dto.LlmUsageSavingsResponse.Summary;
 import com.wip.workipedia.admin.dashboard.dto.MonthlyAutoAssignmentRateResponse;
 import com.wip.workipedia.admin.dashboard.dto.MonthlyAutoAssignmentRateResponse.MonthlyAutoAssignmentRatePoint;
 import com.wip.workipedia.admin.dashboard.dto.MonthlyTicketTrendResponse;
@@ -12,6 +19,8 @@ import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.department.domain.Department;
 import com.wip.workipedia.department.repository.DepartmentRepository;
+import com.wip.workipedia.llmusage.domain.LlmUsageMetric;
+import com.wip.workipedia.llmusage.repository.LlmUsageMetricRepository;
 import com.wip.workipedia.ticket.domain.TicketStatus;
 import com.wip.workipedia.ticket.repository.TicketRepository;
 import java.math.BigDecimal;
@@ -21,15 +30,19 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -42,6 +55,8 @@ public class AdminDashboardService {
 
 	private final TicketRepository ticketRepository;
 	private final DepartmentRepository departmentRepository;
+	private final LlmUsageMetricRepository llmUsageMetricRepository;
+	private final ObjectMapper objectMapper;
 
 	public MonthlyAutoAssignmentRateResponse getMonthlyAutoAssignmentRate(Integer months) {
 		int normalizedMonths = normalizeMonths(months);
@@ -151,6 +166,45 @@ public class AdminDashboardService {
 		return new DepartmentAutoAssignmentRateResponse(items);
 	}
 
+	public LlmUsageSavingsResponse getLlmUsageSavings() {
+		LlmUsageMetricRepository.LlmUsageSummaryProjection totals =
+			llmUsageMetricRepository.summarizeActive();
+		long sampleCount = value(totals.getSampleCount());
+		long fullFileTokens = value(totals.getFullFileTokens());
+		long ragTokens = value(totals.getRagTokens());
+		long savedTokens = value(totals.getSavedTokens());
+
+		Summary summary = new Summary(
+			sampleCount,
+			fullFileTokens,
+			ragTokens,
+			savedTokens,
+			percent(savedTokens, fullFileTokens),
+			value(totals.getFullFileCredits()),
+			value(totals.getRagCredits()),
+			value(totals.getSavedCredits()),
+			value(totals.getFullFileCalls()),
+			value(totals.getRagCalls()),
+			value(totals.getSavedCalls()),
+			value(totals.getSourceCount()),
+			value(totals.getCitedChunkCount()),
+			average(fullFileTokens, sampleCount),
+			average(ragTokens, sampleCount)
+		);
+
+		List<RecentSample> recentSamples = llmUsageMetricRepository
+			.findByIsDeletedOrderByCreatedAtDesc("N", PageRequest.of(0, 5))
+			.stream()
+			.map(this::toRecentSample)
+			.toList();
+
+		return new LlmUsageSavingsResponse(
+			summary,
+			recentSamples,
+			totalSourceBreakdown()
+		);
+	}
+
 	private int normalizeMonths(Integer months) {
 		if (months == null) {
 			return DEFAULT_MONTHS;
@@ -181,6 +235,69 @@ public class AdminDashboardService {
 		return BigDecimal.valueOf(numerator)
 			.multiply(BigDecimal.valueOf(100))
 			.divide(BigDecimal.valueOf(denominator), 2, RoundingMode.HALF_UP);
+	}
+
+	private RecentSample toRecentSample(LlmUsageMetric metric) {
+		return new RecentSample(
+			metric.getLlmUsageMetricId(),
+			metric.getChatbotMessageId(),
+			metric.getCreatedAt(),
+			metric.getQuestionSnapshot(),
+			"Y".equals(metric.getAnswerable()),
+			metric.getSourceCount(),
+			metric.getCitedChunkCount(),
+			metric.getFullFileTokens(),
+			metric.getRagTokens(),
+			metric.getSavedTokens(),
+			percent(metric.getSavedTokens(), metric.getFullFileTokens()),
+			metric.getFullFileCredits(),
+			metric.getRagCredits(),
+			metric.getSavedCredits(),
+			metric.getFullFileCalls(),
+			metric.getRagCalls(),
+			metric.getSavedCalls(),
+			parseSourceBreakdown(metric.getSourceBreakdown())
+		);
+	}
+
+	private List<SourceBreakdown> totalSourceBreakdown() {
+		Map<String, Integer> totals = new LinkedHashMap<>();
+		for (String raw : llmUsageMetricRepository.findActiveSourceBreakdowns()) {
+			for (SourceBreakdown item : parseSourceBreakdown(raw)) {
+				totals.put(item.type(), totals.getOrDefault(item.type(), 0) + item.count());
+			}
+		}
+		return totals.entrySet().stream()
+			.map(entry -> new SourceBreakdown(entry.getKey(), entry.getValue()))
+			.sorted((a, b) -> Integer.compare(b.count(), a.count()))
+			.toList();
+	}
+
+	private List<SourceBreakdown> parseSourceBreakdown(String raw) {
+		if (raw == null || raw.isBlank()) {
+			return List.of();
+		}
+		try {
+			return objectMapper.readValue(raw, new TypeReference<>() {});
+		} catch (JsonProcessingException e) {
+			log.warn("LLM 사용량 source_breakdown 파싱 실패: {}", e.getMessage());
+			return List.of();
+		}
+	}
+
+	private long value(Long value) {
+		return value == null ? 0L : value;
+	}
+
+	private long average(long total, long count) {
+		return count == 0L ? 0L : Math.round((double) total / count);
+	}
+
+	private long percent(long numerator, long denominator) {
+		if (denominator <= 0L) {
+			return 0L;
+		}
+		return Math.round((double) numerator * 100 / denominator);
 	}
 
 	private record Range(LocalDateTime startAt, LocalDateTime endAt) {
