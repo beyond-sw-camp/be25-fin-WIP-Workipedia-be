@@ -2,6 +2,7 @@ package com.wip.workipedia.admin.dashboard.controller;
 
 import com.wip.workipedia.admin.dashboard.dto.DepartmentAutoAssignmentRateResponse;
 import com.wip.workipedia.admin.dashboard.dto.DepartmentTicketStatusResponse;
+import com.wip.workipedia.admin.dashboard.dto.LlmUsageSavingsResponse;
 import com.wip.workipedia.admin.dashboard.dto.MonthlyAutoAssignmentRateResponse;
 import com.wip.workipedia.admin.dashboard.dto.MonthlyTicketTrendResponse;
 import com.wip.workipedia.admin.dashboard.service.AdminDashboardService;
@@ -43,5 +44,10 @@ public class AdminDashboardController {
 	@GetMapping("/department-auto-assignment-rate")
 	public ResponseEntity<DepartmentAutoAssignmentRateResponse> departmentAutoAssignmentRate() {
 		return ResponseEntity.ok(adminDashboardService.getDepartmentAutoAssignmentRate());
+	}
+
+	@GetMapping("/llm-usage-savings")
+	public ResponseEntity<LlmUsageSavingsResponse> llmUsageSavings() {
+		return ResponseEntity.ok(adminDashboardService.getLlmUsageSavings());
 	}
 }

@@ -25,6 +25,7 @@ import com.wip.workipedia.chatbot.repository.ChatbotMessageRepository;
 import com.wip.workipedia.chatbot.repository.ChatbotSessionRepository;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
+import com.wip.workipedia.llmusage.service.LlmUsageMetricService;
 import com.wip.workipedia.ragcitation.service.RagCitationService;
 import com.wip.workipedia.user.repository.UserRepository;
 import com.wip.workipedia.user.domain.User;
@@ -44,9 +45,10 @@ class ChatbotServiceTest {
     private final AdminAiPromptService adminAiPromptService = mock(AdminAiPromptService.class);
     private final RagCitationService ragCitationService = mock(RagCitationService.class);
     private final UserRepository userRepository = mock(UserRepository.class);
+    private final LlmUsageMetricService llmUsageMetricService = mock(LlmUsageMetricService.class);
     private final ChatbotService service = new ChatbotService(
             sessionRepository, messageRepository, aiClient, aiStreamClient, fallbackAiClient,
-            adminAiPromptService, new ObjectMapper(), ragCitationService, userRepository);
+            adminAiPromptService, new ObjectMapper(), ragCitationService, userRepository, llmUsageMetricService);
 
     @Test
     void createSession_저장하고_세션을_반환한다() {
@@ -134,7 +136,7 @@ class ChatbotServiceTest {
         ReflectionTestUtils.setField(assistantMsg, "messageId", 10L);
         when(messageRepository.save(any())).thenReturn(assistantMsg);
 
-        ChatbotMessageResponse response = service.saveAssistantMessage(5L, aiResponse);
+        ChatbotMessageResponse response = service.saveAssistantMessage(5L, "노트북 고장났어요", aiResponse);
 
         assertThat(response.answerable()).isFalse();
         assertThat(response.nextAction()).isEqualTo(NextAction.CREATE_TICKET);
@@ -147,7 +149,7 @@ class ChatbotServiceTest {
         ReflectionTestUtils.setField(assistantMsg, "messageId", 11L);
         when(messageRepository.save(any())).thenReturn(assistantMsg);
 
-        ChatbotMessageResponse response = service.saveAssistantMessage(5L, aiResponse);
+        ChatbotMessageResponse response = service.saveAssistantMessage(5L, "휴가는 어디서 신청해요?", aiResponse);
 
         assertThat(response.answerable()).isTrue();
     }
@@ -158,7 +160,7 @@ class ChatbotServiceTest {
         ChatbotAiResponse aiResponse = new ChatbotAiResponse("", List.of(), null, "CREATE_TICKET");
         when(messageRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ChatbotMessageResponse response = service.saveAssistantMessage(5L, aiResponse);
+        ChatbotMessageResponse response = service.saveAssistantMessage(5L, "없는 규정 알려줘", aiResponse);
 
         ArgumentCaptor<ChatbotMessage> captor = ArgumentCaptor.forClass(ChatbotMessage.class);
         verify(messageRepository).save(captor.capture());
