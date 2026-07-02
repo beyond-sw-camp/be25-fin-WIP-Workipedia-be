@@ -25,6 +25,7 @@ import com.wip.workipedia.chatbot.repository.ChatbotSessionRepository;
 import com.wip.workipedia.common.exception.CustomException;
 import com.wip.workipedia.common.exception.ErrorType;
 import com.wip.workipedia.common.response.PageResponse;
+import com.wip.workipedia.llmusage.service.LlmUsageMetricService;
 import com.wip.workipedia.ragcitation.service.RagCitationService;
 import com.wip.workipedia.user.repository.UserRepository;
 import java.util.ArrayList;
@@ -61,6 +62,7 @@ public class ChatbotService {
     private final ObjectMapper objectMapper;
     private final RagCitationService ragCitationService;
     private final UserRepository userRepository;
+    private final LlmUsageMetricService llmUsageMetricService;
 
     // self-injection: @Transactional 서브메서드를 같은 빈 내에서 프록시로 호출하기 위해 필요
     // (직접 this.method()로 호출하면 트랜잭션이 적용되지 않음)
@@ -113,7 +115,7 @@ public class ChatbotService {
         logStepHistory(aiResponse.stepHistory());
 
         // 3단계: ASSISTANT 응답 저장 (트랜잭션 커밋)
-        return self.saveAssistantMessage(sessionId, aiResponse);
+        return self.saveAssistantMessage(sessionId, request.question(), aiResponse);
     }
 
     // 질문 전송 + 스트리밍 진입점 — 타자 효과(SSE)용
@@ -147,7 +149,7 @@ public class ChatbotService {
             logStepHistory(meta.stepHistory());
             ChatbotAiResponse aiResponse = new ChatbotAiResponse(
                     answerBuffer.toString(), meta.sources(), meta.route(), meta.action(), meta.stepHistory());
-            ChatbotMessageResponse saved = self.saveAssistantMessage(sessionId, aiResponse);
+            ChatbotMessageResponse saved = self.saveAssistantMessage(sessionId, aiRequest.question(), aiResponse);
             return Mono.just(doneEvent(saved));
         }).subscribeOn(Schedulers.boundedElastic());
 
@@ -194,7 +196,8 @@ public class ChatbotService {
     private Flux<ServerSentEvent<Object>> streamFallback(Long sessionId, ChatbotAiRequest aiRequest, Throwable e) {
         log.error("AI 챗봇 스트리밍 실패: {}", e.getMessage());
         return Mono.defer(() -> {
-            ChatbotMessageResponse saved = self.saveAssistantMessage(sessionId, fallbackChatbotAiClient.ask(aiRequest));
+            ChatbotMessageResponse saved = self.saveAssistantMessage(
+                    sessionId, aiRequest.question(), fallbackChatbotAiClient.ask(aiRequest));
             return Mono.just(doneEvent(saved));
         }).subscribeOn(Schedulers.boundedElastic()).flux();
     }
@@ -255,7 +258,7 @@ public class ChatbotService {
     // AI가 빈 답변을 반환하면(매뉴얼·게시판에서 답을 찾지 못한 경우) 빈 메시지를 저장하지 않고
     // 워키 질문 등록 유도 메시지로 대체한다. (빈 content 저장 시 다음 턴 컨텍스트로 전달되어 AI 422 유발)
     @Transactional
-    public ChatbotMessageResponse saveAssistantMessage(Long sessionId, ChatbotAiResponse aiResponse) {
+    public ChatbotMessageResponse saveAssistantMessage(Long sessionId, String question, ChatbotAiResponse aiResponse) {
         String answer = aiResponse.answer();
         boolean hasAnswer = answer != null && !answer.isBlank();
 
@@ -268,6 +271,8 @@ public class ChatbotService {
                 ChatbotMessage.ofAssistant(sessionId, content, answerable, nextAction, referencesJson)
         );
         ragCitationService.replaceChatbotMessageCitations(assistant.getMessageId(), aiResponse.sources());
+        llmUsageMetricService.recordChatbotUsage(
+                assistant.getMessageId(), question, content, answerable, aiResponse.sources());
         return ChatbotMessageResponse.from(assistant);
     }
 
